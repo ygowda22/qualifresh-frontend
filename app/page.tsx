@@ -184,11 +184,11 @@ export default function Home() {
 
   // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
-    fetch(`${API}/api/products`)
-      .then(r => r.json())
-      .then(d => { setProducts(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+  fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`)
+    .then(r => r.json())
+    .then(setProducts)
+    .catch(() => setLoading(false));
+}, []);
 
   // ── Reset page on filter change ───────────────────────────────────────────
   useEffect(() => { setPage(1); }, [cat, search]);

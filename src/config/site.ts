@@ -147,5 +147,5 @@ export const siteConfig = {
   apiUrl: "http://localhost:4000",
 
   // ── Products per page ──────────────────────────────────────
-  productsPerPage: 12,
+  productsPerPage: 15,
 };

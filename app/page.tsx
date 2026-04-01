@@ -210,7 +210,8 @@ export default function Home() {
   const heroRef                     = useRef<HTMLDivElement>(null);
   const whyRef                      = useRef<HTMLDivElement>(null);
   const filterRowRef                = useRef<HTMLDivElement>(null);
-  const [filterOverflows, setFilterOverflows] = useState(false);
+  const [showLeftArrow, setShowLeftArrow]   = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
   // ── Load user session + cart ──────────────────────────────────────────────
   useEffect(() => {
@@ -338,16 +339,19 @@ export default function Home() {
     else document.title = siteConfig.pageTitles.products;
   }, [cat, search]);
 
-  // ── Category: only visible after scrolling down ───────────────────────────
+  // ── Category: only visible after scrolling down (delay prevents fire on mount) ─
   useEffect(() => {
     const el = catRef.current;
     if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setCatVisible(true); },
-      { threshold: 0.05, rootMargin: "0px 0px -60px 0px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    let observer: IntersectionObserver;
+    const timer = setTimeout(() => {
+      observer = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setCatVisible(true); },
+        { threshold: 0.08, rootMargin: "0px 0px -80px 0px" }
+      );
+      observer.observe(el);
+    }, 400);
+    return () => { clearTimeout(timer); observer?.disconnect(); };
   }, []);
 
   // ── Dynamic page title based on visible section ───────────────────────────
@@ -382,15 +386,19 @@ export default function Home() {
   const add    = (id: string) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
   const remove = (id: string) => setCart(c => { const n = { ...c }; n[id] > 1 ? n[id]-- : delete n[id]; return n; });
 
-  // Detect filter row overflow (to show/hide arrows)
+  // Detect filter row overflow — track left/right arrows independently
   useEffect(() => {
     const el = filterRowRef.current;
     if (!el) return;
-    const check = () => setFilterOverflows(el.scrollWidth > el.clientWidth + 2);
-    check();
-    const ro = new ResizeObserver(check);
+    const update = () => {
+      setShowLeftArrow(el.scrollLeft > 2);
+      setShowRightArrow(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
   }, [products, cat]);
 
   // Scroll to products with offset for sticky nav
@@ -739,8 +747,8 @@ export default function Home() {
               <h2 className="section-heading" style={{ fontSize: "clamp(1.3rem,2.5vw,1.7rem)", fontWeight: 800, color: "#0f1a0f" }}>Our Fresh Picks</h2>
             </div>
             <div className="filter-wrap">
-              <button className="filter-arrow" style={{ left: 0, display: filterOverflows ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: -150, behavior: "smooth" })}>‹</button>
-              <div ref={filterRowRef} className="filter-row" style={{ display: "flex", gap: "6px", flexWrap: "nowrap", overflowX: "auto", paddingBottom: "4px", padding: filterOverflows ? "2px 32px 4px" : "2px 0 4px" }}>
+              <button className="filter-arrow" style={{ left: 0, display: showLeftArrow ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: -150, behavior: "smooth" })}>‹</button>
+              <div ref={filterRowRef} className="filter-row" style={{ display: "flex", gap: "6px", flexWrap: "nowrap", overflowX: "auto", paddingBottom: "4px", padding: `2px ${showRightArrow ? "32px" : "0"} 4px ${showLeftArrow ? "32px" : "0"}` }}>
                 <button onClick={() => setCat("all")}
                   style={{ padding: "6px 14px", borderRadius: "18px", border: cat === "all" ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: cat === "all" ? "#2d8a4e" : "#fff", color: cat === "all" ? "#fff" : "#374151", fontWeight: 600, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>
                   All
@@ -752,7 +760,7 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              <button className="filter-arrow" style={{ right: 0, display: filterOverflows ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: 150, behavior: "smooth" })}>›</button>
+              <button className="filter-arrow" style={{ right: 0, display: showRightArrow ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: 150, behavior: "smooth" })}>›</button>
             </div>
           </div>
 
@@ -793,18 +801,20 @@ export default function Home() {
                         <span style={{ fontWeight: 800, color: "#1a3c2e", fontSize: "18px" }}>₹{p.price}</span>
                         {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "sans-serif" }}>/kg</span>}
                       </div>
-                      {qty > 0 ? (
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", borderRadius: "8px", padding: "5px 8px", border: "1.5px solid #86efac" }}>
-                          <button onClick={() => remove(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800 }}>−</button>
-                          <span style={{ fontWeight: 800, color: "#166534", fontSize: "15px" }}>{qty}</span>
-                          <button onClick={() => add(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800 }}>+</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => p.stock > 0 && add(p._id)} disabled={p.stock === 0}
-                          style={{ width: "100%", padding: "9px", fontSize: "13px", background: p.stock > 0 ? "#2d8a4e" : "#f3f4f6", color: p.stock > 0 ? "#fff" : "#9ca3af", border: "none", borderRadius: "8px", cursor: p.stock > 0 ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                          {p.stock > 0 ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
-                        </button>
-                      )}
+                      <div style={{ height: "42px", display: "flex", alignItems: "stretch" }}>
+                        {qty > 0 ? (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", borderRadius: "8px", padding: "0 8px", border: "1.5px solid #86efac", width: "100%" }}>
+                            <button onClick={() => remove(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>−</button>
+                            <span style={{ fontWeight: 800, color: "#166534", fontSize: "15px" }}>{qty}</span>
+                            <button onClick={() => add(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>+</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => p.stock > 0 && add(p._id)} disabled={p.stock === 0}
+                            style={{ width: "100%", fontSize: "13px", background: p.stock > 0 ? "#2d8a4e" : "#f3f4f6", color: p.stock > 0 ? "#fff" : "#9ca3af", border: "none", borderRadius: "8px", cursor: p.stock > 0 ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            {p.stock > 0 ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

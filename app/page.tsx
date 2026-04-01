@@ -145,7 +145,7 @@ function WhatsAppIcon({ size = 17 }: { size?: number }) {
 }
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
-function QFLogo({ height = 44 }: { height?: number }) {
+function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
   return (
     <img
       src="/logo.png"

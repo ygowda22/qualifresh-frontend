@@ -705,7 +705,8 @@ export default function Home() {
       {/* ═══ CATEGORIES — invisible until scrolled to ═══ */}
       <div ref={catRef} className="cat-section"
         style={{
-          background: "#fff", padding: "2.5rem 1.5rem",
+          background: catVisible ? "#fff" : "transparent",
+          padding: "2.5rem 1.5rem",
           opacity: catVisible ? 1 : 0,
           transform: catVisible ? "translateY(0)" : "translateY(48px)",
           transition: "opacity 0.75s ease, transform 0.75s ease",

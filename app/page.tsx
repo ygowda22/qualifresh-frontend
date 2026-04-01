@@ -339,15 +339,17 @@ export default function Home() {
     else document.title = siteConfig.pageTitles.products;
   }, [cat, search]);
 
-  // ── Category: only visible after user has actually scrolled down ─────────
+  // ── Category: only visible once user scrolls hero out of view ───────────
+  // Uses hero bottom position — screen-size independent (works on mobile, laptop, monitor)
   useEffect(() => {
     const check = () => {
       const el = catRef.current;
+      const hero = heroRef.current;
       if (!el || catVisible) return;
-      // require user to have scrolled at least 50px so it never fires on landing
-      if (window.scrollY < 50) return;
+      // Hero must have scrolled at least 50% off screen before cat-section can appear
+      if (hero && hero.getBoundingClientRect().bottom > window.innerHeight * 0.5) return;
       const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight * 0.92) setCatVisible(true);
+      if (rect.top < window.innerHeight * 0.95) setCatVisible(true);
     };
     window.addEventListener("scroll", check, { passive: true });
     return () => window.removeEventListener("scroll", check);

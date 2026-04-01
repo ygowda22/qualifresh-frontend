@@ -339,20 +339,19 @@ export default function Home() {
     else document.title = siteConfig.pageTitles.products;
   }, [cat, search]);
 
-  // ── Category: only visible after scrolling down (delay prevents fire on mount) ─
+  // ── Category: only visible after user has actually scrolled down ─────────
   useEffect(() => {
-    const el = catRef.current;
-    if (!el) return;
-    let observer: IntersectionObserver;
-    const timer = setTimeout(() => {
-      observer = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setCatVisible(true); },
-        { threshold: 0.08, rootMargin: "0px 0px -80px 0px" }
-      );
-      observer.observe(el);
-    }, 400);
-    return () => { clearTimeout(timer); observer?.disconnect(); };
-  }, []);
+    const check = () => {
+      const el = catRef.current;
+      if (!el || catVisible) return;
+      // require user to have scrolled at least 50px so it never fires on landing
+      if (window.scrollY < 50) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.92) setCatVisible(true);
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    return () => window.removeEventListener("scroll", check);
+  }, [catVisible]);
 
   // ── Dynamic page title based on visible section ───────────────────────────
   useEffect(() => {
@@ -777,9 +776,9 @@ export default function Home() {
                 const qty = cart[p._id] || 0;
                 return (
                   <div key={p._id} className="lift"
-                    style={{ background: "#fff", borderRadius: "13px", border: "1px solid #e9ede4", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.05)", animation: `fadeUp .4s ${(i % PER_PAGE) * 0.03}s both` }}
+                    style={{ background: "#fff", borderRadius: "13px", border: "1px solid #e9ede4", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.05)", animation: `fadeUp .4s ${(i % PER_PAGE) * 0.03}s both`, display: "flex", flexDirection: "column" }}
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
-                    <div className="prod-img" style={{ height: "175px", overflow: "hidden", position: "relative" }}>
+                    <div className="prod-img" style={{ height: "175px", overflow: "hidden", position: "relative", flexShrink: 0 }}>
                       <img src={p.imageUrl || `/products/${p.slug}.png`} alt={p.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }}
                         onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = IMG[p.slug] || CAT_IMG[p.category] || FALLBACK; }} />
@@ -793,7 +792,7 @@ export default function Home() {
                         {p.stock > 0 ? "In Stock" : "Out"}
                       </div>
                     </div>
-                    <div style={{ padding: "0.85rem 0.95rem" }}>
+                    <div style={{ padding: "0.85rem 0.95rem", display: "flex", flexDirection: "column", flex: 1 }}>
                       <span style={{ fontSize: "10px", color: CAT_COLOR[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", fontFamily: "sans-serif" }}>{CAT_LABEL[p.category]}</span>
                       <h3 className="prod-name" style={{ margin: "4px 0 3px", fontSize: "13.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>{p.name}</h3>
                       <p style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "9px", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>
@@ -801,7 +800,7 @@ export default function Home() {
                         <span style={{ fontWeight: 800, color: "#1a3c2e", fontSize: "18px" }}>₹{p.price}</span>
                         {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "sans-serif" }}>/kg</span>}
                       </div>
-                      <div style={{ height: "42px", display: "flex", alignItems: "stretch" }}>
+                      <div style={{ height: "42px", display: "flex", alignItems: "stretch", marginTop: "auto" }}>
                         {qty > 0 ? (
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", borderRadius: "8px", padding: "0 8px", border: "1.5px solid #86efac", width: "100%" }}>
                             <button onClick={() => remove(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>−</button>

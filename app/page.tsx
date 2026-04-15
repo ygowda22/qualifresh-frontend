@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { siteConfig } from "../src/config/site";
 
 const { delivery: DEL } = siteConfig;
@@ -166,9 +168,15 @@ export default function Home() {
   const [showLogin, setShowLogin]   = useState(false);
   const [mobileMenu, setMobileMenu]     = useState(false);
   const [search, setSearch]             = useState("");
+  const [searchOpen, setSearchOpen]     = useState(false);
+  const desktopSearchRef                = useRef<HTMLDivElement>(null);
+  const mobileSearchRef                 = useRef<HTMLDivElement>(null);
   const [page, setPage]                 = useState(1);
   const [hov, setHov]                   = useState<string | null>(null);
-  const [catVisible, setCatVisible]     = useState(false);
+  const [catVisible, setCatVisible]     = useState(true);
+  const [cartEnabled, setCartEnabled]   = useState(true);
+  const [customCats, setCustomCats]     = useState<{ key:string; label:string; image:string; color:string; icon:string }[]>([]);
+  const [catOverrides, setCatOverrides] = useState<Record<string, { label?: string; image?: string; color?: string; icon?: string }>>({});
 
   // ── Contact modal ──────────────────────────────────────────────────────────
   const [showContactModal, setShowContactModal] = useState(false);
@@ -210,10 +218,15 @@ export default function Home() {
   const heroRef                     = useRef<HTMLDivElement>(null);
   const whyRef                      = useRef<HTMLDivElement>(null);
   const filterRowRef                = useRef<HTMLDivElement>(null);
+  const navRef                      = useRef<HTMLElement>(null);
+  const [dropdownTop, setDropdownTop] = useState(0);
+  const [perPage, setPerPage]       = useState(PER_PAGE);
   const [showLeftArrow, setShowLeftArrow]   = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [activeNav, setActiveNav]           = useState("Home");
+  const router = useRouter();
 
-  // ── Load user session + cart ──────────────────────────────────────────────
+  // ── Load user session + cart + settings ──────────────────────────────────
   useEffect(() => {
     try {
       const saved = localStorage.getItem("qf_user");
@@ -223,12 +236,58 @@ export default function Home() {
       const savedCart = localStorage.getItem("qf_cart");
       if (savedCart) setCart(JSON.parse(savedCart));
     } catch {}
+    // Load store settings
+    const cartSetting = localStorage.getItem("qf_cart_enabled");
+    if (cartSetting !== null) setCartEnabled(cartSetting === "true");
+    try {
+      const catSetting = localStorage.getItem("qf_custom_categories");
+      if (catSetting) setCustomCats(JSON.parse(catSetting));
+    } catch {}
+    try {
+      const ovSetting = localStorage.getItem("qf_category_overrides");
+      if (ovSetting) setCatOverrides(JSON.parse(ovSetting));
+    } catch {}
   }, []);
 
   // ── Persist cart to localStorage on every change ─────────────────────────
   useEffect(() => {
     localStorage.setItem("qf_cart", JSON.stringify(cart));
   }, [cart]);
+
+  // ── Responsive products per page (4 rows: 8 on tablet/mobile, 16 desktop) ─
+  useEffect(() => {
+    const update = () => setPerPage(window.innerWidth <= 1024 ? 8 : PER_PAGE);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  useEffect(() => { setPage(1); }, [perPage]);
+
+  // ── Track nav bottom for mobile menu dropdown positioning ────────────────
+  useEffect(() => {
+    const update = () => {
+      if (navRef.current) setDropdownTop(navRef.current.getBoundingClientRect().bottom);
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, { passive: true });
+    return () => { window.removeEventListener("resize", update); window.removeEventListener("scroll", update); };
+  }, [mobileMenu]);
+
+  // ── Close search dropdown on outside click ────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        desktopSearchRef.current && !desktopSearchRef.current.contains(e.target as Node) &&
+        mobileSearchRef.current && !mobileSearchRef.current.contains(e.target as Node)
+      ) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   // ── Auth helpers ──────────────────────────────────────────────────────────
   async function doLogin() {
@@ -241,6 +300,7 @@ export default function Home() {
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       setCkName(u.name); setCkEmail(u.email);
       setShowLogin(false); setAuthEmail(""); setAuthPass("");
+      window.location.href = "/user";
     } catch { setAuthError("Network error. Please try again."); }
     finally { setAuthLoading(false); }
   }
@@ -261,6 +321,7 @@ export default function Home() {
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       setCkName(u.name); setCkEmail(u.email);
       setShowLogin(false);
+      window.location.href = "/user";
     } catch { setAuthError("Network error. Please try again."); }
     finally { setAuthLoading(false); }
   }
@@ -279,6 +340,8 @@ export default function Home() {
       });
       const d = await r.json();
       if (!r.ok) { alert(d.message || "Order failed. Please try again."); return; }
+      // Non-blocking SMS + email notification
+      fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
       setCkOrderNum(d.orderNumber);
       setCheckoutStep(2);
       setCart({});
@@ -315,12 +378,21 @@ export default function Home() {
     // Other tabs: storage event fires when admin writes qf_products_updated
     const onStorage = (e: StorageEvent) => {
       if (e.key === "qf_products_updated") refetchProducts();
+      if (e.key === "qf_settings_updated" || e.key === "qf_cart_enabled") {
+        const cartSetting = localStorage.getItem("qf_cart_enabled");
+        if (cartSetting !== null) setCartEnabled(cartSetting === "true");
+        try { const c = localStorage.getItem("qf_custom_categories"); if (c) setCustomCats(JSON.parse(c)); } catch {}
+        try { const ov = localStorage.getItem("qf_category_overrides"); if (ov) setCatOverrides(JSON.parse(ov)); } catch {}
+      }
     };
     // Same tab: re-fetch whenever user navigates back to this page/tab
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         const updated = localStorage.getItem("qf_products_updated");
         if (updated) refetchProducts();
+        // Re-read cart setting in case admin changed it in another tab
+        const cartSetting = localStorage.getItem("qf_cart_enabled");
+        if (cartSetting !== null) setCartEnabled(cartSetting === "true");
       }
     };
     window.addEventListener("storage", onStorage);
@@ -334,10 +406,10 @@ export default function Home() {
   // ── Reset page on filter change + update title ───────────────────────────
   useEffect(() => {
     setPage(1);
-    const catCfg = CATS.find(c => c.key === cat);
-    if (catCfg) document.title = `${catCfg.pageTitle} | QualiFresh`;
+    const catCfg = allCats.find(c => c.key === cat);
+    if (catCfg) document.title = `${catCfg.pageTitle || catCfg.label} | QualiFresh`;
     else document.title = siteConfig.pageTitles.products;
-  }, [cat, search]);
+  }, [cat, search, customCats]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Category: only visible once user scrolls hero out of view ───────────
   // Uses hero bottom position — screen-size independent (works on mobile, laptop, monitor)
@@ -376,13 +448,45 @@ export default function Home() {
     return () => observers.forEach(o => o?.disconnect());
   }, []);
 
+  // ── Active nav tracking ───────────────────────────────────────────────────
+  useEffect(() => {
+    const sections: { ref: React.RefObject<HTMLElement | HTMLDivElement | null>; label: string }[] = [
+      { ref: heroRef,     label: "Home"     },
+      { ref: productsRef, label: "Products" },
+      { ref: footerRef,   label: "Contact"  },
+    ];
+    const observers = sections.map(({ ref, label }) => {
+      const el = ref.current;
+      if (!el) return null;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveNav(label); },
+        { threshold: 0.3 }
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach(o => o?.disconnect());
+  }, []);
+
   const filtered   = products.filter(p => (cat === "all" || p.category === cat) && p.name.toLowerCase().includes(search.toLowerCase()));
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paginated  = filtered.slice((page - 1) * perPage, page * perPage);
+  const searchSuggestions = search.trim().length > 0
+    ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
+    : [];
   const cartItems  = products.filter(p => cart[p._id]);
   const cartCount  = Object.values(cart).reduce((a: number, b) => a + (b as number), 0);
   const cartTotal  = products.reduce((s, p) => s + (cart[p._id] || 0) * p.price, 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;
+
+  // WhatsApp URL with full cart details — used by all WA buttons on this page
+  const homeWaUrl = cartItems.length > 0
+    ? `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
+        "Hi QualiFresh! I'd like to order:\n" +
+        cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
+        `\n\nTotal: ₹${cartTotal + deliveryCost}${deliveryCost === 0 ? " (Free delivery!)" : ""}`
+      )}`
+    : `https://wa.me/${siteConfig.whatsapp}`;
 
   const add    = (id: string) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
   const remove = (id: string) => setCart(c => { const n = { ...c }; n[id] > 1 ? n[id]-- : delete n[id]; return n; });
@@ -410,19 +514,29 @@ export default function Home() {
     window.scrollTo({ top, behavior: "smooth" });
   };
 
+
+  // Merge static config categories (with any admin overrides) + custom categories
+  const allCats      = [
+    ...CATS.map(c => ({ ...c, ...(catOverrides[c.key] || {}) })),
+    ...customCats.map(c => ({ key: c.key, label: c.label, color: c.color, image: c.image, icon: c.icon, pageTitle: c.label })),
+  ];
+  const allCatLabel  = Object.fromEntries(allCats.map(c => [c.key, c.label]));
+  const allCatColor  = Object.fromEntries(allCats.map(c => [c.key, c.color]));
+  const allCatImg    = Object.fromEntries(allCats.map(c => [c.key, c.image]));
+
   const catCounts = products.reduce((a, p) => { a[p.category] = (a[p.category] || 0) + 1; return a; }, {} as Record<string, number>);
 
   return (
-    <div style={{ fontFamily: "Georgia,'Times New Roman',serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
 
       {/* ═══ GLOBAL STYLES ═══ */}
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
-        body{overflow-x:hidden;-webkit-text-size-adjust:100%}
+        body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
-        .ticker-wrap { overflow: hidden; background: #1a3c2e; }
+        .ticker-wrap { overflow: hidden; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); margin-bottom:0; }
         /* Desktop: show items centered, no animation */
         .ticker-desktop {
           display: flex;
@@ -430,50 +544,85 @@ export default function Home() {
           align-items: center;
           flex-wrap: nowrap;
           gap: 0;
-          padding: 7px 1rem;
+          padding: 6px 1rem;
           overflow: hidden;
         }
-        /* Mobile: full scrolling ticker — hidden on desktop */
-        .ticker-mobile { display: none; }
-        @media(max-width: 900px) {
+        /* Mobile: full scrolling ticker — hidden on desktop, STICKY */
+        .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); border-bottom: 1px solid #174123; }
+        @media(max-width: 1024px) {
+          body{padding-top:34px!important}
           .ticker-desktop { display: none; }
-          .ticker-mobile  { display: block; overflow: hidden; padding: 7px 0; }
+          .ticker-mobile  { display: block; overflow: hidden; padding: 5px 0; height:34px; }
           .ticker-scroll  { display: inline-flex; animation: ticker 30s linear infinite; white-space: nowrap; }
           .ticker-scroll:hover { animation-play-state: paused; }
+          .nav-bar { top: 34px!important; }
+          .desktop-nav{display:none!important}
+          .desktop-search{display:none!important}
+          .mobile-hamburger{display:flex!important}
+          .mob-search-bar{display:flex!important;position:sticky;top:calc(34px + 68px);z-index:195;background:#fff;}
+          .desktop-search input { width: 130px !important; }
+          .prod-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .mobile-menu-dropdown { z-index:210!important; }
         }
         @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
         @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse   { 0%,100%{box-shadow:0 6px 24px rgba(45,138,78,.45)} 50%{box-shadow:0 6px 32px rgba(45,138,78,.7)} }
         @keyframes shimmer { 0%{opacity:.5} 100%{opacity:1} }
+        @keyframes floatImg { 0%,100%{transform:rotate(-2deg) translateY(0)} 50%{transform:rotate(-2deg) translateY(-8px)} }
 
         .fade-up { animation: fadeUp .45s ease both; }
-        .btn-g   { background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s; }
-        .btn-g:hover:not(:disabled){ background:#1f6b3a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,138,78,.35); }
-        .btn-g:disabled{ background:#e5e7eb;color:#9ca3af;cursor:not-allowed; }
-        .nav-a  { color:#4b5563;text-decoration:none;font-size:14px;font-weight:600;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s;font-family:'Helvetica Neue',Arial,sans-serif; }
+        .btn-g   { background:linear-gradient(135deg,#2d8a4e,#1f6b3a);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .22s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(45,138,78,.25); }
+        .btn-g:hover:not(:disabled){ background:linear-gradient(135deg,#1f6b3a,#155c2e);transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(45,138,78,.4); }
+        .btn-g:active:not(:disabled){ transform:translateY(0) scale(0.99); }
+        .btn-g:disabled{ background:#e5e7eb;color:#9ca3af;cursor:not-allowed;box-shadow:none; }
+        .nav-a  { color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s cubic-bezier(.4,0,.2,1);font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em; }
         .nav-a:hover,.nav-a.active{ color:#2d8a4e;border-bottom-color:#2d8a4e; }
-        .lift   { transition:all .25s ease; }
-        .lift:hover { transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.12)!important; }
+        .hero-btn-secondary { background:rgba(255,255,255,0.06);color:#fff;border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:13px 22px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-family:inherit;transition:all .22s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(8px); }
+        .hero-btn-secondary:hover { background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.55);transform:translateY(-2px) scale(1.02); }
+        .lift   { transition:all .25s cubic-bezier(.4,0,.2,1); }
+        .lift:hover { transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.14)!important; }
         input:focus { outline:none; }
         ::-webkit-scrollbar{width:4px;height:4px}
         ::-webkit-scrollbar-thumb{background:#2d8a4e;border-radius:4px}
+        .logo-btn { background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center; }
+        .filter-wrap{position:relative}
+        .filter-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:28px;height:28px;border-radius:50%;border:1.5px solid #d1d5db;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#374151;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:background .15s}
+        .filter-arrow:hover{background:#f0fdf4;border-color:#2d8a4e;color:#2d8a4e}
+        .cat-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;text-align:center}
+        .cat-scroll-wrap::-webkit-scrollbar{height:4px}
+        .cat-scroll-wrap::-webkit-scrollbar-thumb{background:#2d8a4e;border-radius:4px}
+        .cat-grid{display:inline-flex!important;flex-wrap:nowrap!important;gap:14px!important;text-align:left}
+        .cat-grid>div{width:120px!important;flex-shrink:0!important}
+        .cat-card-img{height:88px}
 
         /* Responsive */
         @media(max-width:1024px){
           .hero-cards{display:none!important}
+          .hero-inner{flex-direction:column!important;align-items:flex-start!important;min-height:auto!important;padding:2.5rem 1rem 1.5rem!important;}
+          .hero-h1{font-size:2.2rem!important;}
+          .hero-sub{font-size:14px!important;}
           .cat-grid{grid-template-columns:repeat(4,1fr)!important}
+          .nav-bar{flex-wrap:wrap!important;align-items:flex-start!important;gap:0.75rem!important;height:auto!important;padding:1rem 1rem!important;}
+          .desktop-nav{flex-wrap:wrap!important;justify-content:center!important;gap:0.85rem!important;width:100%!important;}
+          .desktop-search{width:100%!important;display:flex!important;justify-content:center!important;order:2!important;}
+          .desktop-search input{width:100%!important;max-width:280px!important;}
+          .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:1rem!important;}
         }
-        @media(max-width:768px){
+        .mobile-hamburger{display:none}
+        @media(max-width:1024px){
           .desktop-nav{display:none!important}
           .desktop-search{display:none!important}
-          .hero-inner{padding:2rem 1rem!important;min-height:unset!important}
+          .nav-bar{top:34px!important}
+          .hero-inner{padding:3rem 1rem 2rem!important;min-height:unset!important}
+          .hero-inner > div:first-child{max-width:100%!important;width:100%!important;}
           .hero-h1{font-size:1.65rem!important}
-          .hero-sub{font-size:13px!important}
+          .hero-sub{font-size:13px!important;max-width:100%!important;}
           .hero-btn{padding:10px 16px!important;font-size:13px!important}
           .hero-stats{gap:1.2rem!important;padding-top:1.2rem!important;margin-top:1.5rem!important}
           .cat-section{padding:2rem 1rem!important}
-          .cat-grid{grid-template-columns:repeat(4,1fr)!important;gap:8px!important}
+          .cat-scroll-wrap{margin:0 -1rem;padding-left:1rem;padding-right:1rem}
+          .cat-grid>div{width:82px!important}
           .cat-card-img{height:65px!important}
           .cat-card-label{font-size:9.5px!important;padding:5px 3px!important}
           .prod-section{padding:1.5rem 1rem 4rem!important}
@@ -490,26 +639,39 @@ export default function Home() {
           .filter-row{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;width:100%;scroll-behavior:smooth}
           .filter-row::-webkit-scrollbar{display:none}
           .prod-header{flex-direction:column!important;align-items:flex-start!important;gap:12px!important}
-          .filter-wrap{position:relative;width:100%}
-          .filter-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:28px;height:28px;border-radius:50%;border:1.5px solid #d1d5db;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#374151;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:background .15s}
-          .filter-arrow:hover{background:#f0fdf4;border-color:#2d8a4e;color:#2d8a4e}
+          .filter-wrap{width:100%}
           .page-btns{gap:4px!important}
           .page-btn{width:32px!important;height:32px!important;font-size:12px!important}
-          .nav-bar{padding:0 1rem!important;height:60px!important}
-          .mob-search-bar{display:flex!important}
+          .nav-bar{padding:0.75rem 1rem!important;height:auto!important;min-height:72px!important}
           .mobile-hamburger{display:flex!important}
+          .hero-inner{flex-direction:column!important;align-items:flex-start!important;min-height:auto!important;padding:2.5rem 1rem 1.5rem!important;}
+          .hero-h1{font-size:1.85rem!important;}
+          .hero-cards{display:none!important}
+          .hero-badge{font-size:10px!important;letter-spacing:0.04em!important;padding:5px 12px!important;}
+          .fade-up{max-width:100%!important;width:100%!important;}
         }
+        .mob-search-bar{display:none}
+        .mobile-menu-dropdown { z-index:210; }
         @media(max-width:480px){
-          .cat-grid{grid-template-columns:repeat(4,1fr)!important}
+          .cat-grid>div{width:70px!important}
           .prod-grid{grid-template-columns:repeat(2,1fr)!important}
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
           .footer-grid{grid-template-columns:1fr!important}
           .hero-stats-val{font-size:1.2rem!important}
+          .mob-search-bar{display:flex!important;position:sticky;top:calc(34px + 72px);z-index:195;background:#fff;}
+          .mobile-menu-dropdown { z-index:210!important; }
         }
-        .mobile-hamburger{display:none}
-        .mob-search-bar{display:none}
+        /* Farm photo grid — stack on mobile */
+        @media(max-width:768px){
+          .farm-grid { grid-template-columns: 1fr 1fr !important; }
+          .farm-hero { height: 220px !important; grid-row: span 1 !important; }
+        }
+        @media(max-width:480px){
+          .farm-grid { grid-template-columns: 1fr !important; }
+          .farm-hero { height: 200px !important; }
+        }
         /* Hide Next.js dev overlay bottom-left indicator */
         nextjs-portal{display:none!important}
       `}</style>
@@ -519,9 +681,9 @@ export default function Home() {
         {/* Desktop: centered single line */}
         <div className="ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontFamily: "'Inter','Poppins',sans-serif", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
               {item}
-              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)", fontSize: "12px" }}>·</span>}
+              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "18px", color: "rgba(163,230,53,0.35)", fontSize: "14px", fontWeight: 300 }}>|</span>}
             </span>
           ))}
         </div>
@@ -539,40 +701,62 @@ export default function Home() {
       </div>
 
       {/* ═══ NAVBAR ═══ */}
-      <nav className="nav-bar" style={{ background: "#fff", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px", position: "sticky", top: 0, zIndex: 200, boxShadow: "0 1px 0 #e5e7eb,0 4px 16px rgba(0,0,0,.06)" }}>
-        <QFLogo height={58} />
+      <nav ref={navRef} className="nav-bar" style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px", position: "sticky", top: 0, zIndex: 200, boxShadow: "0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08)" }}>
+        <button className="logo-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Go to home" aria-label="QualiFresh Home">
+          <QFLogo height={52} />
+        </button>
 
         {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display: "flex", gap: "2rem" }}>
-          {[
-            { label: "Home",      action: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-            { label: "Products",  action: scrollToProducts },
-            { label: "About Us",  action: undefined },
-            { label: "Our Farms", action: undefined },
-            { label: "Contact",   action: () => footerRef.current?.scrollIntoView({ behavior: "smooth" }) },
-          ].map((item, i) => (
-            <a key={item.label} href="#" onClick={e => { e.preventDefault(); item.action?.(); }}
-              className={`nav-a${i === 0 ? " active" : ""}`}>
-              {item.label}
-            </a>
+        <div className="desktop-nav" style={{ display: "flex", gap: "2.2rem", flex: "1 1 auto", justifyContent: "center", alignItems: "center" }}>
+          {([
+            { label: "Home",      href: null,          scroll: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+            { label: "Products",  href: "/products",   scroll: null },
+            { label: "About Us",  href: "/about-us",   scroll: null },
+            { label: "Our Farms", href: "/our-farms",  scroll: null },
+            { label: "Contact",   href: "/contact",     scroll: null },
+          ] as const).map((item) => (
+            item.href ? (
+              <a key={item.label} href={item.href} className={`nav-a${item.label === activeNav ? " active" : ""}`}>
+                {item.label}
+              </a>
+            ) : (
+              <a key={item.label} href="#" onClick={e => { e.preventDefault(); item.scroll?.(); }}
+                className={`nav-a${item.label === activeNav ? " active" : ""}`}>
+                {item.label}
+              </a>
+            )
           ))}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
           {/* Desktop search */}
-          <div className="desktop-search" style={{ position: "relative" }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search…"
-              style={{ padding: "8px " + (search ? "28px" : "12px") + " 8px 32px", borderRadius: "22px", border: "1.5px solid #e5e7eb", fontSize: "13px", width: "170px", fontFamily: "inherit", background: "#f9fafb", transition: "all .25s" }}
-              onFocus={e => { e.target.style.width = "210px"; e.target.style.background = "#fff"; e.target.style.borderColor = "#2d8a4e"; }}
-              onBlur={e => { e.target.style.width = "170px"; e.target.style.background = "#f9fafb"; e.target.style.borderColor = "#e5e7eb"; }} />
+          <div ref={desktopSearchRef} className="desktop-search" style={{ position: "relative" }}>
+            <input value={search} onChange={e => { setSearch(e.target.value); setSearchOpen(true); }} placeholder="Search products…"
+              onFocus={e => { setSearchOpen(true); e.target.style.width = "220px"; e.target.style.background = "#fff"; e.target.style.borderColor = "#2d8a4e"; e.target.style.boxShadow = "0 0 0 3px rgba(45,138,78,0.1)"; }}
+              onBlur={e => { e.target.style.width = "180px"; e.target.style.background = "#f7faf8"; e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
+              style={{ padding: "9px " + (search ? "30px" : "14px") + " 9px 34px", borderRadius: "24px", border: "1.5px solid #e5e7eb", fontSize: "13px", width: "180px", fontFamily: "inherit", background: "#f7faf8", transition: "all .25s cubic-bezier(.4,0,.2,1)" }} />
             <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", pointerEvents: "none", color: "#9ca3af" }}>🔍</span>
-            {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", background: "#e5e7eb", border: "none", borderRadius: "50%", width: "16px", height: "16px", cursor: "pointer", fontSize: "9px", color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1 }}>✕</button>}
+            {search && <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", background: "#d1d5db", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "11px", color: "#374151", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, fontWeight: 600 }}>✕</button>}
+            {searchOpen && searchSuggestions.length > 0 && (
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 300, overflow: "hidden" }}>
+                {searchSuggestions.map(p => (
+                  <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
+                    <span style={{ fontSize: "12.5px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0 }}>₹{p.price}</span>
+                    <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
+                      style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Sign In / User button */}
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif" }} className="desktop-nav">Hi, {user.name.split(" ")[0]}</span>
+              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none" }} className="desktop-nav">Hi, {user.name.split(" ")[0]}</a>
               <button onClick={logout} style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
             </div>
           ) : (
@@ -585,168 +769,194 @@ export default function Home() {
             </button>
           )}
 
-          {/* Cart */}
-          <button onClick={() => setShowCart(true)} className="btn-g"
-            style={{ padding: "9px 16px", fontSize: "13.5px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <CartSvg />
-            {cartCount > 0 && (
-              <span style={{ background: "#fff", color: "#2d8a4e", borderRadius: "50%", width: "19px", height: "19px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800 }}>{cartCount}</span>
-            )}
-            <span className="desktop-nav" style={{ display: "inline" }}>Cart</span>
-          </button>
+          {/* Cart — hidden when admin disables cart */}
+          {cartEnabled && (
+            <button onClick={() => setShowCart(true)} className="btn-g"
+              style={{ padding: "9px 16px", fontSize: "13.5px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <CartSvg />
+              {cartCount > 0 && (
+                <span style={{ background: "#fff", color: "#2d8a4e", borderRadius: "50%", width: "19px", height: "19px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800 }}>{cartCount}</span>
+              )}
+              <span className="desktop-nav" style={{ display: "inline" }}>Cart</span>
+            </button>
+          )}
 
           {/* Mobile hamburger */}
           <button onClick={() => setMobileMenu(m => !m)} className="mobile-hamburger"
-            style={{ background: "none", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "6px 9px", cursor: "pointer", fontSize: "18px", lineHeight: 1 }}>
+            style={{ background: mobileMenu ? "#f0fdf4" : "none", border: `1.5px solid ${mobileMenu ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "9px", padding: "7px 10px", cursor: "pointer", fontSize: "17px", lineHeight: 1, color: mobileMenu ? "#2d8a4e" : "#374151", transition: "all .2s" }}>
             {mobileMenu ? "✕" : "☰"}
           </button>
         </div>
       </nav>
 
       {/* Mobile search bar */}
-      <div className="mob-search-bar" style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "8px 1rem" }}>
-        <div style={{ position: "relative", flex: 1 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search vegetables, herbs…"
+      <div className="mob-search-bar" style={{ display: mobileMenu ? "none" : undefined, background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "8px 1rem" }}>
+        <div ref={mobileSearchRef} style={{ position: "relative", flex: 1 }}>
+          <input value={search} onChange={e => { setSearch(e.target.value); setSearchOpen(true); }} placeholder="Search vegetables, herbs…"
+            onFocus={() => setSearchOpen(true)}
             style={{ width: "100%", padding: "9px " + (search ? "32px" : "12px") + " 9px 32px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
-          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px" }}>🔍</span>
-          {search && <button onClick={() => setSearch("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "#e5e7eb", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "10px", color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>}
+          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", pointerEvents: "none" }}>🔍</span>
+          {search && <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "#d1d5db", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 600 }}>✕</button>}
+          {searchOpen && searchSuggestions.length > 0 && (
+            <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 300, overflow: "hidden" }}>
+              {searchSuggestions.map(p => (
+                <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
+                  <span style={{ fontSize: "13px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                  <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0 }}>₹{p.price}</span>
+                  <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
+                    style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "12px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Mobile menu dropdown — fixed so it stays visible while scrolling */}
       {mobileMenu && (
-        <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem", zIndex: 190, position: "fixed", top: "60px", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
-          {[
-            { label: "Home",      action: () => { setMobileMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); } },
-            { label: "Products",  action: () => { setMobileMenu(false); scrollToProducts(); } },
-            { label: "About Us",  action: () => setMobileMenu(false) },
-            { label: "Our Farms", action: () => setMobileMenu(false) },
-            { label: "Contact",   action: () => { setMobileMenu(false); footerRef.current?.scrollIntoView({ behavior: "smooth" }); } },
-          ].map(item => (
-            <a key={item.label} href="#" onClick={e => { e.preventDefault(); item.action(); }}
-              style={{ color: "#374151", textDecoration: "none", fontSize: "15px", fontWeight: 600, padding: "9px 12px", borderRadius: "8px", background: "#f9fafb", fontFamily: "sans-serif" }}>
+        <div className="mobile-menu-dropdown" style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
+          {([
+            { label: "🏠 Home",      href: null,          scroll: () => { setMobileMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); } },
+            { label: "🛒 Products",  href: "/products",   scroll: null },
+            { label: "ℹ️ About Us",  href: "/about-us",   scroll: null },
+            { label: "🌾 Our Farms", href: "/our-farms",  scroll: null },
+            { label: "📞 Contact",   href: "/contact",    scroll: null },
+          ] as const).map(item => (
+            item.href ? (
+              <a key={item.label} href={item.href} onClick={() => setMobileMenu(false)}
+                style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: "#f7faf8", border: "1px solid #e9ede4", transition: "all .15s", display: "block" }}>
+                {item.label}
+              </a>
+            ) : (
+            <a key={item.label} href="#"
+              onClick={e => { e.preventDefault(); item.scroll?.(); }}
+              style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: "#f7faf8", border: "1px solid #e9ede4", transition: "all .15s" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderColor = "#bbf7d0"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "#f7faf8"; e.currentTarget.style.borderColor = "#e9ede4"; }}>
               {item.label}
             </a>
+            )
           ))}
-          <button onClick={() => { setMobileMenu(false); setShowLogin(true); }}
-            style={{ display: "flex", alignItems: "center", gap: "8px", color: "#2d8a4e", textDecoration: "none", fontSize: "15px", fontWeight: 600, padding: "9px 12px", borderRadius: "8px", background: "#f0fdf4", border: "none", cursor: "pointer", fontFamily: "sans-serif" }}>
-            <UserSvg /> Sign In
-          </button>
-          <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "10px", fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif" }}>
-            <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "#2d8a4e" }}>{siteConfig.phoneDisplay}</a></div>
-            <div style={{ marginTop: "4px" }}>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "#2d8a4e" }}>{siteConfig.email}</a></div>
-          </div>
         </div>
       )}
 
       {/* ═══ HERO ═══ */}
-      <div ref={heroRef} style={{ background: "linear-gradient(135deg,#0a1f12 0%,#0f3020 45%,#1a4a2e 100%)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "-80px", right: "-80px", width: "360px", height: "360px", borderRadius: "50%", background: "rgba(255,255,255,0.02)", pointerEvents: "none" }} />
-        <div className="hero-inner" style={{ maxWidth: "1300px", margin: "0 auto", padding: "3rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "2rem", minHeight: "460px" }}>
-          <div style={{ flex: "0 0 auto", maxWidth: "560px" }} className="fade-up">
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 14px", fontSize: "11.5px", color: "#d9f99d", marginBottom: "1.2rem", fontFamily: "sans-serif", letterSpacing: "0.5px" }}>
+      <div ref={heroRef} style={{ background: "linear-gradient(145deg,#071812 0%,#0a2218 25%,#0f3320 55%,#164530 80%,#1c5a3a 100%)", position: "relative", overflow: "hidden" }}>
+        {/* Background orbs */}
+        <div style={{ position: "absolute", top: "-100px", right: "-60px", width: "420px", height: "420px", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.12) 0%,transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "-80px", left: "-80px", width: "340px", height: "340px", borderRadius: "50%", background: "radial-gradient(circle,rgba(163,230,53,0.05) 0%,transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "30%", left: "38%", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.06) 0%,transparent 70%)", pointerEvents: "none" }} />
+
+        <div className="hero-inner" style={{ maxWidth: "1300px", margin: "0 auto", padding: "3.5rem 2rem 3rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "2.5rem", minHeight: "500px" }}>
+          <div style={{ flex: "0 0 auto", maxWidth: "48%" }} className="fade-up">
+            {/* Badge */}
+            <div className="hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.28)", borderRadius: "24px", padding: "6px 16px", fontSize: "11px", color: "#bef264", marginBottom: "1.5rem", fontFamily: "inherit", letterSpacing: "0.06em", fontWeight: 600, textTransform: "uppercase", whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
               {siteConfig.hero.badge}
             </div>
-            <h1 className="hero-h1" style={{ fontSize: "clamp(1.8rem,3.8vw,3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.1, marginBottom: "1rem" }}>
+            <h1 className="hero-h1" style={{ fontSize: "clamp(2rem,3.8vw,3.2rem)", fontWeight: 800, color: "#fff", lineHeight: 1.13, marginBottom: "1.2rem", letterSpacing: "-0.02em", fontFamily: "'Poppins','Inter',sans-serif" }}>
               {siteConfig.hero.line1}<br />
-              <span style={{ color: "#d4a017", fontStyle: "italic" }}>{siteConfig.hero.lineAccent}</span><br />
+              <span style={{ background: "linear-gradient(90deg,#d4a017,#f0c040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "italic" }}>{siteConfig.hero.lineAccent}</span><br />
               {siteConfig.hero.line2}
             </h1>
-            <p className="hero-sub" style={{ fontSize: "clamp(13px,1.4vw,15px)", color: "rgba(255,255,255,0.72)", lineHeight: 1.8, marginBottom: "1.8rem", maxWidth: "460px", fontFamily: "sans-serif" }}>
+            <p className="hero-sub" style={{ fontSize: "clamp(13.5px,1.4vw,15.5px)", color: "rgba(255,255,255,0.68)", lineHeight: 1.85, marginBottom: "2rem", maxWidth: "440px", fontFamily: "inherit", fontWeight: 400 }}>
               {siteConfig.hero.subtext}
             </p>
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <button className="btn-g hero-btn" onClick={scrollToProducts} style={{ padding: "13px 28px", fontSize: "14px", display: "flex", alignItems: "center", gap: "7px" }}>
+              <a href="/products" className="btn-g hero-btn" style={{ padding: "14px 30px", fontSize: "14.5px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "10px", boxShadow: "0 4px 20px rgba(45,138,78,0.45)", fontFamily: "inherit", fontWeight: 700, textDecoration: "none", color: "#fff" }}>
                 <CartSvg /> Shop Now
-              </button>
-              <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer" className="hero-btn"
-                style={{ background: "#25d366", color: "#fff", border: "none", borderRadius: "8px", padding: "13px 22px", fontWeight: 700, fontSize: "14px", cursor: "pointer", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "7px", fontFamily: "inherit" }}>
+              </a>
+              <a href={homeWaUrl} target="_blank" rel="noreferrer" className="hero-btn-secondary">
                 💬 WhatsApp Order
               </a>
             </div>
-            <div className="hero-stats" style={{ display: "flex", gap: "2rem", marginTop: "2rem", paddingTop: "1.8rem", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
+            {/* Stats bar */}
+            <div className="hero-stats" style={{ display: "flex", gap: "2rem", marginTop: "2.2rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.09)" }}>
               {siteConfig.stats.map(s => (
                 <div key={s.label}>
-                  <div className="hero-stats-val" style={{ fontSize: "clamp(1.2rem,2.5vw,1.8rem)", fontWeight: 800, color: "#d4a017" }}>{s.value}</div>
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", fontFamily: "sans-serif", marginTop: "2px" }}>{s.label}</div>
+                  <div className="hero-stats-val" style={{ fontSize: "clamp(1.2rem,2.5vw,1.9rem)", fontWeight: 800, color: "#f0c040", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.01em" }}>{s.value}</div>
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginTop: "2px", fontWeight: 500, letterSpacing: "0.03em" }}>{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Hero image — basket blends into dark green hero bg */}
-          <div className="hero-cards" style={{ flex: "0 0 auto", maxWidth: "520px", width: "100%", animation: "fadeUp .6s .2s both", position: "relative" }}>
+          {/* Hero image — basket with glow + float animation */}
+          <div className="hero-cards" style={{ flex: "0 0 auto", maxWidth: "52%", width: "100%", animation: "fadeUp .7s .15s both", position: "relative" }}>
+            {/* Glow halo behind basket */}
+            <div style={{ position: "absolute", top: "10%", left: "15%", right: "15%", bottom: "10%", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.28) 0%,rgba(163,230,53,0.08) 50%,transparent 75%)", filter: "blur(28px)", pointerEvents: "none", zIndex: 0 }} />
             <img
               src="/basket%20of%20exotic%20veg.png"
               alt="Fresh Exotic Vegetables"
               style={{
-                width: "100%", height: "auto", display: "block",
-                WebkitMaskImage: "radial-gradient(ellipse 88% 82% at 52% 44%, black 45%, transparent 78%)",
-                maskImage:        "radial-gradient(ellipse 88% 82% at 52% 44%, black 45%, transparent 78%)",
-                filter: "drop-shadow(0 28px 44px rgba(0,0,0,0.55)) brightness(1.04)",
+                width: "100%", height: "auto", display: "block", position: "relative", zIndex: 1,
+                transform: "rotate(-2deg)",
+                animation: "floatImg 5s ease-in-out infinite",
+                WebkitMaskImage: "radial-gradient(ellipse 90% 85% at 52% 44%, black 42%, transparent 76%)",
+                maskImage:        "radial-gradient(ellipse 90% 85% at 52% 44%, black 42%, transparent 76%)",
+                filter: "drop-shadow(0 32px 52px rgba(0,0,0,0.6)) brightness(1.06) saturate(1.08)",
               }}
             />
-            {/* {products.length > 0 && (
-              <div style={{ position: "absolute", bottom: "8%", left: "5%", right: "5%" }}>
-                <p style={{ color: "rgba(217,249,157,0.65)", fontSize: "9.5px", letterSpacing: "2px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "6px" }}>Available Now</p>
-                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-                  {products.slice(0, 4).map(p => (
-                    <span key={p._id} style={{ background: "rgba(10,31,18,0.72)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "3px 9px", fontSize: "10.5px", color: "#d9f99d", fontFamily: "sans-serif", fontWeight: 600, backdropFilter: "blur(6px)" }}>
-                      {p.name} · ₹{p.price}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )} */}
           </div>
+        </div>
+
+        {/* Wave divider */}
+        <div style={{ position: "relative", lineHeight: 0, marginBottom: "-2px" }}>
+          <svg viewBox="0 0 1440 64" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "64px" }}>
+            <path d="M0,32 C240,64 480,0 720,32 C960,64 1200,0 1440,32 L1440,64 L0,64 Z" fill="#ffffff" />
+          </svg>
         </div>
       </div>
 
       {/* ═══ CATEGORIES — invisible until scrolled to ═══ */}
       <div ref={catRef} className="cat-section"
         style={{
-          background: catVisible ? "#fff" : "linear-gradient(135deg, #0a1f12 0%, #0f3020 45%, #1a4a2e 100%)",
-          padding: "2.5rem 1.5rem",
+          background: "#fff",
+          padding: "2.5rem 1.5rem 3rem",
           opacity: catVisible ? 1 : 0,
-          transform: catVisible ? "translateY(0)" : "translateY(48px)",
-          transition: "opacity 0.75s ease, transform 0.75s ease",
+          transform: catVisible ? "translateY(0)" : "translateY(40px)",
+          transition: "opacity 0.7s ease, transform 0.7s ease",
           pointerEvents: catVisible ? "auto" : "none",
         }}>
         <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <p style={{ color: "#2d8a4e", fontWeight: 700, fontSize: "11.5px", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "6px" }}>Browse by Category</p>
-            <h2 className="section-heading" style={{ fontSize: "clamp(1.4rem,3vw,2rem)", fontWeight: 800, color: "#0f1a0f" }}>Fresh Produce Categories</h2>
+          <div style={{ textAlign: "center", marginBottom: "2.2rem" }}>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px" }}>Browse by Category</span>
+            <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>Fresh Produce Categories</h2>
+            <div style={{ width: "48px", height: "3px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", borderRadius: "2px", margin: "12px auto 0" }} />
           </div>
-          <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: "12px" }}>
-            {Object.entries(CAT_LABEL).map(([key, label]) => {
+          <div className="cat-scroll-wrap">
+          <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: "14px" }}>
+            {Object.entries(allCatLabel).map(([key, label]) => {
               const active = cat === key;
               return (
                 <div key={key} className="lift" onClick={() => { setCat(key); scrollToProducts(); }}
-                  style={{ borderRadius: "12px", overflow: "hidden", cursor: "pointer", border: `2px solid ${active ? CAT_COLOR[key] : "transparent"}`, boxShadow: active ? `0 0 0 3px ${CAT_COLOR[key]}22` : "0 2px 8px rgba(0,0,0,.07)", background: "#fff" }}>
-                  <div className="cat-card-img" style={{ height: "85px", overflow: "hidden" }}>
-                    <img src={CAT_IMG[key]} alt={label}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .4s" }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.1)")}
+                  style={{ borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `2px solid ${active ? allCatColor[key] : "transparent"}`, boxShadow: active ? `0 0 0 3px ${allCatColor[key]}22, 0 4px 16px rgba(0,0,0,.1)` : "0 2px 10px rgba(0,0,0,.07)", background: "#fff", transition: "all .25s cubic-bezier(.4,0,.2,1)" }}>
+                  <div className="cat-card-img" style={{ height: "88px", overflow: "hidden" }}>
+                    <img src={allCatImg[key]} alt={label}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s cubic-bezier(.4,0,.2,1)" }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
                       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
                   </div>
-                  <div className="cat-card-label" style={{ padding: "7px 5px", textAlign: "center", background: active ? CAT_COLOR[key] : "#fff" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: active ? "#fff" : CAT_COLOR[key], fontFamily: "sans-serif", lineHeight: 1.2 }}>{label}</div>
-                    <div style={{ fontSize: "9.5px", color: active ? "rgba(255,255,255,0.7)" : "#9ca3af", fontFamily: "sans-serif" }}>{catCounts[key] || 0}</div>
+                  <div className="cat-card-label" style={{ padding: "8px 5px", textAlign: "center", background: active ? allCatColor[key] : "#fff", transition: "background .25s" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: active ? "#fff" : allCatColor[key], lineHeight: 1.2 }}>{label}</div>
+                    <div style={{ fontSize: "9.5px", color: active ? "rgba(255,255,255,0.7)" : "#9ca3af", marginTop: "1px" }}>{catCounts[key] || 0} items</div>
                   </div>
                 </div>
               );
             })}
           </div>
+          </div>
         </div>
       </div>
 
       {/* ═══ PRODUCTS ═══ */}
-      <div ref={productsRef} className="prod-section" style={{ background: "#f4f6f0", padding: "2rem 1.5rem 4rem" }}>
+      <div ref={productsRef} id="products" className="prod-section" style={{ background: "#f4f6f0", padding: "2rem 1.5rem 4rem" }}>
         <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
           <div className="prod-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.2rem", flexWrap: "wrap", gap: "10px" }}>
             <div>
-              <p style={{ color: "#2d8a4e", fontWeight: 700, fontSize: "11.5px", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "3px" }}>{cat === "all" ? "All Products" : CAT_LABEL[cat]}</p>
-              <h2 className="section-heading" style={{ fontSize: "clamp(1.3rem,2.5vw,1.7rem)", fontWeight: 800, color: "#0f1a0f" }}>Our Fresh Picks</h2>
+              <p style={{ color: "#2d8a4e", fontWeight: 700, fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "4px" }}>{cat === "all" ? "All Products" : allCatLabel[cat]}</p>
+              <h2 className="section-heading" style={{ fontSize: "clamp(1.3rem,2.5vw,1.75rem)", fontWeight: 800, color: "#0f1a0f", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>Our Fresh Picks</h2>
             </div>
             <div className="filter-wrap">
               <button className="filter-arrow" style={{ left: 0, display: showLeftArrow ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: -150, behavior: "smooth" })}>‹</button>
@@ -755,9 +965,9 @@ export default function Home() {
                   style={{ padding: "6px 14px", borderRadius: "18px", border: cat === "all" ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: cat === "all" ? "#2d8a4e" : "#fff", color: cat === "all" ? "#fff" : "#374151", fontWeight: 600, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>
                   All
                 </button>
-                {Object.entries(CAT_LABEL).map(([key, label]) => (
+                {Object.entries(allCatLabel).map(([key, label]) => (
                   <button key={key} onClick={() => setCat(key)}
-                    style={{ padding: "6px 12px", borderRadius: "18px", border: cat === key ? `2px solid ${CAT_COLOR[key]}` : "1.5px solid #d1d5db", background: cat === key ? CAT_COLOR[key] : "#fff", color: cat === key ? "#fff" : "#374151", fontWeight: cat === key ? 700 : 400, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0, transition: "all .18s" }}>
+                    style={{ padding: "6px 12px", borderRadius: "18px", border: cat === key ? `2px solid ${allCatColor[key]}` : "1.5px solid #d1d5db", background: cat === key ? allCatColor[key] : "#fff", color: cat === key ? "#fff" : "#374151", fontWeight: cat === key ? 700 : 400, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0, transition: "all .18s" }}>
                     {label}
                   </button>
                 ))}
@@ -784,27 +994,30 @@ export default function Home() {
                     <div className="prod-img" style={{ height: "175px", overflow: "hidden", position: "relative", flexShrink: 0 }}>
                       <img src={p.imageUrl || `/products/${p.slug}.png`} alt={p.name}
                         style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }}
-                        onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = IMG[p.slug] || CAT_IMG[p.category] || FALLBACK; }} />
+                        onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = `/products/${p.slug}.png`; }} />
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%)" }} />
                       <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "3px" }}>
                         {p.isImported && <span style={{ background: "#1d4ed8", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>Imported</span>}
                         {p.tags?.includes("premium") && <span style={{ background: "#d97706", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>⭐ Premium</span>}
-                        {p.tags?.includes("chef-favorite") && <span style={{ background: "#7c3aed", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>👨‍🍳 Chef's Pick</span>}
                       </div>
                       <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock > 0 ? "rgba(22,163,74,.9)" : "rgba(220,38,38,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600, fontFamily: "sans-serif" }}>
                         {p.stock > 0 ? "In Stock" : "Out"}
                       </div>
                     </div>
                     <div style={{ padding: "0.85rem 0.95rem", display: "flex", flexDirection: "column", flex: 1 }}>
-                      <span style={{ fontSize: "10px", color: CAT_COLOR[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", fontFamily: "sans-serif" }}>{CAT_LABEL[p.category]}</span>
-                      <h3 className="prod-name" style={{ margin: "4px 0 3px", fontSize: "13.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>{p.name}</h3>
+                      <span style={{ fontSize: "10px", color: allCatColor[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", fontFamily: "sans-serif" }}>{allCatLabel[p.category]}</span>
+                      <h3 className="prod-name" style={{ margin: "4px 0 3px", fontSize: "13.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3, fontFamily: "'Inter','Poppins',sans-serif" }}>{p.name}</h3>
                       <p style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "9px", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "9px" }}>
                         <span style={{ fontWeight: 800, color: "#1a3c2e", fontSize: "18px" }}>₹{p.price}</span>
                         {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "sans-serif" }}>/kg</span>}
                       </div>
                       <div style={{ height: "42px", display: "flex", alignItems: "stretch", marginTop: "auto" }}>
-                        {qty > 0 ? (
+                        {!cartEnabled ? (
+                          <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px", color: "#9ca3af", fontWeight: 500 }}>
+                            Ordering paused
+                          </div>
+                        ) : qty > 0 ? (
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", borderRadius: "8px", padding: "0 8px", border: "1.5px solid #86efac", width: "100%" }}>
                             <button onClick={() => remove(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>−</button>
                             <span style={{ fontWeight: 800, color: "#166534", fontSize: "15px" }}>{qty}</span>
@@ -858,8 +1071,8 @@ export default function Home() {
         <div style={{ position: "absolute", bottom: "-40px", left: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "rgba(45,138,78,0.04)", pointerEvents: "none" }} />
         <div style={{ maxWidth: "1160px", margin: "0 auto", position: "relative" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "5px 16px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>Why Choose Us</span>
-            <h2 className="section-heading" style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px" }}>The <span style={{ color: "#2d8a4e" }}>QualiFresh</span> Difference</h2>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>Why Choose Us</span>
+            <h2 className="section-heading" style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>The <span style={{ color: "#2d8a4e" }}>QualiFresh</span> Difference</h2>
             <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", maxWidth: "500px", margin: "0 auto", lineHeight: 1.7 }}>From our farms to your table — we obsess over quality at every step so you don't have to.</p>
           </div>
 
@@ -908,6 +1121,148 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+
+      {/* ═══ ABOUT US — see /about ═══ */}
+      {false && <div>
+
+        {/* ── Hero strip ── */}
+        <div style={{ background: "linear-gradient(135deg,#061a0e 0%,#0d3320 50%,#1a4a2e 100%)", padding: "4rem 1.5rem 3rem", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: "-80px", right: "-80px", width: "360px", height: "360px", borderRadius: "50%", background: "rgba(163,230,53,0.04)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: "-60px", left: "-60px", width: "260px", height: "260px", borderRadius: "50%", background: "rgba(45,138,78,0.06)", pointerEvents: "none" }} />
+          <div style={{ maxWidth: "1160px", margin: "0 auto", position: "relative" }}>
+            <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+              <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "16px" }}>Our Story</span>
+              <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.15 }}>Bringing <span style={{ color: "#a3e635" }}>Restaurant-Grade</span><br />Freshness to Your Home</h2>
+              <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", fontFamily: "sans-serif", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
+                QualiFresh was born from a simple belief — that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We source directly from trusted farms in Pune and deliver twice a week so freshness is never a compromise.
+              </p>
+            </div>
+            {/* Key Stats */}
+            <div className="about-stats-grid">
+              {[
+                { value: "57+",   label: "Exotic Varieties",  sub: "Korean, Thai & more",    color: "#a3e635" },
+                { value: "20+",   label: "Farm Partners",     sub: "Trusted Pune farms",      color: "#34d399" },
+                { value: "2",     label: "Cities Served",     sub: "Pune & Mumbai",           color: "#60a5fa" },
+                { value: "2×",    label: "Weekly Deliveries", sub: "Wednesday & Saturday",    color: "#f59e0b" },
+              ].map(s => (
+                <div key={s.label} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.5rem 1.2rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
+                  <div style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", fontFamily: "sans-serif", marginBottom: "3px" }}>{s.label}</div>
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "sans-serif" }}>{s.sub}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Our Story ── */}
+        <div style={{ background: "#fff", padding: "4rem 1.5rem" }}>
+          <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
+            <div className="about-story-grid">
+              <div>
+                <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Roots</span>
+                <h3 style={{ fontSize: "clamp(1.4rem,2.5vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 16px", lineHeight: 1.25 }}>From Pune's Farms<br />to Your Kitchen</h3>
+                <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "16px" }}>
+                  We started QualiFresh after seeing a gap — home cooks and health-conscious families in Pune & Mumbai had no reliable way to access the specialty produce that only high-end restaurants could source. We changed that.
+                </p>
+                <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "24px" }}>
+                  Today we partner with <strong style={{ color: "#166534" }}>20+ dedicated farms</strong> across the Pune region, maintain a strict cold chain, and personally inspect every batch before it ships. Every order is packed with care and delivered on your chosen day — Wednesday or Saturday.
+                </p>
+                <blockquote style={{ borderLeft: "4px solid #2d8a4e", paddingLeft: "1.2rem", margin: 0 }}>
+                  <p style={{ fontSize: "15px", color: "#1a3c2e", fontStyle: "italic", fontWeight: 600, lineHeight: 1.7, margin: "0 0 6px" }}>"Quality isn't just a word for us — it's the reason we wake up every morning."</p>
+                  <cite style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
+                </blockquote>
+              </div>
+              <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                <img src="/products/farm-1776104049239.png?t=1776104050928" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Mission · Vision · Promise ── */}
+        <div style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#fff 50%,#f0fdf4 100%)", padding: "4rem 1.5rem" }}>
+          <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
+              <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f" }}>Mission, Vision & Promise</h2>
+            </div>
+            <div className="about-mv-grid">
+              {[
+                { icon: "🎯", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0", title: "Our Mission", text: "To make the world's finest exotic vegetables — Korean, Thai, Japanese, and beyond — accessible to every home cook and family across India, at fair prices with zero compromise on freshness." },
+                { icon: "🌏", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
+                { icon: "🤝", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is cold-chain handled and freshness-inspected before it leaves the farm." },
+              ].map(card => (
+                <div key={card.title} className="lift" style={{ background: card.bg, border: `1.5px solid ${card.border}`, borderRadius: "18px", padding: "2rem 1.6rem" }}>
+                  <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px", boxShadow: `0 4px 14px ${card.border}` }}>{card.icon}</div>
+                  <h3 style={{ margin: "0 0 10px", fontSize: "17px", fontWeight: 800, color: card.color }}>{card.title}</h3>
+                  <p style={{ margin: 0, fontSize: "13.5px", color: "#4b5563", lineHeight: 1.8, fontFamily: "sans-serif" }}>{card.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── How It Works ── */}
+        <div style={{ background: "#fff", padding: "4rem 1.5rem" }}>
+          <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
+              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
+              <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f" }}>From Farm to Your Doorstep</h2>
+              <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
+            </div>
+            <div className="about-steps-grid">
+              {[
+                { step: "01", icon: "🌾", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", title: "Farm Sourced",     desc: "Vegetables are harvested from our partner farms in Pune — same morning, every order." },
+                { step: "02", icon: "🔬", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Quality Checked",  desc: "Every batch is inspected for freshness, size consistency, and zero pesticide residue." },
+                { step: "03", icon: "❄️", color: "#0891b2", bg: "#f0f9ff", border: "#bae6fd", title: "Cold Packed",      desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
+                { step: "04", icon: "🚚", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Door Delivered",   desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
+              ].map((s, i) => (
+                <div key={s.step} style={{ position: "relative" }}>
+                  {i < 3 && <div style={{ position: "absolute", top: "28px", left: "calc(50% + 28px)", right: "-50%", height: "2px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", zIndex: 0, display: "block" }} className="about-step-line" />}
+                  <div className="lift" style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: "18px", padding: "1.8rem 1.4rem", textAlign: "center", position: "relative", zIndex: 1 }}>
+                    <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", margin: "0 auto 12px", boxShadow: `0 4px 14px ${s.border}` }}>{s.icon}</div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: s.color, letterSpacing: "1.5px", fontFamily: "sans-serif", marginBottom: "6px" }}>STEP {s.step}</div>
+                    <h4 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#0f1a0f" }}>{s.title}</h4>
+                    <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.7, fontFamily: "sans-serif" }}>{s.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Quality Guarantee strip ── */}
+        <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020,#1a4a2e)", padding: "3.5rem 1.5rem" }}>
+          <div style={{ maxWidth: "1160px", margin: "0 auto", textAlign: "center" }}>
+            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
+            <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
+            <div className="about-stats-grid">
+              {[
+                { icon: "💳", title: "No Advance Payment",    desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever.",    color: "#a3e635" },
+                { icon: "🔄", title: "Free Replacement",      desc: "Not happy with freshness? We replace it, no questions asked, same week.",    color: "#34d399" },
+                { icon: "❄️", title: "Cold Chain Assured",    desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved.", color: "#60a5fa" },
+                { icon: "🌱", title: "Sustainably Sourced",   desc: "Eco packaging, local farm partnerships, and minimum-waste operations.",        color: "#f59e0b" },
+              ].map(g => (
+                <div key={g.title} className="lift" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.8rem 1.4rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
+                  <div style={{ fontSize: "32px", marginBottom: "12px" }}>{g.icon}</div>
+                  <h4 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 800, color: g.color }}>{g.title}</h4>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: "2.5rem", display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+              <a href="/products" className="btn-g" style={{ padding: "13px 28px", fontSize: "14px", borderRadius: "10px", textDecoration: "none", color: "#fff", display: "inline-block" }}>🛒 Shop Now</a>
+              <a href={homeWaUrl} target="_blank" rel="noreferrer"
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "13px 28px", fontSize: "14px", fontWeight: 700, borderRadius: "10px", background: "#25d366", color: "#fff", textDecoration: "none", fontFamily: "inherit" }}>
+                <WhatsAppIcon size={16} /> Order on WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>}
 
       {/* ═══ AUTH MODAL (Login + Register) ═══ */}
       {showLogin && (
@@ -981,7 +1336,13 @@ export default function Home() {
             )}
 
             <div style={{ textAlign: "center", marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6" }}>
-              <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer"
+              <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
+                cartItems.length > 0
+                  ? "Hi QualiFresh! I'd like to order:\n" +
+                    cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
+                    `\n\nTotal: ₹${cartTotal + deliveryCost}${deliveryCost === 0 ? " (Free delivery!)" : ""}`
+                  : "Hi QualiFresh! I'd like to place an order."
+              )}`} target="_blank" rel="noreferrer"
                 style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
                 <WhatsAppIcon size={16} /> Order via WhatsApp instead
               </a>
@@ -1008,18 +1369,18 @@ export default function Home() {
                   <div style={{ fontSize: "52px", marginBottom: "1rem" }}>🛒</div>
                   <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", fontFamily: "sans-serif", margin: "0 0 4px" }}>Your cart is empty</p>
                   <p style={{ fontSize: "13px", fontFamily: "sans-serif", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
-                  <button
-                    onClick={() => { setShowCart(false); scrollToProducts(); }}
+                  <a href="/products"
+                    onClick={() => setShowCart(false)}
                     className="btn-g"
-                    style={{ padding: "11px 28px", fontSize: "14px", borderRadius: "10px" }}>
+                    style={{ padding: "11px 28px", fontSize: "14px", borderRadius: "10px", textDecoration: "none", color: "#fff", display: "inline-block" }}>
                     Shop Now →
-                  </button>
+                  </a>
                 </div>
               ) : cartItems.map(p => (
                 <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
                     <img src={p.imageUrl || `/products/${p.slug}.png`} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                      onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = IMG[p.slug] || CAT_IMG[p.category] || FALLBACK; }} />
+                      onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = `/products/${p.slug}.png`; }} />
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                       <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>
@@ -1101,12 +1462,15 @@ export default function Home() {
                 <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
                   <button onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
                   <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 3px" }}>Contact Support</h2>
-                  <p style={{ fontSize: "12px", color: "#9ca3af", fontFamily: "sans-serif", margin: 0 }}>
-                    <a href={`mailto:${siteConfig.email}`} style={{ color: "#2d8a4e" }}>{siteConfig.email}</a>
-                    {" · "}
-                    <a href={`tel:${siteConfig.phone}`} style={{ color: "#2d8a4e" }}>{siteConfig.phoneDisplay}</a>
-                  </p>
+                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+                    <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ fontSize: "13px" }}>✉️</span>{siteConfig.email}
+                    </a>
+                    <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <span style={{ fontSize: "13px" }}>📞</span>{siteConfig.phoneDisplay}
+                    </a>
+                  </div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {([
@@ -1196,6 +1560,13 @@ export default function Home() {
                   <div style={{ marginTop: "4px" }}>📍 {ckAddress}, {ckCity}</div>
                 </div>
                 <button onClick={() => { setShowCheckout(false); setCkName(""); setCkEmail(""); setCkPhone(""); setCkAddress(""); setCkNotes(""); }} className="btn-g" style={{ padding: "12px 32px", fontSize: "14.5px" }}>Continue Shopping</button>
+                <div style={{ marginTop: "10px" }}>
+                  <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`Hi QualiFresh! Order ${ckOrderNum} confirmed.\nName: ${ckName} | Phone: ${ckPhone}\nDelivery: ${ckSlot}${ckAddress ? `\nAddress: ${ckAddress}${ckCity ? ", " + ckCity : ""}` : ""}`)}`}
+                    target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 24px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                    <WhatsAppIcon size={16} /> Share on WhatsApp
+                  </a>
+                </div>
               </div>
             ) : (
               /* ── Step 1: Delivery Details ── */
@@ -1257,7 +1628,7 @@ export default function Home() {
       )}
 
       {/* ═══ FLOATING CART BUTTON ═══ */}
-      {cartCount > 0 && !showCart && (
+      {cartEnabled && cartCount > 0 && !showCart && (
         <button onClick={() => setShowCart(true)} className="btn-g"
           style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", padding: "12px 20px", borderRadius: "50px", boxShadow: "0 6px 24px rgba(45,138,78,.45)", zIndex: 200, fontSize: "13.5px", display: "flex", alignItems: "center", gap: "7px", animation: "pulse 2.5s ease-in-out infinite" }}>
           <CartSvg /> {cartCount} · <strong>₹{cartTotal}</strong>
@@ -1265,8 +1636,14 @@ export default function Home() {
       )}
 
       {/* ═══ FOOTER ═══ */}
-      <footer ref={footerRef} style={{ background: "#0a1628", color: "#fff" }}>
-        <div className="footer-wrap" style={{ maxWidth: "1200px", margin: "0 auto", padding: "3rem 1.5rem 1.5rem" }}>
+      <footer ref={footerRef} style={{ background: "linear-gradient(180deg,#081812 0%,#060f0c 100%)", color: "#fff", borderTop: "1px solid rgba(45,138,78,0.15)" }}>
+        {/* Footer wave top */}
+        <div style={{ lineHeight: 0, marginTop: "-1px" }}>
+          <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "40px" }}>
+            <path d="M0,20 C360,40 720,0 1080,20 C1260,30 1360,14 1440,20 L1440,0 L0,0 Z" fill="#f4f6f0" />
+          </svg>
+        </div>
+        <div className="footer-wrap" style={{ maxWidth: "1200px", margin: "0 auto", padding: "2.5rem 1.5rem 1.5rem" }}>
           <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}><QFLogo height={38} dark /></div>
@@ -1291,24 +1668,33 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#d4a017", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Quick Links</h4>
-              {[
-                { label: "Home",       action: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-                { label: "Products",   action: scrollToProducts },
-                { label: "About Us",   action: undefined },
-                { label: "Our Farms",  action: undefined },
-                { label: "Contact Us", action: () => footerRef.current?.scrollIntoView({ behavior: "smooth" }) },
-              ].map(link => (
-                <a key={link.label} href="#" onClick={e => { e.preventDefault(); link.action?.(); }}
-                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "#d4a017")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
-                  {link.label}
-                </a>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Quick Links</h4>
+              {([
+                { label: "Home",       href: null,          scroll: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+                { label: "Products",   href: "/products",   scroll: null },
+                { label: "About Us",   href: "/about-us",   scroll: null },
+                { label: "Our Farms",  href: "/our-farms",  scroll: null },
+                { label: "Contact Us", href: "/contact",    scroll: null },
+              ] as const).map(link => (
+                link.href ? (
+                  <a key={link.label} href={link.href}
+                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
+                    {link.label}
+                  </a>
+                ) : (
+                  <a key={link.label} href="#" onClick={e => { e.preventDefault(); link.scroll?.(); }}
+                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
+                    {link.label}
+                  </a>
+                )
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#d4a017", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Contact</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Contact</h4>
               <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
@@ -1317,10 +1703,10 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#d4a017", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Delivery Info</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Delivery Info</h4>
               <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
-                <div>🚚 Free above ₹{DEL.freeDeliveryAbove}</div>
+                <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
                 <div>⏰ Order by {DEL.orderCutoff.wednesday} for Wed</div>
                 <div>⏰ Order by {DEL.orderCutoff.saturday} for Sat</div>

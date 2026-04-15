@@ -1,7 +1,24 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { siteConfig } from "../../src/config/site";
 
 const API = "/backend";
+
+// ── Default Farm Photos ──────────────────────────────────────────────────────
+interface FarmPhoto { id: string; title: string; description: string; imageUrl: string; }
+
+// ── Custom Categories ─────────────────────────────────────────────────────────
+interface CustomCategory { id: string; key: string; label: string; image: string; color: string; icon: string; }
+const CAT_COLOR_OPTIONS = ["#1d4ed8","#16a34a","#15803d","#b91c1c","#0d9488","#ca8a04","#7c3aed","#b45309","#db2777","#0369a1"];
+
+const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
+  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",   imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80&fit=crop" },
+  { id: "f2", title: "Herb Garden",     description: "Fresh herbs cultivated with care every morning", imageUrl: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80&fit=crop" },
+  { id: "f3", title: "Mushroom House",  description: "Climate-controlled growing chambers",            imageUrl: "https://images.unsplash.com/photo-1504382262782-5b4ece78642b?w=800&q=80&fit=crop" },
+  { id: "f4", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800&q=80&fit=crop" },
+  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80&fit=crop" },
+  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80&fit=crop" },
+];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -87,7 +104,7 @@ const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", bo
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AdminPage() {
   const [token, setToken]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<"dashboard"|"orders"|"products"|"users">("dashboard");
+  const [tab, setTab]           = useState<"dashboard"|"orders"|"products"|"users"|"settings">("dashboard");
   const [loginEmail, setLE]     = useState("");
   const [loginPass, setLP]      = useState("");
   const [loginErr, setLoginErr] = useState("");
@@ -98,6 +115,30 @@ export default function AdminPage() {
   const [prodPage, setProdPage]     = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [copied, setCopied]           = useState<string | null>(null);
+  const [imgKey, setImgKey]           = useState(0); // bumped after each upload to force img remount
+  const [prodLoading, setProdLoading] = useState(false);
+  const [prodError, setProdError]     = useState<string | null>(null);
+
+  // ── Settings state ─────────────────────────────────────────────────────────
+  const [cartEnabled, setCartEnabled]   = useState(true);
+  const [farmPhotos, setFarmPhotos]     = useState<FarmPhoto[]>(DEFAULT_FARM_PHOTOS);
+  const [showFarmModal, setShowFarmModal] = useState(false);
+  const [editingFarm, setEditingFarm]   = useState<FarmPhoto | null>(null);
+  const [farmForm, setFarmForm]         = useState({ title: "", description: "", imageUrl: "" });
+  const [farmUploadError, setFarmUploadError] = useState<string | null>(null);
+  const [farmUploading, setFarmUploading]     = useState(false);
+  const farmFileRef = useRef<HTMLInputElement>(null);
+
+  // ── Category state ──────────────────────────────────────────────────────────
+  const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, { label?: string; image?: string; color?: string; icon?: string }>>({});
+  const [showCatModal,  setShowCatModal]  = useState(false);
+  const [editingCat,    setEditingCat]    = useState<CustomCategory | null>(null);
+  const [editingStaticKey, setEditingStaticKey] = useState<string | null>(null);
+  const [catForm,       setCatForm]       = useState({ label: "", image: "", color: CAT_COLOR_OPTIONS[0], icon: "🥦" });
+  const [catUploadError, setCatUploadError] = useState<string | null>(null);
+  const [catUploading,  setCatUploading]  = useState(false);
+  const catFileRef = useRef<HTMLInputElement>(null);
 
   function copyText(text: string, key: string) {
     navigator.clipboard.writeText(text).then(() => {
@@ -113,6 +154,13 @@ export default function AdminPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [users, setUsers]       = useState<any[]>([]);
 
+  // User modal
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser,   setEditingUser]   = useState<any>(null);
+  const [userForm,      setUserForm]      = useState({ name: "", email: "", phone: "", password: "", isActive: true });
+  const [userFormErr,   setUserFormErr]   = useState("");
+  const [userSaving,    setUserSaving]    = useState(false);
+
   // Product modal
   const [showProdModal, setShowProdModal] = useState(false);
   const [editProd, setEditProd]           = useState<any>(null);
@@ -125,8 +173,18 @@ export default function AdminPage() {
   const [orderSearch, setOrderSearch] = useState("");
 
   useEffect(() => {
+    document.title = "Admin Panel — QualiFresh";
     const t = localStorage.getItem("qf_admin_token");
     if (t) setToken(t);
+    // Load settings from localStorage
+    const cartSetting = localStorage.getItem("qf_cart_enabled");
+    if (cartSetting !== null) setCartEnabled(cartSetting === "true");
+    const farmSetting = localStorage.getItem("qf_farm_photos");
+    if (farmSetting) { try { setFarmPhotos(JSON.parse(farmSetting)); } catch {} }
+    const catSetting = localStorage.getItem("qf_custom_categories");
+    if (catSetting) { try { setCustomCategories(JSON.parse(catSetting)); } catch {} }
+    const overrideSetting = localStorage.getItem("qf_category_overrides");
+    if (overrideSetting) { try { setCategoryOverrides(JSON.parse(overrideSetting)); } catch {} }
   }, []);
 
   function showToast(msg: string, ok = true) {
@@ -175,10 +233,24 @@ export default function AdminPage() {
     } catch {}
   }
   async function loadProducts() {
+    setProdLoading(true);
+    setProdError(null);
     try {
       const r = await fetch(`${API}/api/products/admin/all`, { headers: authHeaders() });
-      if (r.ok) setProducts(await r.json());
-    } catch {}
+      if (!r.ok) {
+        if (r.status === 401) { logout(); return; } // token expired — force re-login
+        const d = await r.json().catch(() => ({}));
+        setProdError(d.message || `Server error (${r.status})`);
+        return;
+      }
+      const data = await r.json();
+      const ts = Date.now();
+      setProducts(data.map((p: any) => p.imageUrl ? { ...p, imageUrl: `${p.imageUrl.split("?")[0]}?t=${ts}` } : p));
+    } catch (e: any) {
+      setProdError("Network error — is the backend running?");
+    } finally {
+      setProdLoading(false);
+    }
   }
   async function loadUsers() {
     try {
@@ -188,14 +260,73 @@ export default function AdminPage() {
   }
 
   async function updateOrderStatus(id: string, status: string) {
-    await fetch(`${API}/api/orders/${id}/status`, { method: "PUT", headers: authHeaders(), body: JSON.stringify({ status }) });
+    const r = await fetch(`${API}/api/orders/${id}/status`, { method: "PUT", headers: authHeaders(), body: JSON.stringify({ status }) });
+    if (r.ok) {
+      // Trigger backend notification (email + SMS) after status change
+      try {
+        await fetch(`${API}/api/orders/${id}/notify`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ status }) });
+      } catch {}
+    }
     loadOrders();
+    showToast(`✓ Order status updated to ${STATUS_LABELS[status] || status}`);
+  }
+
+  async function deleteOrder(id: string, orderNumber: string) {
+    if (!confirm(`Delete order ${orderNumber}? This cannot be undone.`)) return;
+    setOrders(prev => prev.filter(o => o._id !== id)); // optimistic remove
+    try {
+      const r = await fetch(`${API}/api/admin/orders/${id}`, { method: "DELETE", headers: authHeaders() });
+      if (r.ok) {
+        showToast("✓ Order deleted");
+      } else {
+        loadOrders(); // revert on failure
+        showToast("Failed to delete order", false);
+      }
+    } catch {
+      loadOrders(); // revert on network error
+      showToast("Network error — order not deleted", false);
+    }
   }
 
   async function deleteUser(id: string) {
     if (!confirm("Delete this user? This cannot be undone.")) return;
     await fetch(`${API}/api/admin/users/${id}`, { method: "DELETE", headers: authHeaders() });
     loadUsers();
+  }
+
+  function openAddUser() {
+    setEditingUser(null);
+    setUserForm({ name: "", email: "", phone: "", password: "", isActive: true });
+    setUserFormErr("");
+    setShowUserModal(true);
+  }
+
+  function openEditUser(u: any) {
+    setEditingUser(u);
+    setUserForm({ name: u.name || "", email: u.email || "", phone: u.phone || "", password: "", isActive: u.isActive !== false });
+    setUserFormErr("");
+    setShowUserModal(true);
+  }
+
+  async function saveUser() {
+    setUserFormErr("");
+    if (!userForm.name.trim()) { setUserFormErr("Name is required"); return; }
+    if (!userForm.email.trim()) { setUserFormErr("Email is required"); return; }
+    if (!editingUser && !userForm.password) { setUserFormErr("Password is required for new users"); return; }
+    setUserSaving(true);
+    try {
+      const payload: any = { name: userForm.name.trim(), email: userForm.email.trim(), phone: userForm.phone.trim(), isActive: userForm.isActive };
+      if (userForm.password) payload.password = userForm.password;
+      const url = editingUser ? `${API}/api/admin/users/${editingUser._id}` : `${API}/api/admin/users`;
+      const method = editingUser ? "PUT" : "POST";
+      const r = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(payload) });
+      const d = await r.json();
+      if (!r.ok) { setUserFormErr(d.message || "Save failed"); return; }
+      setShowUserModal(false);
+      loadUsers();
+      showToast(editingUser ? "User updated" : "User created");
+    } catch { setUserFormErr("Network error"); }
+    finally { setUserSaving(false); }
   }
 
   async function deleteProduct(id: string) {
@@ -244,6 +375,7 @@ export default function AdminPage() {
     }
     localStorage.setItem("qf_products_updated", Date.now().toString());
     await loadProducts(); // load fresh data BEFORE closing so list is ready instantly
+    setImgKey(k => k + 1); // force all product images to re-fetch from server
     setShowProdModal(false);
     showToast(editProd ? "✓ Product updated — list refreshed!" : "✓ Product added — list refreshed!");
   }
@@ -271,17 +403,12 @@ export default function AdminPage() {
       return;
     }
 
-    // ── 2. Filename must match the product slug ───────────────────────────────
-    if (prodForm.slug && basename !== prodForm.slug) {
-      setUploadError(`Filename must match the product slug. Expected "${prodForm.slug}${ext}" but got "${file.name}". Rename the file and try again.`);
-      e.target.value = "";
-      return;
-    }
-
     setUploading(true);
     try {
       const url = await uploadImage(file);
-      setProdForm((f: any) => ({ ...f, imageUrl: url }));
+      // Append cache-bust so the browser fetches the new image immediately in the product list
+      const cacheBustedUrl = `${url}?t=${Date.now()}`;
+      setProdForm((f: any) => ({ ...f, imageUrl: cacheBustedUrl }));
       // If editing an existing product, persist imageUrl to DB immediately so the list refreshes correctly
       if (editProd?._id) {
         await fetch(`${API}/api/products/${editProd._id}`, {
@@ -292,6 +419,7 @@ export default function AdminPage() {
       }
       localStorage.setItem("qf_products_updated", Date.now().toString());
       await loadProducts();
+      setImgKey(k => k + 1); // force all product img elements to remount → always fetches fresh
       showToast(`✓ Image saved as ${url.split("/").pop()}`);
     } catch (err: any) {
       setUploadError(err.message || "Upload failed — please try again.");
@@ -301,11 +429,148 @@ export default function AdminPage() {
     }
   }
 
+  // ── Settings helpers ───────────────────────────────────────────────────────
+  function saveSettings(newCartEnabled: boolean, newFarmPhotos: FarmPhoto[]) {
+    localStorage.setItem("qf_cart_enabled", String(newCartEnabled));
+    localStorage.setItem("qf_farm_photos", JSON.stringify(newFarmPhotos));
+    localStorage.setItem("qf_custom_categories", JSON.stringify(customCategories));
+    localStorage.setItem("qf_settings_updated", Date.now().toString());
+    showToast("✓ Settings saved and applied to store!");
+  }
+
+  function openFarmModal(photo?: FarmPhoto) {
+    if (photo) { setEditingFarm(photo); setFarmForm({ title: photo.title, description: photo.description, imageUrl: photo.imageUrl }); }
+    else { setEditingFarm(null); setFarmForm({ title: "", description: "", imageUrl: "" }); }
+    setFarmUploadError(null);
+    setShowFarmModal(true);
+  }
+
+  function saveFarmPhoto() {
+    if (!farmForm.imageUrl) { setFarmUploadError("Please upload or paste an image URL."); return; }
+    let updated: FarmPhoto[];
+    if (editingFarm) {
+      updated = farmPhotos.map(p => p.id === editingFarm.id ? { ...p, ...farmForm } : p);
+    } else {
+      updated = [...farmPhotos, { id: `f${Date.now()}`, ...farmForm }];
+    }
+    setFarmPhotos(updated);
+    setShowFarmModal(false);
+    showToast(editingFarm ? "✓ Farm photo updated!" : "✓ Farm photo added!");
+  }
+
+  function deleteFarmPhoto(id: string) {
+    if (!confirm("Remove this farm photo?")) return;
+    setFarmPhotos(f => f.filter(p => p.id !== id));
+  }
+
+  async function uploadFarmImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFarmUploadError(null);
+    const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+    if (!ALLOWED_MIME.includes(file.type) || !ALLOWED_EXT.includes(ext)) { setFarmUploadError("Invalid file type. Use JPG, PNG, or WebP."); e.target.value = ""; return; }
+    if (file.size > 10 * 1024 * 1024) { setFarmUploadError("File too large — max 10 MB."); e.target.value = ""; return; }
+    setFarmUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("slug", `farm-${Date.now()}`);
+      const r = await fetch(`/api/upload`, { method: "POST", body: fd });
+      if (!r.ok) throw new Error("Upload failed");
+      const d = await r.json();
+      setFarmForm(f => ({ ...f, imageUrl: `${d.url}?t=${Date.now()}` }));
+    } catch (err: any) { setFarmUploadError(err.message || "Upload failed"); }
+    finally { setFarmUploading(false); e.target.value = ""; }
+  }
+
+  // ── Category helpers ──────────────────────────────────────────────────────
+  function openCatModal(cat?: CustomCategory) {
+    if (cat) { setEditingCat(cat); setCatForm({ label: cat.label, image: cat.image, color: cat.color, icon: cat.icon }); }
+    else { setEditingCat(null); setCatForm({ label: "", image: "", color: CAT_COLOR_OPTIONS[0], icon: "🥦" }); }
+    setEditingStaticKey(null);
+    setCatUploadError(null);
+    setShowCatModal(true);
+  }
+
+  function openStaticCatEdit(staticCat: typeof siteConfig.categories[0]) {
+    const override = categoryOverrides[staticCat.key] || {};
+    setEditingStaticKey(staticCat.key);
+    setEditingCat(null);
+    setCatForm({
+      label: (override.label ?? staticCat.label),
+      image: (override.image ?? staticCat.image),
+      color: (override.color ?? staticCat.color),
+      icon:  (override.icon  ?? staticCat.icon),
+    });
+    setCatUploadError(null);
+    setShowCatModal(true);
+  }
+
+  function saveCatEntry() {
+    if (!catForm.label.trim()) { setCatUploadError("Category name is required."); return; }
+
+    if (editingStaticKey) {
+      // Save override for a static category
+      const updated = { ...categoryOverrides, [editingStaticKey]: { label: catForm.label, image: catForm.image, color: catForm.color, icon: catForm.icon } };
+      setCategoryOverrides(updated);
+      localStorage.setItem("qf_category_overrides", JSON.stringify(updated));
+      localStorage.setItem("qf_settings_updated", Date.now().toString());
+      setShowCatModal(false);
+      showToast("✓ Default category updated!");
+      return;
+    }
+
+    const key = catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g, "-");
+    let updated: CustomCategory[];
+    if (editingCat) {
+      updated = customCategories.map(c => c.id === editingCat.id ? { ...c, ...catForm, key } : c);
+    } else {
+      updated = [...customCategories, { id: `cat-${Date.now()}`, key, ...catForm }];
+    }
+    setCustomCategories(updated);
+    localStorage.setItem("qf_custom_categories", JSON.stringify(updated));
+    localStorage.setItem("qf_settings_updated", Date.now().toString());
+    setShowCatModal(false);
+    showToast(editingCat ? "✓ Category updated!" : "✓ Category added!");
+  }
+
+  function deleteCat(id: string) {
+    if (!confirm("Remove this category?")) return;
+    const updated = customCategories.filter(c => c.id !== id);
+    setCustomCategories(updated);
+    localStorage.setItem("qf_custom_categories", JSON.stringify(updated));
+    localStorage.setItem("qf_settings_updated", Date.now().toString());
+    showToast("✓ Category removed.");
+  }
+
+  async function uploadCatImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCatUploadError(null);
+    const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+    const allowed = [".jpg",".jpeg",".png",".webp"];
+    if (!allowed.includes(ext)) { setCatUploadError("Use JPG, PNG, or WebP."); e.target.value = ""; return; }
+    if (file.size > 10 * 1024 * 1024) { setCatUploadError("File too large — max 10 MB."); e.target.value = ""; return; }
+    setCatUploading(true);
+    try {
+      const slug = `cat-${catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g,"-") || Date.now()}`;
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("slug", slug);
+      const r = await fetch("/api/upload-category", { method: "POST", body: fd });
+      if (!r.ok) throw new Error("Upload failed");
+      const d = await r.json();
+      setCatForm(f => ({ ...f, image: `${d.url}?t=${Date.now()}` }));
+    } catch (err: any) { setCatUploadError(err.message || "Upload failed"); }
+    finally { setCatUploading(false); e.target.value = ""; }
+  }
+
   const navItems = [
     { id: "dashboard", icon: "📊", label: "Dashboard" },
     { id: "orders",    icon: "📦", label: "Orders"    },
     { id: "products",  icon: "🥬", label: "Products"  },
     { id: "users",     icon: "👥", label: "Users"     },
+    { id: "settings",  icon: "⚙️",  label: "Settings"  },
   ] as const;
 
   const filteredOrders = orders.filter(o => {
@@ -316,7 +581,7 @@ export default function AdminPage() {
     return matchStatus && matchSearch;
   });
 
-  const PROD_PER_PAGE = 15;
+  const PROD_PER_PAGE = 10;
   const filteredProducts = products.filter(p => !prodSearch || p.name?.toLowerCase().includes(prodSearch.toLowerCase()) || p.slug?.toLowerCase().includes(prodSearch.toLowerCase()) || p.category?.toLowerCase().includes(prodSearch.toLowerCase()));
   const totalProdPages = Math.ceil(filteredProducts.length / PROD_PER_PAGE);
   const pagedProducts = filteredProducts.slice(prodPage * PROD_PER_PAGE, (prodPage + 1) * PROD_PER_PAGE);
@@ -350,10 +615,41 @@ export default function AdminPage() {
 
   // ── Admin layout ──────────────────────────────────────────────────────────
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "sans-serif", background: "#f1f5f9" }}>
+    <div className="admin-wrap" style={{ display: "flex", minHeight: "100vh", fontFamily: "sans-serif", background: "#f1f5f9" }}>
+      <style>{`
+        @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+        .admin-wrap{flex-direction:row}
+        .admin-sidebar{width:220px;flex-shrink:0;background:linear-gradient(180deg,#0a1f12 0%,#1a3c2e 100%);display:flex;flex-direction:column;padding:1.5rem 0}
+        .admin-sidebar-logo{display:block}
+        .admin-sidebar-nav{flex:1;padding:1rem 0.8rem}
+        .admin-mobile-nav{display:none}
+        .admin-main{flex:1;overflow:auto;padding:2rem}
+        .admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .admin-charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+        .admin-recent-row{display:grid;grid-template-columns:1fr 1.6fr;gap:1rem}
+        @media(max-width:768px){
+          .admin-wrap{flex-direction:column}
+          .admin-sidebar{display:none}
+          .admin-mobile-nav{display:flex;background:linear-gradient(90deg,#0a1f12,#1a3c2e);overflow-x:auto;position:sticky;top:0;z-index:200;padding:0;border-bottom:1px solid rgba(255,255,255,0.1)}
+          .admin-mobile-nav::-webkit-scrollbar{display:none}
+          .admin-mobile-nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 14px;background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap;border-bottom:2px solid transparent;transition:all .15s;flex-shrink:0}
+          .admin-main{padding:1rem}
+          .admin-charts-row{grid-template-columns:1fr!important}
+          .admin-recent-row{grid-template-columns:1fr!important}
+        }
+        @media(max-width:480px){
+          .admin-mobile-nav-btn{padding:8px 10px;font-size:10px}
+          .admin-main{padding:0.75rem}
+          .admin-table-wrap table td:last-child{white-space:nowrap}
+          .admin-prod-actions{display:flex!important;flex-wrap:wrap!important;gap:4px!important}
+          .admin-prod-actions button{padding:4px 8px!important;font-size:11px!important}
+          .admin-order-del{padding:4px 8px!important;font-size:11px!important}
+          .admin-header-toolbar{flex-wrap:wrap!important}
+        }
+      `}</style>
 
-      {/* Sidebar */}
-      <aside style={{ width: "220px", flexShrink: 0, background: "linear-gradient(180deg,#0a1f12 0%,#1a3c2e 100%)", display: "flex", flexDirection: "column", padding: "1.5rem 0" }}>
+      {/* Sidebar — desktop only */}
+      <aside className="admin-sidebar">
         <div style={{ padding: "0 1.2rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
@@ -363,7 +659,7 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        <nav style={{ flex: 1, padding: "1rem 0.8rem" }}>
+        <nav className="admin-sidebar-nav">
           {navItems.map(item => (
             <button key={item.id} onClick={() => setTab(item.id as any)}
               style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "10px", border: "none", background: tab === item.id ? "rgba(163,230,53,0.15)" : "transparent", color: tab === item.id ? "#a3e635" : "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: "13.5px", fontWeight: tab === item.id ? 700 : 400, marginBottom: "4px", textAlign: "left" }}>
@@ -378,8 +674,24 @@ export default function AdminPage() {
         </div>
       </aside>
 
+      {/* Mobile tab bar — mobile only */}
+      <div className="admin-mobile-nav">
+        {navItems.map(item => (
+          <button key={item.id} className="admin-mobile-nav-btn"
+            onClick={() => setTab(item.id as any)}
+            style={{ color: tab === item.id ? "#a3e635" : "rgba(255,255,255,0.55)", borderBottomColor: tab === item.id ? "#a3e635" : "transparent" }}>
+            <span style={{ fontSize: "18px" }}>{item.icon}</span>
+            {item.label}
+          </button>
+        ))}
+        <button className="admin-mobile-nav-btn" onClick={logout} style={{ color: "#fca5a5", borderBottomColor: "transparent" }}>
+          <span style={{ fontSize: "18px" }}>🚪</span>
+          Logout
+        </button>
+      </div>
+
       {/* Main content */}
-      <main style={{ flex: 1, overflow: "auto", padding: "2rem" }}>
+      <main className="admin-main">
 
         {/* ── DASHBOARD ── */}
         {tab === "dashboard" && (
@@ -398,7 +710,7 @@ export default function AdminPage() {
             </div>
 
             {/* Charts row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div className="admin-charts-row">
               {/* Daily orders chart */}
               <div style={{ background: "#fff", borderRadius: "14px", padding: "1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
                 <h3 style={{ margin: "0 0 1rem", fontSize: "14px", fontWeight: 700, color: "#111827" }}>Orders — Last 30 Days</h3>
@@ -427,7 +739,7 @@ export default function AdminPage() {
             </div>
 
             {/* Top products + Recent orders */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: "1rem" }}>
+            <div className="admin-recent-row">
               {/* Top products */}
               <div style={{ background: "#fff", borderRadius: "14px", padding: "1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
                 <h3 style={{ margin: "0 0 1rem", fontSize: "14px", fontWeight: 700, color: "#111827" }}>Top Selling Products</h3>
@@ -484,18 +796,18 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "700px" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
-                    {["Order #", "Customer", "Items", "Total", "Slot", "Date", "Status", "Action"].map(h => (
+                    {["Order #", "Customer", "Items", "Total", "Slot", "Date", "Status", "Update", ""].map(h => (
                       <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredOrders.length === 0 && (
-                    <tr><td colSpan={8} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No orders found</td></tr>
+                    <tr><td colSpan={9} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No orders found</td></tr>
                   )}
                   {filteredOrders.map(o => (
                     <tr key={o._id} style={{ borderTop: "1px solid #f1f5f9" }}>
@@ -504,8 +816,19 @@ export default function AdminPage() {
                         <div style={{ fontWeight: 600, color: "#111827" }}>{o.guestName || o.user?.name || "Guest"}</div>
                         <div style={{ fontSize: "11px", color: "#9ca3af" }}>{o.guestPhone || o.user?.phone || ""}</div>
                       </td>
-                      <td style={{ padding: "12px 14px", maxWidth: "180px" }}>
-                        <div style={{ fontSize: "12px", color: "#374151" }}>{o.items?.slice(0, 2).map((i: any) => `${i.name} ×${i.quantity}`).join(", ")}{o.items?.length > 2 ? ` +${o.items.length - 2} more` : ""}</div>
+                      <td style={{ padding: "12px 14px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "220px" }}>
+                          {o.items?.length > 0 ? o.items.map((i: any, idx: number) => (
+                            <div key={idx} style={{ fontSize: "12px", color: "#374151", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "8px", alignItems: "baseline", paddingBottom: idx < o.items.length - 1 ? "3px" : 0, borderBottom: idx < o.items.length - 1 ? "1px dashed #f1f5f9" : "none" }}>
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {i.name}{i.variant ? <span style={{ color: "#9ca3af", fontSize: "11px" }}> ({i.variant})</span> : ""}
+                                <span style={{ color: "#6b7280" }}> ×{i.quantity}</span>
+                              </span>
+                              <span style={{ color: "#9ca3af", fontSize: "11px", whiteSpace: "nowrap" }}>₹{i.price}/ea</span>
+                              <span style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{(i.price * i.quantity).toFixed(0)}</span>
+                            </div>
+                          )) : <span style={{ fontSize: "12px", color: "#9ca3af" }}>—</span>}
+                        </div>
                       </td>
                       <td style={{ padding: "12px 14px", fontWeight: 700, color: "#111827" }}>₹{o.total}</td>
                       <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>{o.deliverySlot}</td>
@@ -518,6 +841,12 @@ export default function AdminPage() {
                           style={{ padding: "5px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", cursor: "pointer", background: "#fff", color: "#111827" }}>
                           {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                         </select>
+                      </td>
+                      <td style={{ padding: "12px 14px" }}>
+                        <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)}
+                          style={{ padding: "5px 10px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          🗑 Delete
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -532,12 +861,16 @@ export default function AdminPage() {
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "10px" }}>
               <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Products <span style={{ fontSize: "14px", color: "#9ca3af", fontWeight: 400 }}>({filteredProducts.length})</span></h1>
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <div className="admin-header-toolbar" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <div style={{ position: "relative" }}>
                   <input value={prodSearch} onChange={e => { setProdSearch(e.target.value); setProdPage(0); }} placeholder="Search products…"
                     style={{ padding: "8px " + (prodSearch ? "30px" : "12px") + " 8px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13px", background: "#fff", color: "#111827" }} />
                   {prodSearch && <button onClick={() => { setProdSearch(""); setProdPage(0); }} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "#e5e7eb", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "9px", color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>}
                 </div>
+                <button onClick={loadProducts} disabled={prodLoading}
+                  style={{ padding: "10px 14px", background: "#f0fdf4", color: "#16a34a", border: "1.5px solid #bbf7d0", borderRadius: "10px", fontWeight: 600, fontSize: "13px", cursor: prodLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "5px", whiteSpace: "nowrap" }}>
+                  {prodLoading ? "⏳" : "🔄"} Refresh
+                </button>
                 <button onClick={openAddProduct}
                   style={{ padding: "10px 20px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", whiteSpace: "nowrap" }}>
                   + Add Product
@@ -545,8 +878,16 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            {/* Error banner */}
+            {prodError && (
+              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "10px", padding: "12px 16px", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                <span style={{ fontSize: "13px", color: "#dc2626", fontWeight: 600 }}>⚠ {prodError}</span>
+                <button onClick={loadProducts} style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: "7px", cursor: "pointer", fontSize: "12px", fontWeight: 700 }}>Retry</button>
+              </div>
+            )}
+
+            <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "650px" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
                     {["Image", "Name", "Category", "Price", "Stock", "Status", "Actions"].map(h => (
@@ -555,13 +896,27 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pagedProducts.length === 0 && (
-                    <tr><td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>{prodSearch ? "No products match your search" : "No products found"}</td></tr>
+                  {prodLoading && (
+                    <tr><td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "#6b7280" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                        <div style={{ fontSize: "28px", animation: "spin 1s linear infinite" }}>⏳</div>
+                        <span style={{ fontSize: "13px" }}>Loading products…</span>
+                      </div>
+                    </td></tr>
+                  )}
+                  {!prodLoading && pagedProducts.length === 0 && (
+                    <tr><td colSpan={7} style={{ padding: "3rem", textAlign: "center" }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", color: "#9ca3af" }}>
+                        <span style={{ fontSize: "36px" }}>🥬</span>
+                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>{prodSearch ? "No products match your search" : "No products yet"}</span>
+                        {!prodSearch && <button onClick={openAddProduct} style={{ padding: "8px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 700 }}>+ Add First Product</button>}
+                      </div>
+                    </td></tr>
                   )}
                   {pagedProducts.map(p => (
                     <tr key={p._id} style={{ borderTop: "1px solid #f1f5f9", opacity: p.isActive ? 1 : 0.55, background: p.isActive ? undefined : "#fffbeb" }}>
                       <td style={{ padding: "10px 14px" }}>
-                        <img src={p.imageUrl || `/products/${p.slug}.png`} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }}
+                        <img key={imgKey + "-" + p._id} src={p.imageUrl || `/products/${p.slug}.png`} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }}
                           onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=80&q=60&fit=crop"; }} />
                       </td>
                       <td style={{ padding: "10px 14px" }}>
@@ -582,7 +937,7 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td style={{ padding: "10px 14px" }}>
-                        <div style={{ display: "flex", gap: "6px" }}>
+                        <div className="admin-prod-actions" style={{ display: "flex", gap: "6px" }}>
                           <button onClick={() => openEditProduct(p)} style={{ padding: "5px 12px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
                           <button onClick={() => deleteProduct(p._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
                         </div>
@@ -609,9 +964,14 @@ export default function AdminPage() {
         {/* ── USERS ── */}
         {tab === "users" && (
           <div>
-            <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: "0 0 1.5rem" }}>Customers <span style={{ fontSize: "14px", color: "#9ca3af", fontWeight: 400 }}>({users.length})</span></h1>
-            <div style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", overflow: "hidden" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "12px" }}>
+              <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Customers <span style={{ fontSize: "14px", color: "#9ca3af", fontWeight: 400 }}>({users.length})</span></h1>
+              <button onClick={openAddUser} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#2d8a4e,#1f6b3a)", color: "#fff", border: "none", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 2px 8px rgba(45,138,78,.25)" }}>
+                + Add User
+              </button>
+            </div>
+            <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "600px" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
                     {["Name", "Email", "Phone", "Registered", "Status", "Action"].map(h => (
@@ -638,12 +998,196 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <button onClick={() => deleteUser(u._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button onClick={() => openEditUser(u)} style={{ padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                          <button onClick={() => deleteUser(u._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── SETTINGS ── */}
+        {tab === "settings" && (
+          <div>
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: "0 0 4px" }}>Store Settings</h1>
+              <p style={{ color: "#6b7280", fontSize: "13px", margin: 0 }}>Control what users see on the storefront.</p>
+            </div>
+
+            {/* ── Cart Visibility Card ── */}
+            <div style={{ background: "#fff", borderRadius: "16px", padding: "1.8rem", boxShadow: "0 2px 12px rgba(0,0,0,.06)", marginBottom: "1.5rem", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1.5rem", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: "220px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "22px" }}>🛒</span>
+                    <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#111827" }}>Cart & Add to Cart Buttons</h2>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#6b7280", lineHeight: 1.7 }}>
+                    When <strong>disabled</strong>, the Cart button, floating cart, and all "Add to Cart" buttons on the storefront are hidden. Users can still browse products. Useful during restocking or maintenance.
+                  </p>
+                  <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontSize: "12px", padding: "3px 10px", borderRadius: "20px", fontWeight: 700, background: cartEnabled ? "#f0fdf4" : "#fef2f2", color: cartEnabled ? "#16a34a" : "#ef4444" }}>
+                      {cartEnabled ? "✓ Currently visible to users" : "✗ Hidden from users"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Toggle switch */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                  <button
+                    onClick={() => setCartEnabled(v => !v)}
+                    style={{
+                      width: "64px", height: "34px", borderRadius: "17px", border: "none", cursor: "pointer",
+                      background: cartEnabled ? "linear-gradient(135deg,#2d8a4e,#16a34a)" : "#d1d5db",
+                      position: "relative", transition: "background 0.3s", boxShadow: cartEnabled ? "0 2px 12px rgba(45,138,78,0.4)" : "none",
+                    }}
+                    title={cartEnabled ? "Click to hide cart" : "Click to show cart"}
+                  >
+                    <span style={{
+                      position: "absolute", top: "3px", left: cartEnabled ? "33px" : "3px",
+                      width: "28px", height: "28px", borderRadius: "50%", background: "#fff",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.22)", transition: "left 0.25s cubic-bezier(.4,0,.2,1)",
+                    }} />
+                  </button>
+                  <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600 }}>{cartEnabled ? "ON" : "OFF"}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Farm Photos Card ── */}
+            <div style={{ background: "#fff", borderRadius: "16px", padding: "1.8rem", boxShadow: "0 2px 12px rgba(0,0,0,.06)", marginBottom: "1.5rem", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.2rem", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "22px" }}>🌾</span>
+                    <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#111827" }}>Our Farms Section — Photos</h2>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>These photos appear in the "Our Farms" section on the homepage. Up to 6 recommended.</p>
+                </div>
+                <button onClick={() => openFarmModal()}
+                  style={{ padding: "9px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                  + Add Photo
+                </button>
+              </div>
+
+              {farmPhotos.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "2.5rem", color: "#9ca3af", border: "2px dashed #e5e7eb", borderRadius: "10px" }}>
+                  <span style={{ fontSize: "32px" }}>📷</span>
+                  <p style={{ margin: "8px 0 0", fontSize: "13px" }}>No farm photos yet. Click "+ Add Photo" to add one.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: "12px" }}>
+                  {farmPhotos.map(photo => (
+                    <div key={photo.id} style={{ borderRadius: "12px", overflow: "hidden", border: "1.5px solid #e9ede4", background: "#f9fafb", position: "relative" }}>
+                      <div style={{ height: "130px", overflow: "hidden", position: "relative" }}>
+                        <img src={photo.imageUrl} alt={photo.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={e => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&q=60&fit=crop"; }} />
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 50%)" }} />
+                        <div style={{ position: "absolute", bottom: "8px", left: "10px", right: "10px" }}>
+                          <div style={{ color: "#fff", fontSize: "12px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{photo.title || "Untitled"}</div>
+                          {photo.description && <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10.5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{photo.description}</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", padding: "8px 10px" }}>
+                        <button onClick={() => openFarmModal(photo)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                        <button onClick={() => deleteFarmPhoto(photo.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Custom Categories Card ── */}
+            <div style={{ background: "#fff", borderRadius: "16px", padding: "1.8rem", boxShadow: "0 2px 12px rgba(0,0,0,.06)", marginBottom: "1.5rem", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.2rem", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "22px" }}>🗂️</span>
+                    <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#111827" }}>Browse by Category</h2>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>Add custom categories. They appear on the homepage, product filters, and everywhere instantly.</p>
+                </div>
+                <button onClick={() => openCatModal()}
+                  style={{ padding: "9px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                  + Add Category
+                </button>
+              </div>
+
+              {/* Static categories (editable) */}
+              <div style={{ marginBottom: "1.4rem" }}>
+                <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Default Categories (from site config)</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "10px" }}>
+                  {siteConfig.categories.map(c => {
+                    const ov = categoryOverrides[c.key] || {};
+                    const label = ov.label ?? c.label;
+                    const color = ov.color ?? c.color;
+                    const icon  = ov.icon  ?? c.icon;
+                    const image = ov.image ?? c.image;
+                    return (
+                      <div key={c.key} style={{ borderRadius: "10px", overflow: "hidden", border: `2px solid ${color}22`, background: "#f9fafb" }}>
+                        <div style={{ height: "80px", overflow: "hidden", position: "relative", background: image ? undefined : `${color}18` }}>
+                          {image ? (
+                            <img src={image} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          ) : (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "32px" }}>{icon}</div>
+                          )}
+                          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.4) 0%,transparent 55%)" }} />
+                          <div style={{ position: "absolute", bottom: "6px", left: "8px", color: "#fff", fontSize: "12px", fontWeight: 700 }}>{icon} {label}</div>
+                        </div>
+                        <div style={{ padding: "6px 8px" }}>
+                          <button onClick={() => openStaticCatEdit(c)} style={{ width: "100%", padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Custom Categories</p>
+              {customCategories.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af", border: "2px dashed #e5e7eb", borderRadius: "10px" }}>
+                  <span style={{ fontSize: "28px" }}>🗂️</span>
+                  <p style={{ margin: "8px 0 0", fontSize: "13px" }}>No custom categories yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: "12px" }}>
+                  {customCategories.map(cat => (
+                    <div key={cat.id} style={{ borderRadius: "12px", overflow: "hidden", border: `2px solid ${cat.color}22`, background: "#f9fafb", position: "relative" }}>
+                      <div style={{ height: "110px", overflow: "hidden", position: "relative", background: cat.image ? undefined : `${cat.color}18` }}>
+                        {cat.image ? (
+                          <img src={cat.image} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "40px" }}>{cat.icon}</div>
+                        )}
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.45) 0%,transparent 55%)" }} />
+                        <div style={{ position: "absolute", bottom: "8px", left: "10px" }}>
+                          <div style={{ color: "#fff", fontSize: "12.5px", fontWeight: 700 }}>{cat.icon} {cat.label}</div>
+                        </div>
+                        <div style={{ position: "absolute", top: "8px", right: "8px", width: "14px", height: "14px", borderRadius: "50%", background: cat.color, border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,.25)" }} />
+                      </div>
+                      <div style={{ display: "flex", gap: "6px", padding: "8px 10px" }}>
+                        <button onClick={() => openCatModal(cat)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                        <button onClick={() => deleteCat(cat.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Save button */}
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button onClick={() => saveSettings(cartEnabled, farmPhotos)}
+                style={{ padding: "13px 36px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", color: "#fff", border: "none", borderRadius: "11px", fontWeight: 800, fontSize: "14.5px", cursor: "pointer", boxShadow: "0 4px 16px rgba(45,138,78,0.35)", display: "flex", alignItems: "center", gap: "8px" }}>
+                💾 Save Settings
+              </button>
             </div>
           </div>
         )}
@@ -680,26 +1224,11 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* Filename hints — product image + category image */}
-                <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                  {/* Product image filename */}
-                  <div style={{ padding: "7px 10px", background: "#f0fdf4", borderRadius: "6px", border: "1px solid #bbf7d0" }}>
-                    <p style={{ margin: "0 0 4px", fontSize: "10.5px", fontWeight: 700, color: "#166534", fontFamily: "sans-serif" }}>📦 Product image filename:</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      <code style={{ flex: 1, fontSize: "12px", color: "#15803d", background: "#dcfce7", padding: "3px 7px", borderRadius: "4px", fontWeight: 700 }}>
-                        {prodForm.slug ? `${prodForm.slug}.png` : <span style={{ color: "#9ca3af", fontWeight: 400 }}>enter slug first</span>}
-                      </code>
-                      {prodForm.slug && (
-                        <button onClick={() => copyText(`${prodForm.slug}.png`, "prod")}
-                          style={{ padding: "3px 8px", background: copied === "prod" ? "#16a34a" : "#e5e7eb", color: copied === "prod" ? "#fff" : "#374151", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "11px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          {copied === "prod" ? "✓ Copied" : "📋 Copy"}
-                        </button>
-                      )}
-                    </div>
-                    <p style={{ margin: "3px 0 0", fontSize: "10px", color: "#6b7280", fontFamily: "sans-serif" }}>Copy filename and place in your images folder.</p>
-                  </div>
-
-                </div>
+                {prodForm.slug && (
+                  <p style={{ marginTop: "7px", fontSize: "11px", color: "#6b7280", fontFamily: "sans-serif" }}>
+                    ✓ Saved automatically as <strong>{prodForm.slug}.png</strong> in the background.
+                  </p>
+                )}
 
                 {prodForm.imageUrl && (
                   <div style={{ marginTop: "6px" }}>
@@ -715,7 +1244,9 @@ export default function AdminPage() {
             <Field label="Slug (URL key)" required><input value={prodForm.slug || ""} onChange={e => setProdForm((f: any) => ({ ...f, slug: e.target.value }))} style={inputStyle} /></Field>
             <Field label="Category" required>
               <select value={prodForm.category || "other"} onChange={e => setProdForm((f: any) => ({ ...f, category: e.target.value }))} style={inputStyle}>
-                {["leafy","herb","mushroom","microgreen","sprout","fruit","grain","other"].map(c => <option key={c} value={c}>{c}</option>)}
+                {[...siteConfig.categories, ...customCategories.map(c => ({ key: c.key, label: c.label }))].map(c => (
+                  <option key={c.key} value={c.key}>{c.label}</option>
+                ))}
               </select>
             </Field>
             <Field label="Unit">
@@ -749,6 +1280,158 @@ export default function AdminPage() {
             <button onClick={saveProd} disabled={uploading || !!uploadError}
               style={{ padding: "10px 24px", background: uploading || uploadError ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: uploading || uploadError ? "not-allowed" : "pointer", fontWeight: 700, opacity: uploading || uploadError ? 0.6 : 1 }}>
               {editProd ? "Save Changes" : "Add Product"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Farm Photo Modal ── */}
+      {showFarmModal && (
+        <Modal onClose={() => setShowFarmModal(false)}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{editingFarm ? "Edit Farm Photo" : "Add Farm Photo"}</h2>
+            <button onClick={() => setShowFarmModal(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+          </div>
+
+          {/* Photo preview */}
+          {farmForm.imageUrl && (
+            <div style={{ height: "160px", borderRadius: "10px", overflow: "hidden", marginBottom: "14px", background: "#f1f5f9" }}>
+              <img src={farmForm.imageUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            </div>
+          )}
+
+          {/* Image upload */}
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Photo</label>
+            <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
+              <input ref={farmFileRef} type="file" accept={ALLOWED_EXT.join(",")} onChange={uploadFarmImage} style={{ display: "none" }} />
+              <button onClick={() => { setFarmUploadError(null); farmFileRef.current?.click(); }} disabled={farmUploading}
+                style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: farmUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
+                {farmUploading ? "⏳ Uploading…" : "📁 Upload Photo"}
+              </button>
+              <span style={{ fontSize: "12px", color: "#9ca3af", alignSelf: "center" }}>or</span>
+              <input value={farmForm.imageUrl} onChange={e => setFarmForm(f => ({ ...f, imageUrl: e.target.value }))} placeholder="Paste image URL…"
+                style={{ ...inputStyle, flex: 1, minWidth: "160px" }} />
+            </div>
+            {farmUploadError && <p style={{ margin: "6px 0 0", fontSize: "11.5px", color: "#dc2626" }}>⚠ {farmUploadError}</p>}
+          </div>
+
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Title</label>
+            <input value={farmForm.title} onChange={e => setFarmForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Our Main Farm" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Caption <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
+            <input value={farmForm.description} onChange={e => setFarmForm(f => ({ ...f, description: e.target.value }))} placeholder="e.g. Sun-drenched fields in Pune" style={inputStyle} />
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <button onClick={() => setShowFarmModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={saveFarmPhoto} disabled={!farmForm.imageUrl || farmUploading}
+              style={{ padding: "10px 24px", background: !farmForm.imageUrl || farmUploading ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: !farmForm.imageUrl || farmUploading ? "not-allowed" : "pointer", fontWeight: 700, opacity: !farmForm.imageUrl || farmUploading ? 0.7 : 1 }}>
+              {editingFarm ? "Save Changes" : "Add Photo"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Category Modal ── */}
+      {showCatModal && (
+        <Modal onClose={() => setShowCatModal(false)}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{editingStaticKey ? "Edit Default Category" : editingCat ? "Edit Category" : "Add Category"}</h2>
+            <button onClick={() => setShowCatModal(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+          </div>
+
+          {/* Image upload */}
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Category Image <span style={{ color: "#9ca3af", fontWeight: 400 }}>(saved to /public/category)</span></label>
+            <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
+              {catForm.image && (
+                <img src={catForm.image} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <input ref={catFileRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={uploadCatImage} style={{ display: "none" }} />
+                <button onClick={() => { setCatUploadError(null); catFileRef.current?.click(); }} disabled={catUploading}
+                  style={{ padding: "9px 16px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: catUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                  {catUploading ? "⏳ Uploading…" : "📁 Upload Image"}
+                </button>
+                <input value={catForm.image} onChange={e => setCatForm(f => ({ ...f, image: e.target.value }))} placeholder="Or paste image URL"
+                  style={{ ...inputStyle, fontSize: "12px", marginTop: "6px" }} />
+                {catUploadError && <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#dc2626" }}>⚠ {catUploadError}</p>}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Category Name *</label>
+            <input value={catForm.label} onChange={e => setCatForm(f => ({ ...f, label: e.target.value }))} placeholder="e.g. Exotic Fruits" style={inputStyle} />
+          </div>
+
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Icon (emoji)</label>
+            <input value={catForm.icon} onChange={e => setCatForm(f => ({ ...f, icon: e.target.value }))} placeholder="🥦" style={{ ...inputStyle, width: "80px" }} maxLength={4} />
+          </div>
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "8px" }}>Accent Color</label>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              {CAT_COLOR_OPTIONS.map(c => (
+                <button key={c} onClick={() => setCatForm(f => ({ ...f, color: c }))}
+                  style={{ width: "28px", height: "28px", borderRadius: "50%", background: c, border: catForm.color === c ? "3px solid #111" : "2px solid transparent", cursor: "pointer", boxShadow: catForm.color === c ? "0 0 0 2px #fff inset" : undefined, transition: "all .15s" }} />
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <button onClick={() => setShowCatModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={saveCatEntry} disabled={catUploading}
+              style={{ padding: "10px 24px", background: catUploading ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: catUploading ? "not-allowed" : "pointer", fontWeight: 700 }}>
+              {editingStaticKey || editingCat ? "Save Changes" : "Add Category"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── User Modal ── */}
+      {showUserModal && (
+        <Modal onClose={() => setShowUserModal(false)}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{editingUser ? "Edit User" : "Add User"}</h2>
+            <button onClick={() => setShowUserModal(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+          </div>
+
+          <Field label="Full Name" required>
+            <input style={inputStyle} value={userForm.name} onChange={e => setUserForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Rahul Sharma" />
+          </Field>
+          <Field label="Email" required>
+            <input style={inputStyle} type="email" value={userForm.email} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} placeholder="user@example.com" />
+          </Field>
+          <Field label="Phone">
+            <input style={inputStyle} type="tel" value={userForm.phone} onChange={e => setUserForm(f => ({ ...f, phone: e.target.value }))} placeholder="10-digit mobile number" />
+          </Field>
+          <Field label={editingUser ? "New Password (leave blank to keep current)" : "Password"} required={!editingUser}>
+            <input style={inputStyle} type="password" value={userForm.password} onChange={e => setUserForm(f => ({ ...f, password: e.target.value }))} placeholder={editingUser ? "Leave blank to keep current" : "Set a password"} />
+          </Field>
+          <Field label="Status">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button onClick={() => setUserForm(f => ({ ...f, isActive: !f.isActive }))}
+                style={{ width: "52px", height: "28px", borderRadius: "14px", border: "none", cursor: "pointer", background: userForm.isActive ? "#2d8a4e" : "#d1d5db", position: "relative", transition: "background .2s" }}>
+                <span style={{ position: "absolute", top: "3px", left: userForm.isActive ? "26px" : "3px", width: "22px", height: "22px", borderRadius: "50%", background: "#fff", transition: "left .2s", boxShadow: "0 1px 4px rgba(0,0,0,.2)" }} />
+              </button>
+              <span style={{ fontSize: "13px", color: userForm.isActive ? "#16a34a" : "#6b7280", fontWeight: 600 }}>{userForm.isActive ? "Active" : "Inactive"}</span>
+            </div>
+          </Field>
+
+          {userFormErr && <div style={{ background: "#fef2f2", color: "#ef4444", borderRadius: "8px", padding: "9px 14px", fontSize: "13px", marginBottom: "12px" }}>{userFormErr}</div>}
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "1rem" }}>
+            <button onClick={() => setShowUserModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={saveUser} disabled={userSaving}
+              style={{ padding: "10px 24px", background: userSaving ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: userSaving ? "not-allowed" : "pointer", fontWeight: 700 }}>
+              {userSaving ? "Saving…" : editingUser ? "Save Changes" : "Add User"}
             </button>
           </div>
         </Modal>

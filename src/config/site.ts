@@ -140,7 +140,9 @@ export const siteConfig = {
     home:     "Home — Buy Fresh Exotic Vegetables | QualiFresh",
     products: "Shop — Fresh Green Exotic Vegetables | QualiFresh",
     why:      "Why QualiFresh — Farm to Table | QualiFresh",
-    contact:  "Contact Us | QualiFresh",
+    aboutUs:  "About Us – QualiFresh",
+    ourFarms: "Our Farms – QualiFresh",
+    contact:  "Contact – QualiFresh",
   },
 
   // ── API ────────────────────────────────────────────────────

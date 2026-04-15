@@ -51,10 +51,11 @@ export default function ContactPage() {
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
         .c-ticker-wrap{background:#1a3c2e;}
-        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:sticky;top:0;z-index:199;width:100%;}
+        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;}
         .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#1a3c2e;border-bottom:1px solid #174123;}
+        @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width:1024px){
-          body{padding-top:34px!important}
+          body{padding-top:102px!important}
           .c-ticker-desktop{display:none}
           .c-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
           .c-ticker-scroll{display:inline-flex;animation:cticker 30s linear infinite;white-space:nowrap}

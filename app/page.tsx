@@ -536,8 +536,8 @@ export default function Home() {
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
-        .ticker-wrap { overflow: hidden; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); margin-bottom:0; }
-        /* Desktop: show items centered, sticky at top */
+        .ticker-wrap { background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); margin-bottom:0; }
+        /* Desktop: show items centered, fixed at top */
         .ticker-desktop {
           display: flex;
           justify-content: center;
@@ -546,15 +546,18 @@ export default function Home() {
           gap: 0;
           padding: 6px 1rem;
           overflow: hidden;
-          position: sticky;
+          position: fixed;
           top: 0;
-          z-index: 199;
+          left: 0;
+          right: 0;
+          z-index: 9999;
           width: 100%;
         }
         /* Mobile: full scrolling ticker — hidden on desktop, STICKY */
         .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); border-bottom: 1px solid #174123; }
+        @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width: 1024px) {
-          body{padding-top:34px!important}
+          body{padding-top:102px!important}
           .ticker-desktop { display: none; }
           .ticker-mobile  { display: block; overflow: hidden; padding: 5px 0; height:34px; }
           .ticker-scroll  { display: inline-flex; animation: ticker 30s linear infinite; white-space: nowrap; }
@@ -634,7 +637,7 @@ export default function Home() {
           .prod-name{font-size:12.5px!important}
           .why-section{padding:2rem 1rem!important}
           .why-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
-          .why-grid-top{grid-template-columns:1fr!important;gap:10px!important}
+          .why-grid-top{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
           .why-grid-bottom{grid-template-columns:1fr 1fr!important;gap:10px!important}
           .footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important}
           .footer-wrap{padding:2rem 1rem!important}
@@ -704,7 +707,7 @@ export default function Home() {
       </div>
 
       {/* ═══ NAVBAR ═══ */}
-      <nav ref={navRef} className="nav-bar" style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px", position: "sticky", top: 0, zIndex: 200, boxShadow: "0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08)" }}>
+      <nav ref={navRef} className="nav-bar" style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px", position: "fixed", top: "34px", left: 0, right: 0, zIndex: 9998, boxShadow: "0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08)" }}>
         <button className="logo-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Go to home" aria-label="QualiFresh Home">
           <QFLogo height={52} />
         </button>

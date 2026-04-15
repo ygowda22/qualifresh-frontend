@@ -256,7 +256,7 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:sticky;top:34px;z-index:200;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
+        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:fixed;top:34px;left:0;right:0;z-index:9998;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
         @media(max-width:1024px){.sn-nav{top:34px!important}}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}

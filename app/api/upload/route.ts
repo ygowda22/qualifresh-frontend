@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key:    process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 const ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 
+// Proxies image upload to the backend API.
+// Returns { url } where url is an absolute backend URL ready to store in DB.
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
+    const authHeader = request.headers.get("Authorization") || "";
+    const formData   = await request.formData();
     const file = formData.get("image") as File | null;
+
     if (!file) return NextResponse.json({ message: "No file provided" }, { status: 400 });
 
     const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
@@ -24,29 +21,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "File too large — max 10 MB." }, { status: 400 });
     }
 
-    const slug = (formData.get("slug") as string | null)?.trim().replace(/[^a-z0-9-_]/gi, "");
-    const bytes  = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-    const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        {
-          folder:    "qualifresh/products",
-          public_id: slug || undefined,
-          overwrite: true,
-          resource_type: "image",
-        },
-        (err, res) => {
-          if (err || !res) reject(err || new Error("Upload failed"));
-          else resolve(res as { secure_url: string });
-        }
-      );
-      stream.end(buffer);
+    // Forward to backend — pass original FormData (slug, image) unchanged
+    const r = await fetch(`${backendBase}/api/upload`, {
+      method:  "POST",
+      headers: { Authorization: authHeader },
+      body:    formData,
     });
 
-    return NextResponse.json({ url: result.secure_url });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return NextResponse.json(d, { status: r.status });
+
+    // Make the URL absolute so it works cross-domain (browser → any host)
+    const url: string = d.url ?? "";
+    const absoluteUrl = url.startsWith("http") ? url : `${backendBase}${url}`;
+    return NextResponse.json({ url: absoluteUrl });
   } catch (err) {
-    console.error("Upload error:", err);
-    return NextResponse.json({ message: "Upload failed — check Cloudinary credentials" }, { status: 500 });
+    console.error("Upload proxy error:", err);
+    return NextResponse.json({ message: "Upload failed — backend may be unreachable" }, { status: 500 });
   }
 }

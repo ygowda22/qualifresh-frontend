@@ -338,9 +338,12 @@ export default function AdminPage() {
   async function uploadImage(file: File): Promise<string> {
     const fd = new FormData();
     fd.append("image", file);
-    // Send slug so image is saved as /public/products/{slug}.ext for auto-linking
     if (prodForm.slug) fd.append("slug", prodForm.slug);
-    const r = await fetch(`/api/upload`, { method: "POST", body: fd });
+    const r = await fetch(`/api/upload`, {
+      method:  "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body:    fd,
+    });
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
       throw new Error(d.message || "Upload failed");
@@ -476,7 +479,11 @@ export default function AdminPage() {
       const fd = new FormData();
       fd.append("image", file);
       fd.append("slug", `farm-${Date.now()}`);
-      const r = await fetch(`/api/upload`, { method: "POST", body: fd });
+      const r = await fetch(`/api/upload`, {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body:    fd,
+      });
       if (!r.ok) throw new Error("Upload failed");
       const d = await r.json();
       setFarmForm(f => ({ ...f, imageUrl: `${d.url}?t=${Date.now()}` }));
@@ -558,7 +565,11 @@ export default function AdminPage() {
       const fd = new FormData();
       fd.append("image", file);
       fd.append("slug", slug);
-      const r = await fetch("/api/upload-category", { method: "POST", body: fd });
+      const r = await fetch("/api/upload-category", {
+        method:  "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body:    fd,
+      });
       if (!r.ok) throw new Error("Upload failed");
       const d = await r.json();
       setCatForm(f => ({ ...f, image: `${d.url}?t=${Date.now()}` }));

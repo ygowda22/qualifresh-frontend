@@ -537,7 +537,7 @@ export default function Home() {
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
         .ticker-wrap { overflow: hidden; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); margin-bottom:0; }
-        /* Desktop: show items centered, no animation */
+        /* Desktop: show items centered, sticky at top */
         .ticker-desktop {
           display: flex;
           justify-content: center;
@@ -546,6 +546,10 @@ export default function Home() {
           gap: 0;
           padding: 6px 1rem;
           overflow: hidden;
+          position: sticky;
+          top: 0;
+          z-index: 199;
+          width: 100%;
         }
         /* Mobile: full scrolling ticker — hidden on desktop, STICKY */
         .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); border-bottom: 1px solid #174123; }
@@ -627,7 +631,6 @@ export default function Home() {
           .cat-card-label{font-size:9.5px!important;padding:5px 3px!important}
           .prod-section{padding:1.5rem 1rem 4rem!important}
           .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:.75rem!important}
-          .prod-img{height:140px!important}
           .prod-name{font-size:12.5px!important}
           .why-section{padding:2rem 1rem!important}
           .why-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
@@ -991,10 +994,13 @@ export default function Home() {
                   <div key={p._id} className="lift"
                     style={{ background: "#fff", borderRadius: "13px", border: "1px solid #e9ede4", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.05)", animation: `fadeUp .4s ${(i % PER_PAGE) * 0.03}s both`, display: "flex", flexDirection: "column" }}
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
-                    <div className="prod-img" style={{ height: "175px", overflow: "hidden", position: "relative", flexShrink: 0 }}>
-                      <img src={p.imageUrl || `/products/${p.slug}.png`} alt={p.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }}
-                        onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = `/products/${p.slug}.png`; }} />
+                    <div className="prod-img" style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative", flexShrink: 0 }}>
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
+                      ) : (
+                        <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
+                      )}
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%)" }} />
                       <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "3px" }}>
                         {p.isImported && <span style={{ background: "#1d4ed8", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>Imported</span>}
@@ -1379,8 +1385,11 @@ export default function Home() {
               ) : cartItems.map(p => (
                 <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
-                    <img src={p.imageUrl || `/products/${p.slug}.png`} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                      onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = `/products/${p.slug}.png`; }} />
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>
+                    )}
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                       <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>

@@ -50,8 +50,8 @@ export default function ContactPage() {
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
-        .c-ticker-wrap{overflow:hidden;background:#1a3c2e;}
-        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;}
+        .c-ticker-wrap{background:#1a3c2e;}
+        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:sticky;top:0;z-index:199;width:100%;}
         .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#1a3c2e;border-bottom:1px solid #174123;}
         @media(max-width:1024px){
           body{padding-top:34px!important}
@@ -79,6 +79,8 @@ export default function ContactPage() {
         .cf-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem;}
         @media(max-width:1024px){.cf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}}
         @media(max-width:480px){.cf-footer-grid{grid-template-columns:1fr!important;}}
+        .cf-footer-link{display:block;color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:9px;text-decoration:none;font-family:sans-serif;transition:color .2s;}
+        .cf-footer-link:hover{color:#f0c040!important;}
         nextjs-portal{display:none!important}
       `}</style>
 
@@ -257,20 +259,79 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Minimal footer — contact page only */}
+      {/* Footer */}
       <footer style={{ background: "linear-gradient(180deg,#081812 0%,#060f0c 100%)", color: "#fff" }}>
-        <div style={{ lineHeight: 0 }}>
+        <div style={{ lineHeight: 0, marginTop: "-1px" }}>
           <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "40px" }}>
             <path d="M0,20 C360,40 720,0 1080,20 C1260,30 1360,14 1440,20 L1440,0 L0,0 Z" fill="#f4f6f0" />
           </svg>
         </div>
-        <div style={{ padding: "1.5rem", textAlign: "center" }}>
-        <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif", marginBottom: "4px" }}>
-          © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
-        </p>
-        <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
-          {siteConfig.footer.tagline}
-        </p>
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2.5rem 1.5rem 1.5rem" }}>
+          <div className="cf-footer-grid" style={{ marginBottom: "2.5rem" }}>
+            <div>
+              <div style={{ marginBottom: "14px" }}>
+                <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain" }} />
+              </div>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+                {siteConfig.social.instagram && (
+                  <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
+                    style={{ width: "36px", height: "36px", background: "linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                    <InstagramIcon />
+                  </a>
+                )}
+                {siteConfig.social.facebook && (
+                  <a href={siteConfig.social.facebook} target="_blank" rel="noreferrer" aria-label="Facebook"
+                    style={{ width: "36px", height: "36px", background: "#1877f2", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                    <FacebookIcon />
+                  </a>
+                )}
+                <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"
+                  style={{ width: "36px", height: "36px", background: "#25d366", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                  <WhatsAppIcon size={18} />
+                </a>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Quick Links</h4>
+              {[
+                { label: "Home",       href: "/" },
+                { label: "Products",   href: "/products" },
+                { label: "About Us",   href: "/about-us" },
+                { label: "Our Farms",  href: "/our-farms" },
+                { label: "Contact Us", href: "/contact" },
+              ].map(link => (
+                <a key={link.label} href={link.href} className="cf-footer-link">{link.label}</a>
+              ))}
+            </div>
+            <div>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+                <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
+                <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
+                <div>📍 {siteConfig.address}</div>
+                <div>📅 {DEL.days.join(" & ")}</div>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+                <div>📦 Min order: ₹{DEL.minOrder}</div>
+                <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
+                <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
+                <div>⏰ Order by {DEL.orderCutoff.wednesday} for Wed</div>
+                <div>⏰ Order by {DEL.orderCutoff.saturday} for Sat</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+              © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
+            </p>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+              {siteConfig.footer.tagline}
+            </p>
+          </div>
         </div>
       </footer>
     </div>

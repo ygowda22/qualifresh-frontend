@@ -256,7 +256,8 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
+        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:sticky;top:34px;z-index:200;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
+        @media(max-width:1024px){.sn-nav{top:34px!important}}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}
         .sn-link:hover,.sn-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
@@ -438,9 +439,11 @@ export default function SiteNav({ activePage }: Props) {
                   ) : cartItems.map(p => (
                     <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
-                        <img src={p.imageUrl || FALLBACK} alt={p.name}
-                          style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }}
-                          onError={e => { (e.currentTarget as HTMLImageElement).src = FALLBACK; }} />
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>
+                        )}
                         <div style={{ minWidth: 0 }}>
                           <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                           {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>}

@@ -352,18 +352,19 @@ export default function AdminPage() {
   function openAddProduct() {
     setEditProd(null);
     setProdForm({ name: "", slug: "", category: "other", description: "", quantityLabel: "", unit: "gm", price: "", priceUnit: "per_unit", stock: "", isImported: false, isActive: true, imageUrl: "" });
+    setUploadError(null);
     setShowProdModal(true);
   }
 
   function openEditProduct(p: any) {
     setEditProd(p);
     setProdForm({ ...p, price: String(p.price), stock: String(p.stock) });
+    setUploadError(null);
     setShowProdModal(true);
   }
 
   async function saveProd() {
     if (uploading) { showToast("Wait for the image upload to finish first", false); return; }
-    if (uploadError) { showToast("Fix the upload error before saving", false); return; }
     if (!prodForm.name || !prodForm.slug || !prodForm.price) {
       showToast("Name, slug, and price are required", false); return;
     }
@@ -916,8 +917,11 @@ export default function AdminPage() {
                   {pagedProducts.map(p => (
                     <tr key={p._id} style={{ borderTop: "1px solid #f1f5f9", opacity: p.isActive ? 1 : 0.55, background: p.isActive ? undefined : "#fffbeb" }}>
                       <td style={{ padding: "10px 14px" }}>
-                        <img key={imgKey + "-" + p._id} src={p.imageUrl || `/products/${p.slug}.png`} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }}
-                          onError={(e) => { const img = e.currentTarget; img.onerror = null; img.src = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=80&q=60&fit=crop"; }} />
+                        {p.imageUrl ? (
+                          <img key={imgKey + "-" + p._id} src={p.imageUrl} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
+                        ) : (
+                          <div style={{ width: "44px", height: "44px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>🥬</div>
+                        )}
                       </td>
                       <td style={{ padding: "10px 14px" }}>
                         <div style={{ fontWeight: 600, color: "#111827" }}>{p.name}</div>
@@ -1205,8 +1209,8 @@ export default function AdminPage() {
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "8px" }}>Product Image</label>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-              {(prodForm.imageUrl || prodForm.slug) && (
-                <img src={prodForm.imageUrl || `/products/${prodForm.slug}.png`} alt=""
+              {prodForm.imageUrl && (
+                <img src={prodForm.imageUrl} alt=""
                   style={{ width: "70px", height: "70px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
@@ -1224,11 +1228,7 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {prodForm.slug && (
-                  <p style={{ marginTop: "7px", fontSize: "11px", color: "#6b7280", fontFamily: "sans-serif" }}>
-                    ✓ Saved automatically as <strong>{prodForm.slug}.png</strong> in the background.
-                  </p>
-                )}
+
 
                 {prodForm.imageUrl && (
                   <div style={{ marginTop: "6px" }}>
@@ -1277,8 +1277,8 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
             <button onClick={() => setShowProdModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-            <button onClick={saveProd} disabled={uploading || !!uploadError}
-              style={{ padding: "10px 24px", background: uploading || uploadError ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: uploading || uploadError ? "not-allowed" : "pointer", fontWeight: 700, opacity: uploading || uploadError ? 0.6 : 1 }}>
+            <button onClick={saveProd} disabled={uploading}
+              style={{ padding: "10px 24px", background: uploading ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: uploading ? "not-allowed" : "pointer", fontWeight: 700, opacity: uploading ? 0.6 : 1 }}>
               {editProd ? "Save Changes" : "Add Product"}
             </button>
           </div>

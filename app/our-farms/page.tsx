@@ -95,8 +95,8 @@ export default function OurFarmsPage() {
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
 
         /* Ticker */
-        .ticker-wrap{overflow:hidden;background:linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c);margin-bottom:0;}
-        .ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;}
+        .ticker-wrap{background:linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c);margin-bottom:0;}
+        .ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;position:sticky;top:0;z-index:199;width:100%;}
         .ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c);border-bottom:1px solid #174123;}
         @media(max-width:1024px){
           body{padding-top:34px!important}

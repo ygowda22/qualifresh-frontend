@@ -405,8 +405,8 @@ export default function SiteNav({ activePage }: Props) {
       {/* ── Cart Drawer (3-step: cart → checkout form → confirmed) ── */}
       {showCart && (
         <>
-          <div onClick={() => { if (!ckLoading) closeCart(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 400, display: "flex", flexDirection: "column" }}>
+          <div onClick={() => { if (!ckLoading) closeCart(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 490, backdropFilter: "blur(3px)" }} />
+          <div style={{ position: "fixed", top: "102px", right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
 
             {/* Header */}
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
@@ -597,11 +597,29 @@ export default function SiteNav({ activePage }: Props) {
         </>
       )}
 
+      {/* ── Floating mail button (visible on all SiteNav pages) ── */}
+      <a href={`mailto:${siteConfig.email}`} title={`Email: ${siteConfig.email}`}
+        className={`qf-fab qf-fab-mail${cartEnabled && cartCount > 0 && !showCart ? " cart-active" : ""}`}>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2d8a4e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <span style={{ position: "absolute", top: "-3px", right: "-3px", width: "13px", height: "13px", background: "#2d8a4e", borderRadius: "50%", border: "2.5px solid #fff" }} />
+      </a>
+
+      {/* ── Floating cart button (visible on all SiteNav pages) ── */}
+      {cartEnabled && cartCount > 0 && !showCart && (
+        <button onClick={() => setShowCart(true)} className="qf-fab qf-fab-cart" style={{ display: "flex" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          {cartCount} · <strong>₹{cartTotal}</strong>
+        </button>
+      )}
+
       {/* ── Login modal ── */}
       {showLogin && (
         <>
           <div onClick={closeLogin} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
+          <div style={{ position: "fixed", top: "calc(50% + 51px)", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 120px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={closeLogin} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />

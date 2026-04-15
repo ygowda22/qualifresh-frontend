@@ -197,7 +197,7 @@ function ProductsContent() {
         .btn-g:hover{background:#1f6b3a;}
         .pf-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem;}
         @media(max-width:1024px){.pf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}}
-        @media(max-width:480px){.pf-footer-grid{grid-template-columns:1fr!important;}}
+        @media(max-width:480px){.pf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important;}}
         nextjs-portal{display:none!important}
       `}</style>
 
@@ -344,7 +344,7 @@ function ProductsContent() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "2rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "2rem", flexWrap: "nowrap", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" as const, paddingBottom: "4px" }}>
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
                   style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: safePage === 1 ? "#f9fafb" : "#fff", color: safePage === 1 ? "#9ca3af" : "#374151", cursor: safePage === 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px", fontFamily: "sans-serif" }}>
                   ← Prev

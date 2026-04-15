@@ -79,7 +79,7 @@ export default function ContactPage() {
         @media(max-width:900px){.c-grid{grid-template-columns:1fr!important;}}
         .cf-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem;}
         @media(max-width:1024px){.cf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}}
-        @media(max-width:480px){.cf-footer-grid{grid-template-columns:1fr!important;}}
+        @media(max-width:480px){.cf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important;}}
         .cf-footer-link{display:block;color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:9px;text-decoration:none;font-family:sans-serif;transition:color .2s;}
         .cf-footer-link:hover{color:#f0c040!important;}
         nextjs-portal{display:none!important}

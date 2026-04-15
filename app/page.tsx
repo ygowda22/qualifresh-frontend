@@ -256,7 +256,7 @@ export default function Home() {
 
   // ── Responsive products per page (4 rows: 8 on tablet/mobile, 16 desktop) ─
   useEffect(() => {
-    const update = () => setPerPage(window.innerWidth <= 1024 ? 8 : PER_PAGE);
+    const update = () => setPerPage(window.innerWidth <= 480 ? 6 : window.innerWidth <= 1024 ? 8 : PER_PAGE);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -647,7 +647,8 @@ export default function Home() {
           .filter-row::-webkit-scrollbar{display:none}
           .prod-header{flex-direction:column!important;align-items:flex-start!important;gap:12px!important}
           .filter-wrap{width:100%}
-          .page-btns{gap:4px!important}
+          .page-btns{gap:4px!important;flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;}
+          .page-btns::-webkit-scrollbar{display:none}
           .page-btn{width:32px!important;height:32px!important;font-size:12px!important}
           .nav-bar{padding:0.75rem 1rem!important;height:auto!important;min-height:72px!important}
           .mobile-hamburger{display:flex!important}
@@ -665,7 +666,7 @@ export default function Home() {
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
-          .footer-grid{grid-template-columns:1fr!important}
+          .footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
           .hero-stats-val{font-size:1.2rem!important}
           .mob-search-bar{display:flex!important;position:sticky;top:calc(34px + 72px);z-index:195;background:#fff;}
           .mobile-menu-dropdown { z-index:210!important; }
@@ -1278,7 +1279,7 @@ export default function Home() {
       {showLogin && (
         <>
           <div onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
+          <div style={{ position: "fixed", top: "calc(50% + 51px)", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 120px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
@@ -1364,8 +1365,8 @@ export default function Home() {
       {/* ═══ CART DRAWER ═══ */}
       {showCart && (
         <>
-          <div onClick={() => setShowCart(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 300, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 400, display: "flex", flexDirection: "column" }}>
+          <div onClick={() => setShowCart(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 490, backdropFilter: "blur(3px)" }} />
+          <div style={{ position: "fixed", top: "102px", right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <QFLogo height={30} />
@@ -1448,7 +1449,7 @@ export default function Home() {
           borderRadius: "50%",
           display: "flex", alignItems: "center", justifyContent: "center",
           boxShadow: "0 4px 18px rgba(45,138,78,0.22)",
-          cursor: "pointer", zIndex: 199,
+          cursor: "pointer", zIndex: 149,
           transition: "bottom 0.3s ease, background 0.2s",
         }}
         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
@@ -1643,7 +1644,7 @@ export default function Home() {
       {/* ═══ FLOATING CART BUTTON ═══ */}
       {cartEnabled && cartCount > 0 && !showCart && (
         <button onClick={() => setShowCart(true)} className="btn-g"
-          style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", padding: "12px 20px", borderRadius: "50px", boxShadow: "0 6px 24px rgba(45,138,78,.45)", zIndex: 200, fontSize: "13.5px", display: "flex", alignItems: "center", gap: "7px", animation: "pulse 2.5s ease-in-out infinite" }}>
+          style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", padding: "12px 20px", borderRadius: "50px", boxShadow: "0 6px 24px rgba(45,138,78,.45)", zIndex: 150, fontSize: "13.5px", display: "flex", alignItems: "center", gap: "7px", animation: "pulse 2.5s ease-in-out infinite" }}>
           <CartSvg /> {cartCount} · <strong>₹{cartTotal}</strong>
         </button>
       )}

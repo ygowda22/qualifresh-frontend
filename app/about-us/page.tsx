@@ -158,7 +158,7 @@ export default function AboutPage() {
         @media(max-width:480px){
           .about-stats-grid { grid-template-columns:repeat(2,1fr)!important; }
           .about-steps-grid { grid-template-columns:repeat(2,1fr)!important; }
-          .footer-grid      { grid-template-columns:1fr!important; }
+          .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1rem!important; }
         }
         nextjs-portal{display:none!important}
       `}</style>

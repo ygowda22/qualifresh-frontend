@@ -133,7 +133,7 @@ export default function OurFarmsPage() {
         @media(max-width:480px){
           .farm-grid-f{grid-template-columns:1fr!important;}
           .farm-hero-f,.farm-other-f{height:200px!important;grid-row:span 1!important;}
-          .footer-grid-f{grid-template-columns:1fr!important;}
+          .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1rem!important;}
           .nav-bar-f{padding:0 1rem!important;}
         }
         nextjs-portal{display:none!important}

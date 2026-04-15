@@ -50,9 +50,9 @@ export default function ContactPage() {
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
-        .c-ticker-wrap{background:#1a3c2e;}
-        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;}
-        .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#1a3c2e;border-bottom:1px solid #174123;}
+        .c-ticker-wrap{}
+        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;background:#0f8a65;}
+        .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
         @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width:1024px){
           body{padding-top:102px!important}

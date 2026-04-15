@@ -536,7 +536,7 @@ export default function Home() {
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
-        .ticker-wrap { background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); margin-bottom:0; }
+        .ticker-wrap { margin-bottom:0; }
         /* Desktop: show items centered, fixed at top */
         .ticker-desktop {
           display: flex;
@@ -552,9 +552,10 @@ export default function Home() {
           right: 0;
           z-index: 9999;
           width: 100%;
+          background: #0f8a65;
         }
         /* Mobile: full scrolling ticker — hidden on desktop, STICKY */
-        .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: linear-gradient(90deg,#0f2d1c,#1a3c2e,#0f2d1c); border-bottom: 1px solid #174123; }
+        .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: #0f8a65; border-bottom: 1px solid #0a6e50; }
         @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width: 1024px) {
           body{padding-top:102px!important}

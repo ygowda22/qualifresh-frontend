@@ -23,6 +23,14 @@ body {
   line-height: 1.6;
 }
 
+/* ── Page-level offset below fixed header (ticker 34px + navbar 68px = 102px) ──
+   Add class="qf-page-wrap" to the outermost div of any page that uses the fixed header.
+   On mobile the SiteNav spacer (.sn-mob-spacer, 50px) adds the extra offset
+   for the mobile search bar automatically — no media-query override needed here. ── */
+.qf-page-wrap {
+  padding-top: var(--qf-header-h);
+}
+
 /* ── Shared Navbar (homepage .nav-bar + SiteNav .sn-nav) ── */
 .nav-bar,
 .sn-nav {

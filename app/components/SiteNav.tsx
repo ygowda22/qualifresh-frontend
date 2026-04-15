@@ -269,11 +269,20 @@ export default function SiteNav({ activePage }: Props) {
         .sn-suggestion-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:default;}
         .sn-suggestion-item:hover{background:#f9fafb;}
         .sn-suggestion-item:last-child{border-bottom:none;}
+        .sn-mob-search{display:none;position:fixed;top:102px;left:0;right:0;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;z-index:9990;box-sizing:border-box;}
+        .sn-mob-spacer{display:none;height:0;}
         @media(max-width:1024px){
           .sn-desk-nav{display:none!important;}
           .sn-search-wrap{display:none!important;}
-          .sn-desk-only{display:none!important;}
           .sn-hamburger{display:flex!important;}
+          .sn-mob-search{display:flex!important;}
+          .sn-mob-spacer{display:block!important;height:50px;}
+          .sn-signin-text{display:none!important;}
+          .sn-cart-text{display:none!important;}
+          .sn-user-name{display:none!important;}
+          .sn-logout-btn{display:none!important;}
+          .sn-signin-btn{padding:8px 9px!important;}
+          .sn-cart-btn{padding:8px 10px!important;}
         }
         nextjs-portal{display:none!important}
       `}</style>
@@ -329,29 +338,31 @@ export default function SiteNav({ activePage }: Props) {
 
           {/* Sign In / User */}
           {user ? (
-            <div className="sn-desk-only" style={{ alignItems: "center", gap: "6px" }}>
-              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none" }}>Hi, {user.name.split(" ")[0]}</a>
-              <button onClick={logout} style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}>
+                <UserSvg /><span className="sn-user-name">Hi, {user.name.split(" ")[0]}</span>
+              </a>
+              <button onClick={logout} className="sn-logout-btn" style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
             </div>
           ) : (
             <button onClick={() => { setShowLogin(true); resetAuth("login"); }}
-              className="sn-desk-only"
-              style={{ alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "inherit", transition: "all .2s" }}
+              className="sn-signin-btn"
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "inherit", transition: "all .2s" }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2d8a4e"; (e.currentTarget as HTMLButtonElement).style.color = "#2d8a4e"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.color = "#374151"; }}>
-              <UserSvg /><span style={{ display: "inline" }}>Sign In</span>
+              <UserSvg /><span className="sn-signin-text">Sign In</span>
             </button>
           )}
 
           {/* Cart button */}
           {cartEnabled && (
-            <button onClick={() => setShowCart(true)} className="sn-btn-g sn-desk-only"
-              style={{ padding: "9px 16px", fontSize: "13.5px", alignItems: "center", gap: "6px", display: "flex" }}>
+            <button onClick={() => setShowCart(true)} className="sn-btn-g sn-cart-btn"
+              style={{ padding: "9px 16px", fontSize: "13.5px", display: "flex", alignItems: "center", gap: "6px" }}>
               <CartSvg />
               {cartCount > 0 && (
                 <span style={{ background: "#fff", color: "#2d8a4e", borderRadius: "50%", width: "19px", height: "19px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800 }}>{cartCount}</span>
               )}
-              <span>Cart</span>
+              <span className="sn-cart-text">Cart</span>
             </button>
           )}
 
@@ -363,7 +374,7 @@ export default function SiteNav({ activePage }: Props) {
         </div>
       </nav>
 
-      {/* ── Mobile menu ── */}
+      {/* ── Mobile menu (nav links only — Sign In, Cart, and search are on the navbar / below it) ── */}
       {mobileMenu && (
         <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
           {navLinks.map(item => (
@@ -372,33 +383,6 @@ export default function SiteNav({ activePage }: Props) {
               {item.label}
             </a>
           ))}
-          {/* Mobile search */}
-          <div style={{ position: "relative", margin: "4px 0" }}>
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && search.trim()) { setMobileMenu(false); window.location.href = `/products?q=${encodeURIComponent(search.trim())}`; } }}
-              placeholder="Search products…"
-              style={{ width: "100%", padding: "10px 12px 10px 34px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
-            <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", pointerEvents: "none" }}>🔍</span>
-          </div>
-          {/* Mobile user / sign-in */}
-          {user ? (
-            <div style={{ display: "flex", gap: "8px", padding: "4px 0" }}>
-              <a href="/user" style={{ flex: 1, textAlign: "center", padding: "10px", borderRadius: "10px", background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#166534", fontWeight: 700, fontSize: "13px", textDecoration: "none" }}>👤 {user.name.split(" ")[0]}</a>
-              <button onClick={logout} style={{ padding: "10px 16px", borderRadius: "10px", background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", fontWeight: 600, fontSize: "13px", cursor: "pointer", fontFamily: "inherit" }}>Logout</button>
-            </div>
-          ) : (
-            <button onClick={() => { setMobileMenu(false); setShowLogin(true); resetAuth("login"); }}
-              style={{ padding: "11px 16px", borderRadius: "10px", background: "#2d8a4e", color: "#fff", border: "none", fontWeight: 700, fontSize: "14px", cursor: "pointer", fontFamily: "inherit" }}>
-              Sign In / Register
-            </button>
-          )}
-          {/* Mobile cart */}
-          {cartEnabled && (
-            <button onClick={() => { setMobileMenu(false); setShowCart(true); }}
-              style={{ padding: "11px 16px", borderRadius: "10px", background: "#f7faf8", border: "1px solid #e9ede4", fontWeight: 700, fontSize: "14px", cursor: "pointer", fontFamily: "inherit", color: "#1a3c2e", display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}>
-              <CartSvg /> Cart {cartCount > 0 && <span style={{ background: "#2d8a4e", color: "#fff", borderRadius: "50%", width: "20px", height: "20px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800 }}>{cartCount}</span>}
-            </button>
-          )}
         </div>
       )}
 
@@ -614,6 +598,44 @@ export default function SiteNav({ activePage }: Props) {
           {cartCount} · <strong>₹{cartTotal}</strong>
         </button>
       )}
+
+      {/* ── Mobile search bar: fixed below navbar, visible when dropdown is closed ── */}
+      {!mobileMenu && (
+        <div className="sn-mob-search">
+          <div style={{ position: "relative", flex: 1 }}>
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              onKeyDown={e => { if (e.key === "Enter" && search.trim()) { window.location.href = `/products?q=${encodeURIComponent(search.trim())}`; } }}
+              placeholder="Search vegetables, herbs…"
+              style={{ width: "100%", padding: "9px 12px 9px 32px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" as const, outline: "none" }} />
+            <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", pointerEvents: "none" }}>🔍</span>
+            {search && (
+              <button onClick={() => { setSearch(""); setSearchOpen(false); }}
+                style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "#d1d5db", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 600 }}>✕</button>
+            )}
+            {searchOpen && searchSuggestions.length > 0 && (
+              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 9996, overflow: "hidden" }}>
+                {searchSuggestions.map(p => (
+                  <div key={p._id} className="sn-suggestion-item">
+                    <span style={{ fontSize: "12.5px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
+                    <button
+                      onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
+                      style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile spacer: pushes page content below the fixed mobile search bar ── */}
+      <div className="sn-mob-spacer" />
 
       {/* ── Login modal ── */}
       {showLogin && (

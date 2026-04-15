@@ -44,7 +44,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
+    <div className="qf-page-wrap" style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -53,9 +53,7 @@ export default function ContactPage() {
         .c-ticker-wrap{}
         .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;background:#0f8a65;}
         .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
-        @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width:1024px){
-          body{padding-top:102px!important}
           .c-ticker-desktop{display:none}
           .c-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
           .c-ticker-scroll{display:inline-flex;animation:cticker 30s linear infinite;white-space:nowrap}

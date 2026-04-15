@@ -94,7 +94,7 @@ export default function AboutPage() {
   const canSend  = cEmail.trim() && emailOk && cMsg.trim() && phoneOk;
 
   return (
-    <div style={{ fontFamily: "Georgia,'Times New Roman',serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div className="qf-page-wrap" style={{ fontFamily: "Georgia,'Times New Roman',serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -104,9 +104,7 @@ export default function AboutPage() {
         .a-ticker-wrap {}
         .a-ticker-desktop { display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;background:#0f8a65; }
         .a-ticker-mobile { display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50; }
-        @media(min-width:1025px){body{padding-top:102px}}
         @media(max-width:1024px){
-          body{padding-top:102px!important}
           .a-ticker-desktop{display:none}
           .a-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
           .a-ticker-scroll{display:inline-flex;animation:aticker 30s linear infinite;white-space:nowrap}
@@ -114,19 +112,6 @@ export default function AboutPage() {
           .sn-nav{top:34px!important}
         }
         @keyframes aticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
-        /* Navbar */
-        .a-nav { position:sticky;top:0;z-index:200;background:#fff;box-shadow:0 1px 0 #e5e7eb,0 4px 16px rgba(0,0,0,.06); }
-        .a-hamburger { display:none;background:none;border:1px solid #e5e7eb;border-radius:8px;padding:6px 9px;cursor:pointer;font-size:18px;line-height:1; }
-        .a-mob-menu { position:fixed;left:0;right:0;background:#f9fafb;border-top:2px solid #2d8a4e;border-bottom:1px solid #e5e7eb;padding:.8rem 1rem;display:flex;flex-direction:column;gap:.4rem;z-index:210;box-shadow:0 4px 12px rgba(0,0,0,.08); }
-        .a-nav-link { color:#4b5563;text-decoration:none;font-size:14px;font-weight:600;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s;font-family:'Helvetica Neue',Arial,sans-serif; }
-        .a-nav-link:hover,.a-nav-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e}
-        .a-search { display:flex; }
-        .a-deskonly { display:inline-flex; }
-        @media(max-width:1024px){
-          .a-search  { display:none!important; }
-          .a-deskonly{ display:none!important; }
-        }
 
         /* Buttons */
         .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
@@ -414,85 +399,6 @@ export default function AboutPage() {
         </div>
       </footer>
 
-      {/* ── Floating email support button ── */}
-      <button onClick={() => setShowContact(true)}
-        title={`Email Support: ${siteConfig.email}`}
-        style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", width: "48px", height: "48px", background: "#fff", border: "2px solid #2d8a4e", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 18px rgba(45,138,78,0.22)", cursor: "pointer", zIndex: 199 }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}>
-        <MailSvg size={21} color="#2d8a4e" />
-        <span style={{ position: "absolute", top: "-3px", right: "-3px", width: "13px", height: "13px", background: "#2d8a4e", borderRadius: "50%", border: "2.5px solid #fff" }} />
-      </button>
-
-      {/* ── Contact modal ── */}
-      {showContact && (
-        <>
-          <div onClick={closeModal} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
-            {cSent ? (
-              <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
-                <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Email Client Opened!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
-                <button onClick={closeModal} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Close</button>
-              </div>
-            ) : (
-              <>
-                <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
-                  <button onClick={closeModal} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-                  <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                    <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span>✉️</span>{siteConfig.email}
-                    </a>
-                    <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span>📞</span>{siteConfig.phoneDisplay}
-                    </a>
-                  </div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {([
-                    { label: "Your Name",     placeholder: "e.g. Priya Sharma", value: cName,   set: setCName,   type: "text" },
-                    { label: "Your Email",    placeholder: "your@email.com",     value: cEmail,  set: setCEmail,  type: "email", required: true },
-                    { label: "Mobile Number", placeholder: "e.g. 9876543210",    value: cMobile, set: setCMobile, type: "tel" },
-                  ] as { label: string; placeholder: string; value: string; set: (v: string) => void; type: string; required?: boolean }[]).map(f => (
-                    <div key={f.label}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>
-                        {f.label}{f.required && <span style={{ color: "#ef4444" }}> *</span>}
-                      </label>
-                      <input type={f.type} placeholder={f.placeholder} value={f.value} onChange={e => f.set(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", background: "#fff", color: "#111827" }}
-                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                    </div>
-                  ))}
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>Message <span style={{ color: "#ef4444" }}>*</span></label>
-                    <textarea placeholder="How can we help you?" value={cMsg} onChange={e => setCMsg(e.target.value)} rows={4}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", resize: "vertical", background: "#fff", color: "#111827" }}
-                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  </div>
-                </div>
-                {cEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", fontFamily: "sans-serif", margin: "4px 0 0" }}>Please enter a valid email address</p>}
-                {cMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", fontFamily: "sans-serif", margin: "4px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
-                <button disabled={!canSend}
-                  onClick={() => {
-                    if (!canSend) return;
-                    const body = [`Name: ${cName || "Not provided"}`, `Email: ${cEmail}`, `Phone: ${cMobile || "Not provided"}`, ``, `Message:`, cMsg].join("\n");
-                    window.open(`mailto:${siteConfig.email}?subject=${encodeURIComponent("QualiFresh Website Enquiry")}&body=${encodeURIComponent(body)}`);
-                    setCSent(true);
-                  }}
-                  style={{ width: "100%", marginTop: "14px", padding: "12px", fontSize: "14px", background: !canSend ? "#e5e7eb" : "#2d8a4e", color: !canSend ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: !canSend ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
-                  <MailSvg size={16} color={!canSend ? "#9ca3af" : "#fff"} /> Open Email to Send
-                </button>
-                <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "8px" }}>
-                  Or reach us at <a href={`tel:${siteConfig.phone}`} style={{ color: "#2d8a4e" }}>{siteConfig.phoneDisplay}</a>
-                </p>
-              </>
-            )}
-          </div>
-        </>
-      )}
     </div>
   );
 }

@@ -9,11 +9,17 @@ export const metadata: Metadata = {
   description: "Premium Korean, Exotic & Thai vegetables delivered twice a week in Pune & Mumbai. Farm to doorstep freshness guaranteed.",
   keywords: ["exotic vegetables", "Korean vegetables", "Thai vegetables", "Pune delivery", "farm fresh", "QualiFresh"],
   authors: [{ name: "QualiFresh" }],
+  icons: {
+    icon:     [{ url: "/logo.png", type: "image/png", sizes: "any" }],
+    shortcut: "/logo.png",
+    apple:    "/logo.png",
+  },
   openGraph: {
     title:       "QualiFresh — Fresh Exotic Vegetables, Pune",
     description: "Premium Korean, Exotic & Thai vegetables delivered twice a week in Pune & Mumbai.",
     type:        "website",
     locale:      "en_IN",
+    images:      [{ url: "/logo.png" }],
   },
 };
 

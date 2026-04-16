@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { siteConfig } from "../src/config/site";
+import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
 
 const { delivery: DEL } = siteConfig;
 
@@ -224,6 +225,7 @@ export default function Home() {
   const [perPage, setPerPage]       = useState(PER_PAGE);
   const [showLeftArrow, setShowLeftArrow]   = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [wishlist, setWishlist]             = useState<string[]>([]);
   const [activeNav, setActiveNav]           = useState("Home");
   const router = useRouter();
 
@@ -254,6 +256,31 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem("qf_cart", JSON.stringify(cart));
   }, [cart]);
+
+  // ── Sync wishlist from backend when user logs in / on mount ───────────────
+  useEffect(() => {
+    if (!user) {
+      // Logged out — clear wishlist state and localStorage
+      setWishlist([]);
+      localStorage.removeItem("qf_wishlist");
+      return;
+    }
+    fetch("/backend/api/users/wishlist", {
+      headers: { Authorization: `Bearer ${user.token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.wishlist) {
+          const ids: string[] = d.wishlist.map((p: any) => typeof p === "string" ? p : p._id);
+          setWishlist(ids);
+          localStorage.setItem("qf_wishlist", JSON.stringify(ids));
+        }
+      })
+      .catch(() => {
+        // Fall back to cached localStorage on network error
+        try { const wl = localStorage.getItem("qf_wishlist"); if (wl) setWishlist(JSON.parse(wl)); } catch {}
+      });
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Responsive products per page (4 rows: 8 on tablet/mobile, 16 desktop) ─
   useEffect(() => {
@@ -300,6 +327,9 @@ export default function Home() {
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       setCkName(u.name); setCkEmail(u.email);
+      // Merge current guest cart with user's saved backend cart
+      const merged = await fetchAndMergeCart(d.token, cart);
+      setCart(merged);
       setShowLogin(false); setAuthEmail(""); setAuthPass("");
       window.location.href = "/user";
     } catch { setAuthError("Network error. Please try again."); }
@@ -321,6 +351,9 @@ export default function Home() {
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       setCkName(u.name); setCkEmail(u.email);
+      // New account — save whatever guest cart items were present
+      const merged = await fetchAndMergeCart(d.token, cart);
+      setCart(merged);
       setShowLogin(false);
       window.location.href = "/user";
     } catch { setAuthError("Network error. Please try again."); }
@@ -346,7 +379,44 @@ export default function Home() {
   const phoneCleanV = regPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const phoneValid = /^[6-9]\d{9}$/.test(phoneCleanV);
 
-  function logout() { setUser(null); localStorage.removeItem("qf_user"); }
+  async function logout() {
+    const token = user?.token;
+    if (token) await saveAndClearCart(token, cart);
+    else {
+      localStorage.setItem("qf_cart", JSON.stringify({}));
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
+    }
+    setCart({});
+    setUser(null);
+    setWishlist([]);
+    localStorage.removeItem("qf_user");
+    localStorage.removeItem("qf_wishlist");
+  }
+
+  function toggleWishlist(productId: string) {
+    if (!user) { setShowLogin(true); return; }
+    const isWishlisted = wishlist.includes(productId);
+    // Optimistic update
+    setWishlist(prev => {
+      const next = isWishlisted ? prev.filter(id => id !== productId) : [...prev, productId];
+      localStorage.setItem("qf_wishlist", JSON.stringify(next));
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_wishlist" }));
+      return next;
+    });
+    // Sync to backend
+    const method = isWishlisted ? "DELETE" : "POST";
+    fetch(`/backend/api/users/wishlist/${productId}`, {
+      method,
+      headers: { Authorization: `Bearer ${user.token}` },
+    }).catch(() => {
+      // Revert optimistic update on failure
+      setWishlist(prev => {
+        const reverted = isWishlisted ? [...prev, productId] : prev.filter(id => id !== productId);
+        localStorage.setItem("qf_wishlist", JSON.stringify(reverted));
+        return reverted;
+      });
+    });
+  }
 
   // ── Checkout helper ───────────────────────────────────────────────────────
   async function placeOrder() {
@@ -724,7 +794,7 @@ export default function Home() {
       {/* ═══ NAVBAR ═══ */}
       <nav ref={navRef} className="nav-bar" style={{ padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button className="logo-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Go to home" aria-label="QualiFresh Home">
-          <QFLogo height={52} />
+          <QFLogo height={60} />
         </button>
 
         {/* Desktop nav */}
@@ -1020,13 +1090,16 @@ export default function Home() {
                         <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
                       )}
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%)" }} />
-                      <div style={{ position: "absolute", top: "8px", left: "8px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                        {p.isImported && <span style={{ background: "#1d4ed8", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>Imported</span>}
-                        {p.tags?.includes("premium") && <span style={{ background: "#d97706", color: "#fff", fontSize: "9.5px", padding: "2px 7px", borderRadius: "8px", fontWeight: 700, fontFamily: "sans-serif" }}>⭐ Premium</span>}
-                      </div>
                       <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock > 0 ? "rgba(22,163,74,.9)" : "rgba(220,38,38,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600, fontFamily: "sans-serif" }}>
                         {p.stock > 0 ? "In Stock" : "Out"}
                       </div>
+                      <button onClick={(e) => { e.stopPropagation(); toggleWishlist(p._id); }}
+                        title={wishlist.includes(p._id) ? "Remove from wishlist" : "Add to wishlist"}
+                        style={{ position: "absolute", top: "8px", right: "8px", background: "rgba(255,255,255,0.92)", border: "none", borderRadius: "50%", width: "30px", height: "30px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "16px", boxShadow: "0 1px 4px rgba(0,0,0,.15)", transition: "transform .15s", padding: 0 }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.15)")}
+                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}>
+                        {wishlist.includes(p._id) ? "❤️" : "🤍"}
+                      </button>
                     </div>
                     <div style={{ padding: "0.85rem 0.95rem", display: "flex", flexDirection: "column", flex: 1 }}>
                       <span style={{ fontSize: "10px", color: allCatColor[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", fontFamily: "sans-serif" }}>{allCatLabel[p.category]}</span>
@@ -1097,15 +1170,15 @@ export default function Home() {
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>Why Choose Us</span>
             <h2 className="section-heading" style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>The <span style={{ color: "#2d8a4e" }}>QualiFresh</span> Difference</h2>
-            <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", maxWidth: "500px", margin: "0 auto", lineHeight: 1.7 }}>From our farms to your table — we obsess over quality at every step so you don't have to.</p>
+            <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", maxWidth: "500px", margin: "0 auto", lineHeight: 1.7 }}>From our farms to your table - we obsess over quality at every step so you don't have to.</p>
           </div>
 
           {/* Top 3 big cards */}
           <div className="why-grid-top" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1.2rem", marginBottom: "1.2rem" }}>
             {([
-              { icon: "🌿", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", title: "Farm to Table",  stat: "Same Day", statSub: "Harvest to door", desc: "Vegetables are harvested every morning and delivered to your doorstep the same day — nothing sits in a warehouse.", img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&q=80&fit=crop" },
-              { icon: "❄️", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", title: "Cold Chain",     stat: "2–8°C",      statSub: "Temperature kept", desc: "Our entire logistics chain is temperature-controlled. Freshness is guaranteed from farm cold storage to your door.", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop" },
-              { icon: "👨‍🍳", gradient: "linear-gradient(135deg,#3b1a08,#7c3010)", title: "Chef's Choice",   stat: "50+",        statSub: "Restaurants trust us", desc: "Top restaurants and hotels across Pune & Mumbai rely on QualiFresh for consistent, restaurant-grade exotic produce.", img: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80&fit=crop" },
+              { icon: "🌿", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", title: "Farm to Table",  stat: "Same Day", statSub: "Harvest to door", desc: "Vegetables are harvested every morning and delivered to your doorstep the same day - nothing sits in a warehouse.", img: "/products/framtotable.jpg" },
+              { icon: "❄️", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", title: "Cold Chain",     stat: "2-8°C",      statSub: "Temperature kept", desc: "Our entire logistics chain is temperature-controlled. Freshness is guaranteed from farm cold storage to your door.", img: "/products/coldchain.jpg" },
+              { icon: "👨‍🍳", gradient: "linear-gradient(135deg,#3b1a08,#7c3010)", title: "Chef's Choice",   stat: "50+",        statSub: "Restaurants trust us", desc: "Top restaurants and hotels across Pune & Mumbai rely on QualiFresh for consistent, restaurant-grade exotic produce.", img: "/products/chefchoice.jpg" },
             ]).map(card => (
               <div key={card.title} className="lift" style={{ borderRadius: "18px", overflow: "hidden", background: card.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", cursor: "pointer" }}>
                 <div style={{ height: "140px", overflow: "hidden", position: "relative" }}>

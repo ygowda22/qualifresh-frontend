@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
+import { fetchAndMergeCart, saveAndClearCart } from "../lib/cartSync";
 
 interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"; }
 interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; }
@@ -18,6 +20,7 @@ function WhatsAppIcon({ size = 16 }: { size?: number }) {
 }
 
 export default function SiteNav({ activePage }: Props) {
+  const router    = useRouter();
   const navRef    = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -111,6 +114,13 @@ export default function SiteNav({ activePage }: Props) {
     return () => { window.removeEventListener("resize", update); window.removeEventListener("scroll", update); };
   }, [mobileMenu]);
 
+  // ── Open login modal when other components request it ──────────────────────
+  useEffect(() => {
+    const handler = () => { setShowLogin(true); setAuthTab("login"); };
+    window.addEventListener("qf:open-login", handler);
+    return () => window.removeEventListener("qf:open-login", handler);
+  }, []);
+
   // ── Close search on outside click ──────────────────────────────────────────
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -200,8 +210,12 @@ export default function SiteNav({ activePage }: Props) {
       if (!r.ok) { setAuthError(d.message || "Login failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
-      setShowLogin(false); setAuthEmail(""); setAuthPass("");
-      window.location.href = "/user";
+      // Merge guest cart with user's saved backend cart
+      const guestCart = cart; // current state before merging
+      const merged = await fetchAndMergeCart(d.token, guestCart);
+      setCart(merged);
+      setShowLogin(false); setAuthEmail(""); setAuthPass(""); setAuthError("");
+      router.push("/user");
     } catch { setAuthError("Network error. Please try again."); }
     finally { setAuthLoading(false); }
   }
@@ -223,14 +237,27 @@ export default function SiteNav({ activePage }: Props) {
       if (!r.ok) { setAuthError(d.message || "Registration failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
-      setShowLogin(false);
-      window.location.href = "/user";
+      // New accounts start with whatever guest cart items they had
+      const guestCart = cart;
+      const merged = await fetchAndMergeCart(d.token, guestCart);
+      setCart(merged);
+      setShowLogin(false); setAuthError("");
+      router.push("/user");
     } catch { setAuthError("Network error. Please try again."); }
     finally { setAuthLoading(false); }
   }
 
-  function logout() {
-    setUser(null); localStorage.removeItem("qf_user");
+  async function logout() {
+    const token = user?.token;
+    if (token) await saveAndClearCart(token, cart);
+    else {
+      localStorage.setItem("qf_cart", JSON.stringify({}));
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
+    }
+    setCart({});
+    setUser(null);
+    localStorage.removeItem("qf_user");
+    localStorage.removeItem("qf_wishlist");
     window.location.href = "/";
   }
   function closeLogin() { setShowLogin(false); setAuthError(""); setAuthEmail(""); setAuthPass(""); setForgotSent(false); }
@@ -277,19 +304,19 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
+        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);font-family:'Inter','Poppins',-apple-system,sans-serif;}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}
         .sn-link:hover,.sn-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
         .sn-hamburger{display:none;background:none;border:1.5px solid #e5e7eb;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:17px;line-height:1;color:#374151;transition:all .2s;}
         .sn-search-wrap{position:relative;}
         .sn-desk-only{display:flex;}
-        .sn-btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}
+        .sn-btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Inter','Poppins',-apple-system,sans-serif;font-weight:700;transition:all .2s;}
         .sn-btn-g:hover{background:#1f6b3a;}
         .sn-suggestion-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:default;}
         .sn-suggestion-item:hover{background:#f9fafb;}
         .sn-suggestion-item:last-child{border-bottom:none;}
-        .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;}
+        .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;font-family:'Inter','Poppins',-apple-system,sans-serif;}
         @media(max-width:1024px){
           .sn-desk-nav{display:none!important;}
           .sn-search-wrap{display:none!important;}
@@ -297,7 +324,7 @@ export default function SiteNav({ activePage }: Props) {
           .sn-mob-search{display:flex!important;}
           .sn-signin-text{display:none!important;}
           .sn-cart-text{display:none!important;}
-          .sn-user-name{display:none!important;}
+          .sn-user-name{max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px!important;}
           .sn-logout-btn{display:none!important;}
           .sn-signin-btn{padding:8px 9px!important;}
           .sn-cart-btn{padding:8px 10px!important;}
@@ -308,7 +335,7 @@ export default function SiteNav({ activePage }: Props) {
       {/* ── Navbar ── */}
       <nav ref={navRef} className="sn-nav">
         <a href="/" style={{ lineHeight: 0, flexShrink: 0 }}>
-          <img src="/logo.png" alt="QualiFresh" style={{ height: "52px", width: "auto", display: "block", objectFit: "contain" }} />
+          <img src="/logo.png" alt="QualiFresh" style={{ height: "60px", width: "auto", display: "block", objectFit: "contain" }} />
         </a>
 
         {/* Desktop nav links */}
@@ -365,7 +392,7 @@ export default function SiteNav({ activePage }: Props) {
           ) : (
             <button onClick={() => { setShowLogin(true); resetAuth("login"); }}
               className="sn-signin-btn"
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "inherit", transition: "all .2s" }}
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "'Inter','Poppins',-apple-system,sans-serif", transition: "all .2s" }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2d8a4e"; (e.currentTarget as HTMLButtonElement).style.color = "#2d8a4e"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.color = "#374151"; }}>
               <UserSvg /><span className="sn-signin-text">Sign In</span>
@@ -394,7 +421,7 @@ export default function SiteNav({ activePage }: Props) {
 
       {/* ── Mobile menu (nav links only — Sign In, Cart, and search are on the navbar / below it) ── */}
       {mobileMenu && (
-        <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
+        <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined, fontFamily: "'Inter','Poppins',-apple-system,sans-serif" }}>
           {navLinks.map(item => (
             <a key={item.label} href={item.href} onClick={() => setMobileMenu(false)}
               style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: `/${activePage}` === item.href ? "#f0fdf4" : "#f7faf8", border: `1px solid ${ `/${activePage}` === item.href ? "#bbf7d0" : "#e9ede4"}`, transition: "all .15s", display: "block" }}>

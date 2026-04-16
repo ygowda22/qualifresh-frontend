@@ -32,8 +32,16 @@ function WhatsAppIconFt({ size = 18 }: { size?: number }) {
 
 function syncCart(updated: Record<string, number>) {
   localStorage.setItem("qf_cart", JSON.stringify(updated));
-  // Notify SiteNav (same-tab) via synthetic storage event
   window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify(updated) }));
+}
+
+function CartSvg() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+    </svg>
+  );
 }
 
 function getPerPage(): number {
@@ -54,6 +62,25 @@ function ProductsContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [page, setPage]           = useState(1);
   const [perPage, setPerPage]     = useState(12);
+  const [hov, setHov]             = useState<string | null>(null);
+  const [wishlist, setWishlist]   = useState<string[]>([]);
+  const [userToken, setUserToken] = useState<string | null>(null);
+
+  // Helper: fetch wishlist from backend and update state + cache
+  function fetchWishlistFromBackend(token: string) {
+    fetch("/backend/api/users/wishlist", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.wishlist) {
+          const ids: string[] = d.wishlist.map((p: any) => typeof p === "string" ? p : p._id);
+          setWishlist(ids);
+          localStorage.setItem("qf_wishlist", JSON.stringify(ids));
+        }
+      })
+      .catch(() => {
+        try { const wl = localStorage.getItem("qf_wishlist"); if (wl) setWishlist(JSON.parse(wl)); } catch {}
+      });
+  }
 
   useEffect(() => {
     document.title = "Shop — Fresh Exotic Vegetables | QualiFresh";
@@ -61,10 +88,33 @@ function ProductsContent() {
       const c = localStorage.getItem("qf_cart");
       if (c) setCart(JSON.parse(c));
       setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false");
+      const saved = localStorage.getItem("qf_user");
+      if (saved) {
+        const u = JSON.parse(saved);
+        setUserToken(u.token);
+        fetchWishlistFromBackend(u.token);
+      } else {
+        // Not logged in — clear wishlist
+        setWishlist([]);
+        localStorage.removeItem("qf_wishlist");
+      }
     } catch {}
     const onStorage = (e: StorageEvent) => {
       if (e.key === "qf_cart") { try { setCart(e.newValue ? JSON.parse(e.newValue) : {}); } catch {} }
       if (e.key === "qf_cart_enabled") { setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false"); }
+      if (e.key === "qf_wishlist") { try { const wl = localStorage.getItem("qf_wishlist"); setWishlist(wl ? JSON.parse(wl) : []); } catch {} }
+      if (e.key === "qf_user") {
+        const saved = localStorage.getItem("qf_user");
+        if (saved) {
+          const u = JSON.parse(saved);
+          setUserToken(u.token);
+          fetchWishlistFromBackend(u.token);
+        } else {
+          setUserToken(null);
+          setWishlist([]);
+          localStorage.removeItem("qf_wishlist");
+        }
+      }
     };
     window.addEventListener("storage", onStorage);
 
@@ -124,7 +174,37 @@ function ProductsContent() {
     setCart(updated); syncCart(updated);
   }
 
+  function toggleWishlist(productId: string) {
+    if (!userToken) {
+      // Not logged in — open SiteNav's login modal in place; no redirect
+      window.dispatchEvent(new CustomEvent("qf:open-login"));
+      return;
+    }
+    const isWishlisted = wishlist.includes(productId);
+    // Optimistic update
+    setWishlist(prev => {
+      const next = isWishlisted ? prev.filter(id => id !== productId) : [...prev, productId];
+      localStorage.setItem("qf_wishlist", JSON.stringify(next));
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_wishlist" }));
+      return next;
+    });
+    // Sync to backend
+    fetch(`/backend/api/users/wishlist/${productId}`, {
+      method: isWishlisted ? "DELETE" : "POST",
+      headers: { Authorization: `Bearer ${userToken}` },
+    }).catch(() => {
+      // Revert on failure
+      setWishlist(prev => {
+        const reverted = isWishlisted ? [...prev, productId] : prev.filter(id => id !== productId);
+        localStorage.setItem("qf_wishlist", JSON.stringify(reverted));
+        return reverted;
+      });
+    });
+  }
+
   const allCats = [{ key: "all", label: "All", icon: "🌿" }, ...siteConfig.categories];
+  const allCatLabel = Object.fromEntries(allCats.map(c => [c.key, c.label]));
+  const allCatColor: Record<string, string> = Object.fromEntries(siteConfig.categories.map(c => [c.key, c.color]));
   const cartItems = products.filter(p => (cart[p._id] || 0) > 0);
   const cartTotal = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;
@@ -168,27 +248,39 @@ function ProductsContent() {
         .p-cat.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
         .p-cat:not(.active):hover{border-color:#2d8a4e;color:#2d8a4e;}
 
-        .p-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+        .p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.1rem;}
         @media(max-width:1023px){.p-grid{grid-template-columns:repeat(3,1fr);gap:12px;}}
         @media(max-width:640px){.p-grid{grid-template-columns:repeat(2,1fr);gap:10px;}}
         @media(max-width:340px){.p-grid{grid-template-columns:1fr;}}
+        @keyframes pfadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
-        .p-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid #f1f5f9;transition:transform .2s,box-shadow .2s;}
-        .p-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
-        .p-card-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#f3f4f6;}
-        .p-card-body{padding:10px 12px 12px;}
-        .p-card-name{font-size:13px;font-weight:700;color:#111827;margin:0 0 2px;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-        .p-card-qty{font-size:11px;color:#9ca3af;margin:0 0 6px;}
-        .p-card-price{font-size:15px;font-weight:800;color:#2d8a4e;margin:0 0 8px;}
-        .p-add-btn{width:100%;padding:7px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;}
-        .p-add-btn:hover{background:#1f6b3a;}
-        .p-qty-ctrl{display:flex;align-items:center;justify-content:space-between;gap:4px;}
-        .p-qty-btn{width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;font-weight:800;font-size:15px;line-height:1;transition:background .2s;}
-        .p-qty-minus{background:#f3f4f6;color:#374151;}
-        .p-qty-minus:hover{background:#e5e7eb;}
+        .p-card{background:#fff;border-radius:13px;border:1px solid #e9ede4;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);display:flex;flex-direction:column;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s cubic-bezier(.4,0,.2,1);}
+        .p-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.14);}
+        .p-card-img-wrap{aspect-ratio:4/3;overflow:hidden;position:relative;flex-shrink:0;}
+        .p-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s;background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
+        .p-card:hover .p-card-img{transform:scale(1.08);}
+        .p-card-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%);pointer-events:none;}
+        .p-stock-badge{position:absolute;bottom:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;font-family:sans-serif;color:#fff;}
+        .p-stock-in{background:rgba(22,163,74,.9);}
+        .p-stock-out{background:rgba(220,38,38,.9);}
+        .p-wish-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.92);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:0 1px 4px rgba(0,0,0,.15);transition:transform .15s;padding:0;}
+        .p-wish-btn:hover{transform:scale(1.15);}
+        .p-card-body{padding:0.85rem 0.95rem;display:flex;flex-direction:column;flex:1;}
+        .p-card-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;font-family:sans-serif;margin-bottom:3px;}
+        .p-card-name{font-size:13.5px;font-weight:700;color:#111827;margin:0 0 3px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-family:'Inter','Poppins',sans-serif;}
+        .p-card-qty{font-size:11.5px;color:#9ca3af;margin:0 0 9px;font-family:sans-serif;}
+        .p-card-price{font-weight:800;color:#1a3c2e;font-size:18px;margin:0 0 9px;}
+        .p-card-actions{height:42px;display:flex;align-items:stretch;margin-top:auto;}
+        .p-add-btn{width:100%;font-size:13px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+        .p-add-btn:hover:not(:disabled){background:#1f6b3a;}
+        .p-add-btn:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
+        .p-qty-ctrl{display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border-radius:8px;padding:0 8px;border:1.5px solid #86efac;width:100%;}
+        .p-qty-btn{width:28px;height:28px;border:none;border-radius:6px;cursor:pointer;font-weight:800;font-size:16px;line-height:1;transition:background .2s;flex-shrink:0;}
+        .p-qty-minus{background:#2d8a4e;color:#fff;}
+        .p-qty-minus:hover{background:#1f6b3a;}
         .p-qty-plus{background:#2d8a4e;color:#fff;}
         .p-qty-plus:hover{background:#1f6b3a;}
-        .p-qty-val{font-weight:800;font-size:14px;color:#111827;min-width:24px;text-align:center;}
+        .p-qty-val{font-weight:800;font-size:15px;color:#166534;min-width:24px;text-align:center;}
 
         .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
         .btn-g:hover{background:#1f6b3a;}
@@ -308,35 +400,60 @@ function ProductsContent() {
               {search ? ` matching "${search}"` : ""}
             </p>
             <div className="p-grid">
-              {paginated.map(p => (
-                <div key={p._id} className="p-card">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className="p-card-img" />
-                  ) : (
-                    <div className="p-card-img" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", fontSize: "52px" }}>🥬</div>
-                  )}
-                  <div className="p-card-body">
-                    <p className="p-card-name">{p.name}</p>
-                    {p.quantityLabel && <p className="p-card-qty">{p.quantityLabel}</p>}
-                    <p className="p-card-price">₹{p.price}</p>
-                    {!cartEnabled ? (
-                      <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`Hi! I'd like to order: ${p.name} — ₹${p.price}`)}`}
-                        target="_blank" rel="noreferrer"
-                        style={{ display: "block", width: "100%", padding: "7px", background: "#25d366", color: "#fff", borderRadius: "8px", textAlign: "center", textDecoration: "none", fontSize: "12.5px", fontWeight: 700 }}>
-                        WhatsApp Order
-                      </a>
-                    ) : cart[p._id] ? (
-                      <div className="p-qty-ctrl">
-                        <button className="p-qty-btn p-qty-minus" onClick={() => remove(p._id)}>−</button>
-                        <span className="p-qty-val">{cart[p._id]}</span>
-                        <button className="p-qty-btn p-qty-plus" onClick={() => add(p._id)}>+</button>
+              {paginated.map((p, i) => {
+                const qty = cart[p._id] || 0;
+                const inStock = p.available !== false;
+                return (
+                  <div key={p._id} className="p-card"
+                    style={{ animation: `pfadeUp .4s ${(i % perPage) * 0.03}s both` }}
+                    onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
+                    <div className="p-card-img-wrap">
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name} className="p-card-img"
+                          style={{ transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
+                      ) : (
+                        <div className="p-card-img" style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
+                      )}
+                      <div className="p-card-overlay" />
+                      <div className={`p-stock-badge ${inStock ? "p-stock-in" : "p-stock-out"}`}>
+                        {inStock ? "In Stock" : "Out of Stock"}
                       </div>
-                    ) : (
-                      <button className="p-add-btn" onClick={() => add(p._id)}>+ Add to Cart</button>
-                    )}
+                      <button className="p-wish-btn"
+                        onClick={(e) => { e.stopPropagation(); toggleWishlist(p._id); }}
+                        title={wishlist.includes(p._id) ? "Remove from wishlist" : "Add to wishlist"}>
+                        {wishlist.includes(p._id) ? "❤️" : "🤍"}
+                      </button>
+                    </div>
+                    <div className="p-card-body">
+                      <span className="p-card-cat" style={{ color: allCatColor[p.category] || "#6b7280" }}>
+                        {allCatLabel[p.category] || p.category}
+                      </span>
+                      <p className="p-card-name">{p.name}</p>
+                      {p.quantityLabel && <p className="p-card-qty">{p.quantityLabel}</p>}
+                      <p className="p-card-price">₹{p.price}</p>
+                      <div className="p-card-actions">
+                        {!cartEnabled ? (
+                          <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`Hi! I'd like to order: ${p.name} — ₹${p.price}`)}`}
+                            target="_blank" rel="noreferrer"
+                            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: "7px", background: "#25d366", color: "#fff", borderRadius: "8px", textAlign: "center", textDecoration: "none", fontSize: "12.5px", fontWeight: 700 }}>
+                            WhatsApp Order
+                          </a>
+                        ) : qty > 0 ? (
+                          <div className="p-qty-ctrl">
+                            <button className="p-qty-btn p-qty-minus" onClick={() => remove(p._id)}>−</button>
+                            <span className="p-qty-val">{qty}</span>
+                            <button className="p-qty-btn p-qty-plus" onClick={() => add(p._id)}>+</button>
+                          </div>
+                        ) : (
+                          <button className="p-add-btn" onClick={() => inStock && add(p._id)} disabled={!inStock}>
+                            {inStock ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pagination */}

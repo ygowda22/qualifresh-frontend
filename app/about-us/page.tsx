@@ -140,35 +140,43 @@ export default function AboutPage() {
         .scroll-anim.d4{animation-delay:.37s}
 
         /* About grids */
-        .about-stats-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem; }
+        /* Stats: 4 fixed-width columns that won't stretch — centered in hero */
+        .about-stats-grid { display:grid;grid-template-columns:repeat(4,minmax(130px,220px));gap:1.2rem;justify-content:center; }
+        .about-stats-cell { background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.4rem 1rem;text-align:center;backdrop-filter:blur(6px);min-width:0; }
         .about-mv-grid    { display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem; }
         .about-steps-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem; }
         .about-story-grid { display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center; }
         .about-step-line  { display:block; }
         .section-heading  { font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;color:#0f1a0f; }
+        .about-card-img   { height:130px; }
 
         /* Footer */
         .footer-grid { display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem; }
 
         @media(max-width:1024px){
-          .about-stats-grid { grid-template-columns:repeat(2,1fr)!important; }
-          .about-mv-grid    { grid-template-columns:repeat(1,1fr)!important; }
+          .about-stats-grid { grid-template-columns:repeat(2,minmax(130px,260px))!important;gap:1rem!important; }
+          .about-mv-grid    { grid-template-columns:repeat(2,1fr)!important; }
           .about-steps-grid { grid-template-columns:repeat(2,1fr)!important; }
           .about-story-grid { grid-template-columns:1fr!important;gap:1.5rem!important; }
           .about-story-img  { display:none!important; }
           .about-step-line  { display:none!important; }
           .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1.5rem!important; }
+          .about-card-img   { height:110px!important; }
+        }
+        @media(max-width:640px){
+          .about-stats-grid { grid-template-columns:repeat(2,1fr)!important; }
+          .about-stats-cell { padding:1.1rem 0.8rem!important; }
+          .about-mv-grid    { grid-template-columns:1fr!important; }
+          .about-card-img   { height:100px!important; }
         }
         @media(max-width:480px){
           .about-stats-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
+          .about-stats-cell { padding:0.9rem 0.6rem!important;border-radius:12px!important; }
           .about-steps-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
           .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1rem!important; }
           .about-how-section  { padding:2rem 1rem!important; }
           .about-guar-section { padding:2rem 1rem!important; }
-          .about-steps-grid .lift { padding:0.9rem 0.7rem!important;border-radius:12px!important; }
-          .about-steps-grid .lift>div:first-child { width:40px!important;height:40px!important;font-size:18px!important;margin-bottom:8px!important; }
-          .about-stats-grid .lift { padding:0.85rem 0.7rem!important;border-radius:12px!important; }
-          .about-stats-grid .lift>div:first-child { font-size:22px!important;margin-bottom:8px!important; }
+          .about-card-img   { height:88px!important; }
         }
         nextjs-portal{display:none!important}
       `}</style>
@@ -212,7 +220,7 @@ export default function AboutPage() {
               Bringing <span style={{ color: "#a3e635" }}>Restaurant-Grade</span><br />Freshness to Your Home
             </h1>
             <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", fontFamily: "sans-serif", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
-              QualiFresh was born from a simple belief — that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We source directly from trusted farms in Pune and deliver twice a week so freshness is never a compromise.
+              QualiFresh was born from a simple belief that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We grow everything ourselves on our farms in Pune - no middlemen, no sourcing, just pure farm-fresh produce.
             </p>
           </div>
           <div className="about-stats-grid">
@@ -222,8 +230,8 @@ export default function AboutPage() {
               { value: "2",   label: "Cities Served",     sub: "Pune & Mumbai",          color: "#60a5fa" },
               { value: "2×",  label: "Weekly Deliveries", sub: "Wednesday & Saturday",   color: "#f59e0b" },
             ].map(s => (
-              <div key={s.label} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.5rem 1.2rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
-                <div style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
+              <div key={s.label} className="about-stats-cell">
+                <div style={{ fontSize: "clamp(1.6rem,2.8vw,2.2rem)", fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", fontFamily: "sans-serif", marginBottom: "3px" }}>{s.label}</div>
                 <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "sans-serif" }}>{s.sub}</div>
               </div>
@@ -247,10 +255,10 @@ export default function AboutPage() {
               <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Roots</span>
               <h2 style={{ fontSize: "clamp(1.4rem,2.5vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 16px", lineHeight: 1.25 }}>From Pune's Farms<br />to Your Kitchen</h2>
               <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "16px" }}>
-                We started QualiFresh after seeing a gap — home cooks and health-conscious families in Pune &amp; Mumbai had no reliable way to access the specialty produce that only high-end restaurants could source. We changed that.
+                We started QualiFresh after seeing a gap - home cooks and health-conscious families in Pune &amp; Mumbai had no reliable way to access the specialty produce that only high-end restaurants could source. We changed that.
               </p>
               <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "24px" }}>
-                Today we partner with <strong style={{ color: "#166534" }}>20+ dedicated farms</strong> across the Pune region, maintain a strict cold chain, and personally inspect every batch before it ships. Every order is packed with care and delivered on your chosen day — Wednesday or Saturday.
+                Today we grow with <strong style={{ color: "#166534" }}>20+ dedicated farms</strong> across the Pune region, maintain a strict cold chain, and personally inspect every batch before it ships. Every order is packed with care and delivered on your chosen day — Wednesday or Saturday.
               </p>
               <blockquote style={{ borderLeft: "4px solid #2d8a4e", paddingLeft: "1.2rem", margin: 0 }}>
                 <p style={{ fontSize: "15px", color: "#1a3c2e", fontStyle: "italic", fontWeight: 600, lineHeight: 1.7, margin: "0 0 6px" }}>"Quality isn't just a word for us — it's the reason we wake up every morning."</p>
@@ -265,22 +273,34 @@ export default function AboutPage() {
       </div>
 
       {/* ── 3. Mission · Vision · Promise ── */}
-      <div style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#fff 50%,#f0fdf4 100%)", padding: "4rem 1.5rem" }}>
+      <div style={{ background: "linear-gradient(135deg,#071812 0%,#0f2a1a 50%,#071812 100%)", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
-            <h2 className="section-heading">Mission, Vision &amp; Promise</h2>
+            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
+            <h2 className="section-heading" style={{ color: "#fff" }}>Mission, Vision &amp; Promise</h2>
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
-              { icon: "🌏", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure - farm partnerships, cold chain, and community - to make that happen." },
-              { icon: "🤝", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and qualitybefore it leaves the farm." },
+              { icon: "🎯", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&q=80&fit=crop", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🌏", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
+              { icon: "🤝", gradient: "linear-gradient(135deg,#1e0a3c,#4a1080)", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80&fit=crop", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
             ].map((card, i) => (
-              <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ background: card.bg, border: `1.5px solid ${card.border}`, borderRadius: "18px", padding: "2rem 1.6rem" }}>
-                <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px", boxShadow: `0 4px 14px ${card.border}` }}>{card.icon}</div>
-                <h3 style={{ margin: "0 0 10px", fontSize: "17px", fontWeight: 800, color: card.color }}>{card.title}</h3>
-                <p style={{ margin: 0, fontSize: "13.5px", color: "#4b5563", lineHeight: 1.8, fontFamily: "sans-serif" }}>{card.text}</p>
+              <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: card.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", cursor: "pointer" }}>
+                <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
+                  <img src={card.img} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+                  <div style={{ position: "absolute", inset: 0, background: card.gradient, opacity: 0.7 }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
+                    <span style={{ fontSize: "28px" }}>{card.icon}</span>
+                  </div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
+                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{card.stat}</div>
+                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontFamily: "sans-serif" }}>{card.statSub}</div>
+                  </div>
+                </div>
+                <div style={{ padding: "1.2rem" }}>
+                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{card.title}</h3>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{card.text}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -288,27 +308,35 @@ export default function AboutPage() {
       </div>
 
       {/* ── 4. How It Works ── */}
-      <div className="about-how-section" style={{ background: "#fff", padding: "4rem 1.5rem" }}>
+      <div className="about-how-section" style={{ background: "linear-gradient(135deg,#060f0c 0%,#0a1f12 50%,#060f0c 100%)", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
-            <h2 className="section-heading">From Farm to Your Doorstep</h2>
-            <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
+            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
+            <h2 className="section-heading" style={{ color: "#fff" }}>From Farm to Your Doorstep</h2>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "14px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
           </div>
           <div className="about-steps-grid">
             {[
-              { step: "01", icon: "🌾", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune - same morning, every order." },
-              { step: "02", icon: "🔬", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Quality Checked", desc: "Every batch is inspected for freshness, and qua." },
-              { step: "03", icon: "❄️", color: "#0891b2", bg: "#f0f9ff", border: "#bae6fd", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2-8°C) to preserve peak freshness and nutrition." },
-              { step: "04", icon: "🚚", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
+              { step: "01", icon: "🌾", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80&fit=crop", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
+              { step: "02", icon: "🔬", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
+              { step: "03", icon: "❄️", gradient: "linear-gradient(135deg,#0a2030,#0a4060)", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
+              { step: "04", icon: "🚚", gradient: "linear-gradient(135deg,#1e0a3c,#4a1080)", img: "https://images.unsplash.com/photo-1584277261846-c6a1672ed979?w=600&q=80&fit=crop", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
             ].map((s, i) => (
-              <div key={s.step} className={`scroll-anim d${i + 1}`} style={{ position: "relative" }}>
-                {i < 3 && <div className="about-step-line" style={{ position: "absolute", top: "28px", left: "calc(50% + 28px)", right: "-50%", height: "2px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", zIndex: 0 }} />}
-                <div className="lift" style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: "18px", padding: "1.8rem 1.4rem", textAlign: "center", position: "relative", zIndex: 1 }}>
-                  <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", margin: "0 auto 12px", boxShadow: `0 4px 14px ${s.border}` }}>{s.icon}</div>
-                  <div style={{ fontSize: "11px", fontWeight: 700, color: s.color, letterSpacing: "1.5px", fontFamily: "sans-serif", marginBottom: "6px" }}>STEP {s.step}</div>
-                  <h4 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#0f1a0f" }}>{s.title}</h4>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.7, fontFamily: "sans-serif" }}>{s.desc}</p>
+              <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: s.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", cursor: "pointer" }}>
+                <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
+                  <img src={s.img} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+                  <div style={{ position: "absolute", inset: 0, background: s.gradient, opacity: 0.7 }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
+                    <span style={{ fontSize: "28px" }}>{s.icon}</span>
+                  </div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
+                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>STEP</div>
+                    <div style={{ fontSize: "14px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{s.step}</div>
+                  </div>
+                </div>
+                <div style={{ padding: "1.2rem" }}>
+                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{s.title}</h3>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -323,15 +351,27 @@ export default function AboutPage() {
           <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
           <div className="about-stats-grid">
             {[
-              { icon: "💳", title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk - ever.",     color: "#a3e635" },
-              { icon: "🔄", title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week.",    color: "#34d399" },
-              { icon: "❄️", title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2-8°C. Nutrition and flavour fully preserved.", color: "#60a5fa" },
-              { icon: "🌱", title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations.",        color: "#f59e0b" },
+              { icon: "💳", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80&fit=crop", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
+              { icon: "🔄", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1559181567-c3190ca9d1d7?w=600&q=80&fit=crop", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
+              { icon: "❄️", gradient: "linear-gradient(135deg,#0a2030,#0a4060)", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
+              { icon: "🌱", gradient: "linear-gradient(135deg,#1e2a0a,#3a5010)", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&q=80&fit=crop", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
             ].map((g, i) => (
-              <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.8rem 1.4rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
-                <div style={{ fontSize: "32px", marginBottom: "12px" }}>{g.icon}</div>
-                <h4 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 800, color: g.color }}>{g.title}</h4>
-                <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>
+              <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: g.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.2)", cursor: "pointer" }}>
+                <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
+                  <img src={g.img} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
+                  <div style={{ position: "absolute", inset: 0, background: g.gradient, opacity: 0.7 }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
+                    <span style={{ fontSize: "28px" }}>{g.icon}</span>
+                  </div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
+                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{g.stat}</div>
+                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontFamily: "sans-serif" }}>{g.statSub}</div>
+                  </div>
+                </div>
+                <div style={{ padding: "1.2rem" }}>
+                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{g.title}</h3>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>
+                </div>
               </div>
             ))}
           </div>

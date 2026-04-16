@@ -678,9 +678,10 @@ export default function Home() {
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
-          .footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
+          .footer-grid{grid-template-columns:1fr!important;gap:1.2rem!important}
+          .footer-wrap{padding:2rem 1rem 1.5rem!important}
           .hero-stats-val{font-size:1.2rem!important}
-          .mob-search-bar{display:flex!important;position:sticky;top:calc(34px + 72px);z-index:195;background:#fff;}
+          .mob-search-bar{display:flex!important;background:#fff;border-bottom:1px solid #e5e7eb;}
           .mobile-menu-dropdown { z-index:210!important; }
         }
         /* Farm photo grid — stack on mobile */

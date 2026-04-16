@@ -252,7 +252,7 @@ function ProductsContent() {
       </div>
 
       {/* Filters */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", position: "sticky", top: "68px", zIndex: 10 }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "12px 1.5rem", display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
           {/* Search */}
           <div style={{ flex: "1 1 200px", position: "relative", minWidth: "160px" }}>

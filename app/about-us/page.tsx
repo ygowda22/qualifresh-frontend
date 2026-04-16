@@ -140,9 +140,15 @@ export default function AboutPage() {
           .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1.5rem!important; }
         }
         @media(max-width:480px){
-          .about-stats-grid { grid-template-columns:repeat(2,1fr)!important; }
-          .about-steps-grid { grid-template-columns:repeat(2,1fr)!important; }
-          .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1rem!important; }
+          .about-stats-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
+          .about-steps-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
+          .footer-grid      { grid-template-columns:1fr!important;gap:1rem!important; }
+          .about-how-section  { padding:2rem 1rem!important; }
+          .about-guar-section { padding:2rem 1rem!important; }
+          .about-steps-grid .lift { padding:0.9rem 0.7rem!important;border-radius:12px!important; }
+          .about-steps-grid .lift>div:first-child { width:40px!important;height:40px!important;font-size:18px!important;margin-bottom:8px!important; }
+          .about-stats-grid .lift { padding:0.85rem 0.7rem!important;border-radius:12px!important; }
+          .about-stats-grid .lift>div:first-child { font-size:22px!important;margin-bottom:8px!important; }
         }
         nextjs-portal{display:none!important}
       `}</style>
@@ -262,7 +268,7 @@ export default function AboutPage() {
       </div>
 
       {/* ── 4. How It Works ── */}
-      <div style={{ background: "#fff", padding: "4rem 1.5rem" }}>
+      <div className="about-how-section" style={{ background: "#fff", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
             <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
@@ -291,7 +297,7 @@ export default function AboutPage() {
       </div>
 
       {/* ── 5. Quality Guarantee strip ── */}
-      <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020,#1a4a2e)", padding: "3.5rem 1.5rem" }}>
+      <div className="about-guar-section" style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020,#1a4a2e)", padding: "3.5rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto", textAlign: "center" }}>
           <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
           <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>

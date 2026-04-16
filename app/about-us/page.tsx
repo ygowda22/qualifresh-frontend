@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { siteConfig } from "../../src/config/site";
 import SiteNav from "../components/SiteNav";
 
@@ -63,6 +63,17 @@ export default function AboutPage() {
 
   useEffect(() => { document.title = siteConfig.pageTitles.aboutUs; }, []);
 
+  // Scroll-in animation observer
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>(".scroll-anim");
+    if (!els.length) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { (e.target as HTMLElement).classList.add("visible"); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   useEffect(() => {
     try {
       const c = localStorage.getItem("qf_cart");
@@ -115,9 +126,18 @@ export default function AboutPage() {
         /* Buttons */
         .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
         .btn-g:hover{background:#1f6b3a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,138,78,.35)}
-        .lift{transition:all .25s ease}
-        .lift:hover{transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.12)!important}
+        .lift{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+        .lift:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.15)!important;border-color:rgba(45,138,78,0.35)!important}
         input:focus,textarea:focus{outline:none}
+
+        /* Scroll-in animations */
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+        .scroll-anim{opacity:0;transform:translateY(28px);transition:none}
+        .scroll-anim.visible{animation:fadeInUp .55s cubic-bezier(.22,1,.36,1) both}
+        .scroll-anim.d1{animation-delay:.07s}
+        .scroll-anim.d2{animation-delay:.17s}
+        .scroll-anim.d3{animation-delay:.27s}
+        .scroll-anim.d4{animation-delay:.37s}
 
         /* About grids */
         .about-stats-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem; }
@@ -142,7 +162,7 @@ export default function AboutPage() {
         @media(max-width:480px){
           .about-stats-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
           .about-steps-grid { grid-template-columns:repeat(2,1fr)!important;gap:0.6rem!important; }
-          .footer-grid      { grid-template-columns:1fr!important;gap:1rem!important; }
+          .footer-grid      { grid-template-columns:1fr 1fr!important;gap:1rem!important; }
           .about-how-section  { padding:2rem 1rem!important; }
           .about-guar-section { padding:2rem 1rem!important; }
           .about-steps-grid .lift { padding:0.9rem 0.7rem!important;border-radius:12px!important; }
@@ -253,11 +273,11 @@ export default function AboutPage() {
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0", title: "Our Mission", text: "To make the world's finest exotic vegetables — Korean, Thai, Japanese, and beyond — accessible to every home cook and family across India, at fair prices with zero compromise on freshness." },
-              { icon: "🌏", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
-              { icon: "🤝", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is cold-chain handled and freshness-inspected before it leaves the farm." },
-            ].map(card => (
-              <div key={card.title} className="lift" style={{ background: card.bg, border: `1.5px solid ${card.border}`, borderRadius: "18px", padding: "2rem 1.6rem" }}>
+              { icon: "🎯", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🌏", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure - farm partnerships, cold chain, and community - to make that happen." },
+              { icon: "🤝", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and qualitybefore it leaves the farm." },
+            ].map((card, i) => (
+              <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ background: card.bg, border: `1.5px solid ${card.border}`, borderRadius: "18px", padding: "2rem 1.6rem" }}>
                 <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px", boxShadow: `0 4px 14px ${card.border}` }}>{card.icon}</div>
                 <h3 style={{ margin: "0 0 10px", fontSize: "17px", fontWeight: 800, color: card.color }}>{card.title}</h3>
                 <p style={{ margin: 0, fontSize: "13.5px", color: "#4b5563", lineHeight: 1.8, fontFamily: "sans-serif" }}>{card.text}</p>
@@ -277,12 +297,12 @@ export default function AboutPage() {
           </div>
           <div className="about-steps-grid">
             {[
-              { step: "01", icon: "🌾", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", title: "Farm Sourced",    desc: "Vegetables are harvested from our partner farms in Pune — same morning, every order." },
-              { step: "02", icon: "🔬", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Quality Checked", desc: "Every batch is inspected for freshness, size consistency, and zero pesticide residue." },
-              { step: "03", icon: "❄️", color: "#0891b2", bg: "#f0f9ff", border: "#bae6fd", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
+              { step: "01", icon: "🌾", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune - same morning, every order." },
+              { step: "02", icon: "🔬", color: "#1d4ed8", bg: "#eff6ff", border: "#bfdbfe", title: "Quality Checked", desc: "Every batch is inspected for freshness, and qua." },
+              { step: "03", icon: "❄️", color: "#0891b2", bg: "#f0f9ff", border: "#bae6fd", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2-8°C) to preserve peak freshness and nutrition." },
               { step: "04", icon: "🚚", color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
             ].map((s, i) => (
-              <div key={s.step} style={{ position: "relative" }}>
+              <div key={s.step} className={`scroll-anim d${i + 1}`} style={{ position: "relative" }}>
                 {i < 3 && <div className="about-step-line" style={{ position: "absolute", top: "28px", left: "calc(50% + 28px)", right: "-50%", height: "2px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", zIndex: 0 }} />}
                 <div className="lift" style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: "18px", padding: "1.8rem 1.4rem", textAlign: "center", position: "relative", zIndex: 1 }}>
                   <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", margin: "0 auto 12px", boxShadow: `0 4px 14px ${s.border}` }}>{s.icon}</div>
@@ -303,12 +323,12 @@ export default function AboutPage() {
           <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
           <div className="about-stats-grid">
             {[
-              { icon: "💳", title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever.",     color: "#a3e635" },
+              { icon: "💳", title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk - ever.",     color: "#a3e635" },
               { icon: "🔄", title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week.",    color: "#34d399" },
-              { icon: "❄️", title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved.", color: "#60a5fa" },
+              { icon: "❄️", title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2-8°C. Nutrition and flavour fully preserved.", color: "#60a5fa" },
               { icon: "🌱", title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations.",        color: "#f59e0b" },
-            ].map(g => (
-              <div key={g.title} className="lift" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.8rem 1.4rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
+            ].map((g, i) => (
+              <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.8rem 1.4rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
                 <div style={{ fontSize: "32px", marginBottom: "12px" }}>{g.icon}</div>
                 <h4 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 800, color: g.color }}>{g.title}</h4>
                 <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>

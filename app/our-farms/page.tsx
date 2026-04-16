@@ -122,8 +122,8 @@ export default function OurFarmsPage() {
           .farm-grid-f{grid-template-columns:1fr 1fr!important;gap:10px!important;}
           .farm-hero-f{height:220px!important;grid-row:span 1!important;}
           .farm-other-f{height:160px!important;}
-          .trust-grid-f{flex-direction:column!important;align-items:stretch!important;}
-          .trust-card-f{max-width:100%!important;}
+          .trust-grid-f{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0.75rem!important;}
+          .trust-card-f{max-width:100%!important;flex:none!important;padding:12px 14px!important;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}
           .hero-strip-f{padding:3rem 1rem 2rem!important;}
         }
@@ -132,6 +132,9 @@ export default function OurFarmsPage() {
           .farm-hero-f,.farm-other-f{height:200px!important;grid-row:span 1!important;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1rem!important;}
           .nav-bar-f{padding:0 1rem!important;}
+          .trust-grid-f{grid-template-columns:1fr 1fr!important;gap:0.6rem!important;}
+          .trust-card-f{padding:10px 10px!important;gap:10px!important;}
+          .trust-card-f .trust-icon-f{width:38px!important;height:38px!important;font-size:18px!important;}
         }
         nextjs-portal{display:none!important}
       `}</style>
@@ -173,7 +176,7 @@ export default function OurFarmsPage() {
             Where Freshness Begins
           </h1>
           <p style={{ fontSize: "clamp(13px,1.5vw,16px)", color: "rgba(255,255,255,0.65)", maxWidth: "560px", margin: "0 auto 1.8rem", lineHeight: 1.85 }}>
-            Every leaf, herb, and vegetable is grown with intention — harvested at peak freshness from our partner farms in Pune and delivered the same week.
+            Every leaf, herb, and vegetable is grown with intention - harvested at peak freshness from our partner farms in Pune and delivered the same week.
           </p>
           <a href="/products"
             style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "linear-gradient(135deg,#2d8a4e,#1f6b3a)", color: "#fff", borderRadius: "10px", padding: "13px 30px", fontSize: "14.5px", fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 18px rgba(45,138,78,0.45)", fontFamily: "inherit", transition: "all .22s" }}
@@ -202,7 +205,7 @@ export default function OurFarmsPage() {
             Behind the Freshness
           </h2>
           <p style={{ fontSize: "clamp(13px,1.4vw,15px)", color: "#4b5563", maxWidth: "480px", margin: "0 auto", lineHeight: 1.8 }}>
-            A look inside our farms, growing chambers, and delivery process — where quality starts before it reaches your door.
+            A look inside our farms, growing chambers, and delivery process - where quality starts before it reaches your door.
           </p>
           <div style={{ width: "48px", height: "3px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", borderRadius: "2px", margin: "14px auto 0" }} />
         </div>
@@ -239,12 +242,12 @@ export default function OurFarmsPage() {
         <div className="trust-grid-f" style={{ display: "flex", gap: "1rem", marginTop: "3rem", flexWrap: "wrap", justifyContent: "center" }}>
           {[
             { icon: "🌱", title: "20+ Farm Partners",   desc: "Trusted Pune & Mumbai farms"       },
-            { icon: "❄️", title: "Cold Chain Delivery", desc: "2–8°C from farm to door"           },
+            { icon: "❄️", title: "Cold Chain Delivery", desc: "2-8°C from farm to door"           },
             { icon: "📅", title: "Wed & Sat Delivery",  desc: "Twice-weekly freshness guarantee"  },
             { icon: "🤝", title: "Pay After Delivery",  desc: "Zero advance payment required"     },
           ].map(b => (
             <div key={b.title} className="trust-card-f" style={{ display: "flex", alignItems: "center", gap: "14px", background: "#fff", border: "1.5px solid #e9ede4", borderRadius: "16px", padding: "16px 20px", flex: "1 1 200px", maxWidth: "290px", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-              <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0, boxShadow: "0 2px 8px rgba(45,138,78,0.18)" }}>{b.icon}</div>
+              <div className="trust-icon-f" style={{ width: "48px", height: "48px", borderRadius: "50%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0, boxShadow: "0 2px 8px rgba(45,138,78,0.18)" }}>{b.icon}</div>
               <div>
                 <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#0f1a0f" }}>{b.title}</div>
                 <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "2px" }}>{b.desc}</div>

@@ -29,8 +29,9 @@ export default function SiteNav({ activePage }: Props) {
   const [showCart, setShowCart] = useState(false);
   const [cartEnabled, setCartEnabled] = useState(true);
 
-  // Checkout flow (step 1 = cart, step 2 = form, step 3 = confirmed)
-  const [cartStep, setCartStep]       = useState<1|2|3>(1);
+  // Checkout flow (step 1 = cart, step 2 = form, step 3 = payment, step 4 = confirmed)
+  const [cartStep, setCartStep]       = useState<1|2|3|4>(1);
+  const [payMethod, setPayMethod]     = useState<"cod"|"upi"|"card">("cod");
   const [ckName, setCkName]           = useState("");
   const [ckEmail, setCkEmail]         = useState("");
   const [ckPhone, setCkPhone]         = useState("");
@@ -176,7 +177,7 @@ export default function SiteNav({ activePage }: Props) {
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
       fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
       setCkOrderNum(d.orderNumber);
-      setCartStep(3);
+      setCartStep(4);
       updateCart({});
     } catch { setCkError("Network error. Please try again."); }
     finally { setCkLoading(false); }
@@ -412,12 +413,12 @@ export default function SiteNav({ activePage }: Props) {
             {/* Header */}
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {cartStep === 2 && (
-                  <button onClick={() => setCartStep(1)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#6b7280", padding: "0 4px 0 0", lineHeight: 1 }}>←</button>
+                {(cartStep === 2 || cartStep === 3) && (
+                  <button onClick={() => setCartStep(cartStep === 3 ? 2 : 1)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#6b7280", padding: "0 4px 0 0", lineHeight: 1 }}>←</button>
                 )}
                 <img src="/logo.png" alt="QualiFresh" style={{ height: "30px", objectFit: "contain" }} />
                 <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px", fontFamily: "sans-serif" }}>
-                  {cartStep === 3 ? "Order Confirmed 🎉" : cartStep === 2 ? "Checkout" : `Cart (${cartCount})`}
+                  {cartStep === 4 ? "Order Confirmed 🎉" : cartStep === 3 ? "Payment" : cartStep === 2 ? "Checkout" : `Cart (${cartCount})`}
                 </span>
               </div>
               <button onClick={() => { if (!ckLoading) closeCart(); }} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
@@ -552,9 +553,9 @@ export default function SiteNav({ activePage }: Props) {
                           onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                       </div>
                       {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", fontFamily: "sans-serif" }}>{ckError}</div>}
-                      <button onClick={placeOrder} disabled={!ckCanSubmit || ckLoading}
-                        style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: ckCanSubmit && !ckLoading ? "#2d8a4e" : "#e5e7eb", color: ckCanSubmit && !ckLoading ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: ckCanSubmit && !ckLoading ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit" }}>
-                        {ckLoading ? "Placing Order…" : `Place Order · ₹${grandTotal}`}
+                      <button onClick={() => { if (ckCanSubmit) setCartStep(3); }} disabled={!ckCanSubmit}
+                        style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: ckCanSubmit ? "#2d8a4e" : "#e5e7eb", color: ckCanSubmit ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: ckCanSubmit ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit" }}>
+                        Proceed to Payment · ₹{grandTotal} →
                       </button>
                       <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", margin: "0" }}>Pay on delivery · No advance required</p>
                       <div style={{ textAlign: "center", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
@@ -569,8 +570,51 @@ export default function SiteNav({ activePage }: Props) {
               </div>
             )}
 
-            {/* ── STEP 3: Order Confirmed ── */}
+            {/* ── STEP 3: Payment (scaffold) ── */}
             {cartStep === 3 && (
+              <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.3rem" }}>
+                {/* Demo notice */}
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "9px", padding: "9px 12px", marginBottom: "1.2rem", fontSize: "11.5px", color: "#92400e", fontFamily: "sans-serif" }}>
+                  🚧 <strong>Payment coming soon</strong> — for now your order is placed as Pay on Delivery.
+                </div>
+                {/* Order total */}
+                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px 14px", marginBottom: "1.2rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "14px" }}>
+                    <span style={{ color: "#374151", fontFamily: "sans-serif" }}>Amount to Pay</span>
+                    <span style={{ color: "#1a3c2e" }}>₹{grandTotal}</span>
+                  </div>
+                  <div style={{ fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "3px" }}>Delivery: {deliveryCost === 0 ? "FREE" : `₹${deliveryCost}`}</div>
+                </div>
+                {/* Payment method selector */}
+                <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#374151", fontFamily: "sans-serif", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Select Payment Method</p>
+                {([
+                  { id: "cod",  label: "Cash on Delivery", sub: "Pay when your order arrives",      icon: "💵" },
+                  { id: "upi",  label: "UPI / GPay",       sub: "Coming soon — not yet active",     icon: "📱" },
+                  { id: "card", label: "Card Payment",     sub: "Coming soon — not yet active",     icon: "💳" },
+                ] as { id: "cod"|"upi"|"card"; label: string; sub: string; icon: string }[]).map(m => (
+                  <div key={m.id} onClick={() => setPayMethod(m.id)}
+                    style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderRadius: "10px", border: `2px solid ${payMethod === m.id ? "#2d8a4e" : "#e5e7eb"}`, background: payMethod === m.id ? "#f0fdf4" : "#fff", marginBottom: "8px", cursor: m.id === "cod" ? "pointer" : "default", opacity: m.id !== "cod" ? 0.55 : 1, transition: "all .18s" }}>
+                    <span style={{ fontSize: "22px", lineHeight: 1 }}>{m.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827", fontFamily: "sans-serif" }}>{m.label}</div>
+                      <div style={{ fontSize: "11px", color: "#6b7280", fontFamily: "sans-serif" }}>{m.sub}</div>
+                    </div>
+                    <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `2px solid ${payMethod === m.id ? "#2d8a4e" : "#d1d5db"}`, background: payMethod === m.id ? "#2d8a4e" : "#fff", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {payMethod === m.id && <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#fff" }} />}
+                    </div>
+                  </div>
+                ))}
+                {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", fontFamily: "sans-serif", marginBottom: "10px" }}>{ckError}</div>}
+                <button onClick={placeOrder} disabled={ckLoading || payMethod !== "cod"}
+                  style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: !ckLoading ? "#2d8a4e" : "#e5e7eb", color: !ckLoading ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: !ckLoading ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginTop: "4px" }}>
+                  {ckLoading ? "Placing Order…" : `Confirm & Place Order · ₹${grandTotal}`}
+                </button>
+                <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", margin: "6px 0 0" }}>Secured · No advance required</p>
+              </div>
+            )}
+
+            {/* ── STEP 4: Order Confirmed ── */}
+            {cartStep === 4 && (
               <div style={{ flex: 1, overflowY: "auto", padding: "2rem 1.3rem", textAlign: "center" }}>
                 <div style={{ width: "68px", height: "68px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px", margin: "0 auto 14px" }}>🌿</div>
                 <h3 style={{ margin: "0 0 6px", fontSize: "1.2rem", fontWeight: 800, color: "#166534" }}>Order Placed!</h3>

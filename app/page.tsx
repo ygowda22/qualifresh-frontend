@@ -188,7 +188,7 @@ export default function Home() {
   const [contactSent, setContactSent]   = useState(false);
 
   // ── Auth modal ─────────────────────────────────────────────────────────────
-  const [authTab, setAuthTab]           = useState<"login"|"register">("login");
+  const [authTab, setAuthTab]           = useState<"login"|"register"|"forgot">("login");
   const [authEmail, setAuthEmail]       = useState("");
   const [authPass, setAuthPass]         = useState("");
   const [showPass, setShowPass]         = useState(false);
@@ -198,6 +198,7 @@ export default function Home() {
   const [regPass2, setRegPass2]         = useState("");
   const [authLoading, setAuthLoading]   = useState(false);
   const [authError, setAuthError]       = useState("");
+  const [forgotSent, setForgotSent]     = useState(false);
   const [user, setUser]                 = useState<{name:string;email:string;token:string}|null>(null);
 
   // ── Checkout modal ─────────────────────────────────────────────────────────
@@ -325,6 +326,25 @@ export default function Home() {
     } catch { setAuthError("Network error. Please try again."); }
     finally { setAuthLoading(false); }
   }
+
+  async function doForgotPassword() {
+    setAuthError(""); setAuthLoading(true);
+    try {
+      const r = await fetch("/backend/api/users/forgot-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setAuthError(d.message || "Failed to send reset email. Please try again."); return; }
+      setForgotSent(true);
+    } catch { setAuthError("Network error. Please try again."); }
+    finally { setAuthLoading(false); }
+  }
+
+  // Inline validation helpers
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail);
+  const phoneCleanV = regPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
+  const phoneValid = /^[6-9]\d{9}$/.test(phoneCleanV);
 
   function logout() { setUser(null); localStorage.removeItem("qf_user"); }
 
@@ -537,7 +557,7 @@ export default function Home() {
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
         .ticker-wrap { margin-bottom:0; }
-        /* Desktop: show items centered, fixed at top */
+        /* Desktop: show items centered */
         .ticker-desktop {
           display: flex;
           justify-content: center;
@@ -546,28 +566,20 @@ export default function Home() {
           gap: 0;
           padding: 6px 1rem;
           overflow: hidden;
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 9999;
           width: 100%;
           background: #0f8a65;
         }
-        /* Mobile: full scrolling ticker — hidden on desktop, STICKY */
-        .ticker-mobile { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 198; width: 100%; background: #0f8a65; border-bottom: 1px solid #0a6e50; }
-        @media(min-width:1025px){body{padding-top:102px}}
+        /* Mobile: full scrolling ticker — hidden on desktop */
+        .ticker-mobile { display: none; width: 100%; background: #0f8a65; border-bottom: 1px solid #0a6e50; }
         @media(max-width: 1024px) {
-          body{padding-top:102px!important}
           .ticker-desktop { display: none; }
           .ticker-mobile  { display: block; overflow: hidden; padding: 5px 0; height:34px; }
           .ticker-scroll  { display: inline-flex; animation: ticker 30s linear infinite; white-space: nowrap; }
           .ticker-scroll:hover { animation-play-state: paused; }
-          .nav-bar { top: 34px!important; }
           .desktop-nav{display:none!important}
           .desktop-search{display:none!important}
           .mobile-hamburger{display:flex!important}
-          .mob-search-bar{display:flex!important;position:sticky;top:calc(34px + 68px);z-index:195;background:#fff;}
+          .mob-search-bar{display:flex!important;background:#fff;}
           .desktop-search input { width: 130px !important; }
           .prod-grid { grid-template-columns: repeat(2,1fr) !important; }
           .mobile-menu-dropdown { z-index:210!important; }
@@ -709,7 +721,7 @@ export default function Home() {
       </div>
 
       {/* ═══ NAVBAR ═══ */}
-      <nav ref={navRef} className="nav-bar" style={{ background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)", padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between", height: "68px", position: "fixed", top: "34px", left: 0, right: 0, zIndex: 9998, boxShadow: "0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08)" }}>
+      <nav ref={navRef} className="nav-bar" style={{ padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <button className="logo-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Go to home" aria-label="QualiFresh Home">
           <QFLogo height={52} />
         </button>
@@ -1279,35 +1291,79 @@ export default function Home() {
       {showLogin && (
         <>
           <div onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "calc(50% + 51px)", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 120px)", overflowY: "auto" }}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
               <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {/* Tabs */}
-            <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "3px", marginBottom: "1.4rem" }}>
-              {(["login","register"] as const).map(t => (
-                <button key={t} onClick={() => { setAuthTab(t); setAuthError(""); setShowPass(false); setShowPass2(false); setAuthEmail(""); setAuthPass(""); setRegName(""); setRegPhone(""); setRegPass2(""); }}
-                  style={{ flex: 1, padding: "9px", borderRadius: "8px", border: "none", background: authTab === t ? "#fff" : "transparent", fontWeight: authTab === t ? 700 : 500, fontSize: "13.5px", cursor: "pointer", color: authTab === t ? "#1a3c2e" : "#6b7280", boxShadow: authTab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none", transition: "all .2s", fontFamily: "inherit" }}>
-                  {t === "login" ? "Sign In" : "Create Account"}
-                </button>
-              ))}
-            </div>
+            {authTab !== "forgot" && (
+              <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "3px", marginBottom: "1.4rem" }}>
+                {(["login","register"] as const).map(t => (
+                  <button key={t} onClick={() => { setAuthTab(t); setAuthError(""); setShowPass(false); setShowPass2(false); setAuthEmail(""); setAuthPass(""); setRegName(""); setRegPhone(""); setRegPass2(""); setForgotSent(false); }}
+                    style={{ flex: 1, padding: "9px", borderRadius: "8px", border: "none", background: authTab === t ? "#fff" : "transparent", fontWeight: authTab === t ? 700 : 500, fontSize: "13.5px", cursor: "pointer", color: authTab === t ? "#1a3c2e" : "#6b7280", boxShadow: authTab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none", transition: "all .2s", fontFamily: "inherit" }}>
+                    {t === "login" ? "Sign In" : "Create Account"}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", fontFamily: "sans-serif", marginBottom: "12px" }}>{authError}</div>}
 
-            {authTab === "login" ? (
+            {/* ── Forgot Password ── */}
+            {authTab === "forgot" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ textAlign: "center", marginBottom: "4px" }}>
+                  <p style={{ fontSize: "15px", fontWeight: 700, color: "#1a3c2e", margin: "0 0 4px" }}>Reset your password</p>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Enter your email and we'll send a reset link.</p>
+                </div>
+                {forgotSent ? (
+                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
+                    <div style={{ fontSize: "28px", marginBottom: "8px" }}>✉️</div>
+                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", fontFamily: "sans-serif", margin: "0 0 4px" }}>Check your inbox!</p>
+                    <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                      <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && emailValid && doForgotPassword()}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                    </div>
+                    <button onClick={doForgotPassword} disabled={authLoading || !emailValid} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading || !emailValid ? 0.6 : 1 }}>
+                      {authLoading ? "Sending…" : "Send Reset Link"}
+                    </button>
+                  </>
+                )}
+                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                  <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => { setAuthTab("login"); setAuthError(""); setForgotSent(false); }}>← Back to Sign In</span>
+                </p>
+              </div>
+            ) : authTab === "login" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif" }}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <div style={{ position: "relative" }}>
-                  <input type={showPass ? "text" : "password"} placeholder="Password" value={authPass} onChange={e => setAuthPass(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && doLogin()}
-                    style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
-                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} placeholder="Your password" value={authPass} onChange={e => setAuthPass(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && doLogin()}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", marginTop: "-4px" }}>
+                  <span style={{ fontSize: "12.5px", color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => { setAuthTab("forgot"); setAuthError(""); setForgotSent(false); }}>Forgot Password?</span>
                 </div>
                 <button onClick={doLogin} disabled={authLoading} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Signing in…" : "Sign In"}
@@ -1318,27 +1374,47 @@ export default function Home() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input type="text" placeholder="Full name" value={regName} onChange={e => setRegName(e.target.value)}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif" }}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif" }}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <input type="tel" placeholder="Mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif" }}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <div style={{ position: "relative" }}>
-                  <input type={showPass ? "text" : "password"} placeholder="Password" value={authPass} onChange={e => setAuthPass(e.target.value)}
-                    style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Full name <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="text" placeholder="Your full name" value={regName} onChange={e => setRegName(e.target.value)}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Name is too short</p>}
                 </div>
-                <div style={{ position: "relative" }}>
-                  <input type={showPass2 ? "text" : "password"} placeholder="Confirm password" value={regPass2} onChange={e => setRegPass2(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && doRegister()}
-                    style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
-                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Mobile number <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="tel" placeholder="10-digit mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${regPhone && !phoneValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPhone && !phoneValid ? "#f87171" : "#e5e7eb")} />
+                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid 10-digit Indian mobile number</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} placeholder="Min 6 characters" value={authPass} onChange={e => setAuthPass(e.target.value)}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  </div>
+                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Password must be at least 6 characters</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Confirm password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass2 ? "text" : "password"} placeholder="Re-enter password" value={regPass2} onChange={e => setRegPass2(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && doRegister()}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
+                  </div>
+                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Passwords do not match</p>}
                 </div>
                 <button onClick={doRegister} disabled={authLoading} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Creating account…" : "Create Account"}
@@ -1366,7 +1442,7 @@ export default function Home() {
       {showCart && (
         <>
           <div onClick={() => setShowCart(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 490, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "102px", right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <QFLogo height={30} />

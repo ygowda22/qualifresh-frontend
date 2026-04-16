@@ -55,7 +55,7 @@ export default function SiteNav({ activePage }: Props) {
 
   // Login modal
   const [showLogin, setShowLogin]   = useState(false);
-  const [authTab, setAuthTab]       = useState<"login" | "register">("login");
+  const [authTab, setAuthTab]       = useState<"login" | "register" | "forgot">("login");
   const [authEmail, setAuthEmail]   = useState("");
   const [authPass, setAuthPass]     = useState("");
   const [showPass, setShowPass]     = useState(false);
@@ -65,6 +65,7 @@ export default function SiteNav({ activePage }: Props) {
   const [regPass2, setRegPass2]     = useState("");
   const [authError, setAuthError]   = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   // ── Fetch products ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -231,11 +232,30 @@ export default function SiteNav({ activePage }: Props) {
     setUser(null); localStorage.removeItem("qf_user");
     window.location.href = "/";
   }
-  function closeLogin() { setShowLogin(false); setAuthError(""); setAuthEmail(""); setAuthPass(""); }
-  function resetAuth(tab: "login" | "register") {
+  function closeLogin() { setShowLogin(false); setAuthError(""); setAuthEmail(""); setAuthPass(""); setForgotSent(false); }
+  function resetAuth(tab: "login" | "register" | "forgot") {
     setAuthTab(tab); setAuthError(""); setShowPass(false); setShowPass2(false);
-    setAuthEmail(""); setAuthPass(""); setRegName(""); setRegPhone(""); setRegPass2("");
+    setAuthEmail(""); setAuthPass(""); setRegName(""); setRegPhone(""); setRegPass2(""); setForgotSent(false);
   }
+
+  async function doForgotPassword() {
+    setAuthError(""); setAuthLoading(true);
+    try {
+      const r = await fetch("/backend/api/users/forgot-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: authEmail }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setAuthError(d.message || "Failed to send reset email. Please try again."); return; }
+      setForgotSent(true);
+    } catch { setAuthError("Network error. Please try again."); }
+    finally { setAuthLoading(false); }
+  }
+
+  // Inline validation helpers (computed from current values, non-empty fields only)
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authEmail);
+  const phoneCleanV = regPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
+  const phoneValid = /^[6-9]\d{9}$/.test(phoneCleanV);
 
   const navLinks = [
     { label: "Home",      href: "/"          },
@@ -256,8 +276,7 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:fixed;top:34px;left:0;right:0;z-index:9998;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
-        @media(max-width:1024px){.sn-nav{top:34px!important}}
+        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}
         .sn-link:hover,.sn-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
@@ -269,14 +288,12 @@ export default function SiteNav({ activePage }: Props) {
         .sn-suggestion-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:default;}
         .sn-suggestion-item:hover{background:#f9fafb;}
         .sn-suggestion-item:last-child{border-bottom:none;}
-        .sn-mob-search{display:none;position:fixed;top:102px;left:0;right:0;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;z-index:9990;box-sizing:border-box;}
-        .sn-mob-spacer{display:none;height:0;}
+        .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;}
         @media(max-width:1024px){
           .sn-desk-nav{display:none!important;}
           .sn-search-wrap{display:none!important;}
           .sn-hamburger{display:flex!important;}
           .sn-mob-search{display:flex!important;}
-          .sn-mob-spacer{display:block!important;height:50px;}
           .sn-signin-text{display:none!important;}
           .sn-cart-text{display:none!important;}
           .sn-user-name{display:none!important;}
@@ -390,7 +407,7 @@ export default function SiteNav({ activePage }: Props) {
       {showCart && (
         <>
           <div onClick={() => { if (!ckLoading) closeCart(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 490, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "102px", right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
 
             {/* Header */}
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
@@ -634,38 +651,81 @@ export default function SiteNav({ activePage }: Props) {
         </div>
       )}
 
-      {/* ── Mobile spacer: pushes page content below the fixed mobile search bar ── */}
-      <div className="sn-mob-spacer" />
 
       {/* ── Login modal ── */}
       {showLogin && (
         <>
           <div onClick={closeLogin} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "calc(50% + 51px)", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 120px)", overflowY: "auto" }}>
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={closeLogin} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
               <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
-            <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "3px", marginBottom: "1.4rem" }}>
-              {(["login", "register"] as const).map(t => (
-                <button key={t} onClick={() => resetAuth(t)}
-                  style={{ flex: 1, padding: "9px", borderRadius: "8px", border: "none", background: authTab === t ? "#fff" : "transparent", fontWeight: authTab === t ? 700 : 500, fontSize: "13.5px", cursor: "pointer", color: authTab === t ? "#1a3c2e" : "#6b7280", boxShadow: authTab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none", transition: "all .2s", fontFamily: "inherit" }}>
-                  {t === "login" ? "Sign In" : "Create Account"}
-                </button>
-              ))}
-            </div>
+            {authTab !== "forgot" && (
+              <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "3px", marginBottom: "1.4rem" }}>
+                {(["login", "register"] as const).map(t => (
+                  <button key={t} onClick={() => resetAuth(t)}
+                    style={{ flex: 1, padding: "9px", borderRadius: "8px", border: "none", background: authTab === t ? "#fff" : "transparent", fontWeight: authTab === t ? 700 : 500, fontSize: "13.5px", cursor: "pointer", color: authTab === t ? "#1a3c2e" : "#6b7280", boxShadow: authTab === t ? "0 1px 4px rgba(0,0,0,0.1)" : "none", transition: "all .2s", fontFamily: "inherit" }}>
+                    {t === "login" ? "Sign In" : "Create Account"}
+                  </button>
+                ))}
+              </div>
+            )}
             {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", fontFamily: "sans-serif", marginBottom: "12px" }}>{authError}</div>}
-            {authTab === "login" ? (
+
+            {/* ── Forgot Password ── */}
+            {authTab === "forgot" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ textAlign: "center", marginBottom: "4px" }}>
+                  <p style={{ fontSize: "15px", fontWeight: 700, color: "#1a3c2e", margin: "0 0 4px" }}>Reset your password</p>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Enter your email and we'll send a reset link.</p>
+                </div>
+                {forgotSent ? (
+                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
+                    <div style={{ fontSize: "28px", marginBottom: "8px" }}>✉️</div>
+                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", fontFamily: "sans-serif", margin: "0 0 4px" }}>Check your inbox!</p>
+                    <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                      <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && emailValid && doForgotPassword()}
+                        style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
+                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                    </div>
+                    <button onClick={doForgotPassword} disabled={authLoading || !emailValid} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading || !emailValid ? 0.6 : 1 }}>
+                      {authLoading ? "Sending…" : "Send Reset Link"}
+                    </button>
+                  </>
+                )}
+                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                  <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => resetAuth("login")}>← Back to Sign In</span>
+                </p>
+              </div>
+            ) : authTab === "login" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <div style={{ position: "relative" }}>
-                  <input type={showPass ? "text" : "password"} placeholder="Password" value={authPass} onChange={e => setAuthPass(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && doLogin()}
-                    style={{ ...inputStyle, paddingRight: "40px" }}
-                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} placeholder="Your password" value={authPass} onChange={e => setAuthPass(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && doLogin()}
+                      style={{ ...inputStyle, paddingRight: "40px", borderColor: undefined }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", marginTop: "-4px" }}>
+                  <span style={{ fontSize: "12.5px", color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => resetAuth("forgot")}>Forgot Password?</span>
                 </div>
                 <button onClick={doLogin} disabled={authLoading} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Signing in…" : "Sign In"}
@@ -676,24 +736,44 @@ export default function SiteNav({ activePage }: Props) {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <input type="text" placeholder="Full name" value={regName} onChange={e => setRegName(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <input type="email" placeholder="Email address" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <input type="tel" placeholder="Mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)} style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                <div style={{ position: "relative" }}>
-                  <input type={showPass ? "text" : "password"} placeholder="Password" value={authPass} onChange={e => setAuthPass(e.target.value)}
-                    style={{ ...inputStyle, paddingRight: "40px" }}
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Full name <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="text" placeholder="Your full name" value={regName} onChange={e => setRegName(e.target.value)} style={{ ...inputStyle, borderColor: undefined }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Name is too short</p>}
                 </div>
-                <div style={{ position: "relative" }}>
-                  <input type={showPass2 ? "text" : "password"} placeholder="Confirm password" value={regPass2} onChange={e => setRegPass2(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && doRegister()}
-                    style={{ ...inputStyle, paddingRight: "40px" }}
-                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Mobile number <span style={{ color: "#ef4444" }}>*</span></label>
+                  <input type="tel" placeholder="10-digit mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)} style={{ ...inputStyle, borderColor: regPhone && !phoneValid ? "#f87171" : undefined }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPhone && !phoneValid ? "#f87171" : "#e5e7eb")} />
+                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid 10-digit Indian mobile number</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass ? "text" : "password"} placeholder="Min 6 characters" value={authPass} onChange={e => setAuthPass(e.target.value)}
+                      style={{ ...inputStyle, paddingRight: "40px", borderColor: authPass && authPass.length < 6 ? "#f87171" : undefined }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
+                  </div>
+                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Password must be at least 6 characters</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Confirm password <span style={{ color: "#ef4444" }}>*</span></label>
+                  <div style={{ position: "relative" }}>
+                    <input type={showPass2 ? "text" : "password"} placeholder="Re-enter password" value={regPass2} onChange={e => setRegPass2(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && doRegister()}
+                      style={{ ...inputStyle, paddingRight: "40px", borderColor: regPass2 && regPass2 !== authPass ? "#f87171" : undefined }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb")} />
+                    <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
+                  </div>
+                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Passwords do not match</p>}
                 </div>
                 <button onClick={doRegister} disabled={authLoading} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Creating account…" : "Create Account"}

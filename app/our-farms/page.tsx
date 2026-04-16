@@ -88,7 +88,7 @@ export default function OurFarmsPage() {
   const photos = farmPhotos.slice(0, 6);
 
   return (
-    <div className="qf-page-wrap" style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -96,14 +96,13 @@ export default function OurFarmsPage() {
 
         /* Ticker */
         .ticker-wrap{margin-bottom:0;}
-        .ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;background:#0f8a65;}
-        .ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
+        .ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;width:100%;background:#0f8a65;}
+        .ticker-mobile{display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
         @media(max-width:1024px){
           .ticker-desktop{display:none;}
           .ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px;}
           .ticker-scroll{display:inline-flex;animation:ticker 30s linear infinite;white-space:nowrap;}
           .ticker-scroll:hover{animation-play-state:paused;}
-          .sn-nav{top:34px!important;}
         }
         @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}

@@ -44,21 +44,20 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="qf-page-wrap" style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
         .c-ticker-wrap{}
-        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;position:fixed;top:0;left:0;right:0;z-index:9999;width:100%;background:#0f8a65;}
-        .c-ticker-mobile{display:none;position:fixed;top:0;left:0;right:0;z-index:198;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
+        .c-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;width:100%;background:#0f8a65;}
+        .c-ticker-mobile{display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
         @media(max-width:1024px){
           .c-ticker-desktop{display:none}
           .c-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
           .c-ticker-scroll{display:inline-flex;animation:cticker 30s linear infinite;white-space:nowrap}
           .c-ticker-scroll:hover{animation-play-state:paused}
-          .sn-nav{top:34px!important}
         }
         @keyframes cticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 

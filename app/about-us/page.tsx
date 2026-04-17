@@ -273,33 +273,33 @@ export default function AboutPage() {
       </div>
 
       {/* ── 3. Mission · Vision · Promise ── */}
-      <div style={{ background: "linear-gradient(135deg,#071812 0%,#0f2a1a 50%,#071812 100%)", padding: "4rem 1.5rem" }}>
+      <div style={{ background: "#f8fdf9", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
-            <h2 className="section-heading" style={{ color: "#fff" }}>Mission, Vision &amp; Promise</h2>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
+            <h2 className="section-heading">Mission, Vision &amp; Promise</h2>
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&q=80&fit=crop", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
-              { icon: "🌏", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
-              { icon: "🤝", gradient: "linear-gradient(135deg,#1e0a3c,#4a1080)", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80&fit=crop", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
+              { icon: "🎯", img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&q=80&fit=crop", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🌏", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
+              { icon: "🤝", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80&fit=crop", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
             ].map((card, i) => (
-              <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: card.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", cursor: "pointer" }}>
+              <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={card.img} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
-                  <div style={{ position: "absolute", inset: 0, background: card.gradient, opacity: 0.7 }} />
-                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
-                    <span style={{ fontSize: "28px" }}>{card.icon}</span>
+                  <img src={card.img} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+                    <span style={{ fontSize: "22px" }}>{card.icon}</span>
                   </div>
-                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
-                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{card.stat}</div>
-                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontFamily: "sans-serif" }}>{card.statSub}</div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "4px 10px", textAlign: "right", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>{card.stat}</div>
+                    <div style={{ fontSize: "10px", color: "#4b5563", fontFamily: "sans-serif" }}>{card.statSub}</div>
                   </div>
                 </div>
-                <div style={{ padding: "1.2rem" }}>
-                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{card.title}</h3>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{card.text}</p>
+                <div style={{ padding: "1.4rem" }}>
+                  <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{card.title}</h3>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{card.text}</p>
                 </div>
               </div>
             ))}
@@ -308,35 +308,35 @@ export default function AboutPage() {
       </div>
 
       {/* ── 4. How It Works ── */}
-      <div className="about-how-section" style={{ background: "linear-gradient(135deg,#060f0c 0%,#0a1f12 50%,#060f0c 100%)", padding: "4rem 1.5rem" }}>
+      <div className="about-how-section" style={{ background: "#fff", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
-            <h2 className="section-heading" style={{ color: "#fff" }}>From Farm to Your Doorstep</h2>
-            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "14px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
+            <h2 className="section-heading">From Farm to Your Doorstep</h2>
+            <p style={{ color: "#6b7280", fontSize: "15px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0", lineHeight: 1.8 }}>A transparent, quality-controlled journey every single order.</p>
           </div>
           <div className="about-steps-grid">
             {[
-              { step: "01", icon: "🌾", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80&fit=crop", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
-              { step: "02", icon: "🔬", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
-              { step: "03", icon: "❄️", gradient: "linear-gradient(135deg,#0a2030,#0a4060)", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
-              { step: "04", icon: "🚚", gradient: "linear-gradient(135deg,#1e0a3c,#4a1080)", img: "https://images.unsplash.com/photo-1584277261846-c6a1672ed979?w=600&q=80&fit=crop", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
+              { step: "01", icon: "🌾", img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80&fit=crop", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
+              { step: "02", icon: "🔬", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
+              { step: "03", icon: "❄️", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
+              { step: "04", icon: "🚚", img: "https://images.unsplash.com/photo-1584277261846-c6a1672ed979?w=600&q=80&fit=crop", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
             ].map((s, i) => (
-              <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: s.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.15)", cursor: "pointer" }}>
+              <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={s.img} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
-                  <div style={{ position: "absolute", inset: 0, background: s.gradient, opacity: 0.7 }} />
-                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
-                    <span style={{ fontSize: "28px" }}>{s.icon}</span>
+                  <img src={s.img} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+                    <span style={{ fontSize: "22px" }}>{s.icon}</span>
                   </div>
-                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
-                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>STEP</div>
-                    <div style={{ fontSize: "14px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{s.step}</div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "4px 10px", textAlign: "right", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#16a34a", lineHeight: 1, textTransform: "uppercase", letterSpacing: "0.5px" }}>STEP</div>
+                    <div style={{ fontSize: "16px", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>{s.step}</div>
                   </div>
                 </div>
-                <div style={{ padding: "1.2rem" }}>
-                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{s.title}</h3>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{s.desc}</p>
+                <div style={{ padding: "1.4rem" }}>
+                  <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{s.title}</h3>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -345,32 +345,32 @@ export default function AboutPage() {
       </div>
 
       {/* ── 5. Quality Guarantee strip ── */}
-      <div className="about-guar-section" style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020,#1a4a2e)", padding: "3.5rem 1.5rem" }}>
+      <div className="about-guar-section" style={{ background: "#f4f8f5", padding: "3.5rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto", textAlign: "center" }}>
-          <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
-          <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
+          <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
+          <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
           <div className="about-stats-grid">
             {[
-              { icon: "💳", gradient: "linear-gradient(135deg,#0a2e1a,#1a5c30)", img: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80&fit=crop", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
-              { icon: "🔄", gradient: "linear-gradient(135deg,#0c2340,#1e4080)", img: "https://images.unsplash.com/photo-1559181567-c3190ca9d1d7?w=600&q=80&fit=crop", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
-              { icon: "❄️", gradient: "linear-gradient(135deg,#0a2030,#0a4060)", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
-              { icon: "🌱", gradient: "linear-gradient(135deg,#1e2a0a,#3a5010)", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&q=80&fit=crop", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
+              { icon: "💳", img: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80&fit=crop", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
+              { icon: "🔄", img: "https://images.unsplash.com/photo-1559181567-c3190ca9d1d7?w=600&q=80&fit=crop", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
+              { icon: "❄️", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
+              { icon: "🌱", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&q=80&fit=crop", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
             ].map((g, i) => (
-              <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: g.gradient, color: "#fff", boxShadow: "0 8px 30px rgba(0,0,0,0.2)", cursor: "pointer" }}>
+              <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={g.img} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.35 }} />
-                  <div style={{ position: "absolute", inset: 0, background: g.gradient, opacity: 0.7 }} />
-                  <div style={{ position: "absolute", top: "14px", left: "16px" }}>
-                    <span style={{ fontSize: "28px" }}>{g.icon}</span>
+                  <img src={g.img} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
+                  <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+                    <span style={{ fontSize: "22px" }}>{g.icon}</span>
                   </div>
-                  <div style={{ position: "absolute", top: "12px", right: "14px", textAlign: "right" }}>
-                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{g.stat}</div>
-                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontFamily: "sans-serif" }}>{g.statSub}</div>
+                  <div style={{ position: "absolute", top: "12px", right: "14px", background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "4px 10px", textAlign: "right", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                    <div style={{ fontSize: "15px", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>{g.stat}</div>
+                    <div style={{ fontSize: "10px", color: "#4b5563", fontFamily: "sans-serif" }}>{g.statSub}</div>
                   </div>
                 </div>
-                <div style={{ padding: "1.2rem" }}>
-                  <h3 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#fff" }}>{g.title}</h3>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>
+                <div style={{ padding: "1.4rem" }}>
+                  <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{g.title}</h3>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{g.desc}</p>
                 </div>
               </div>
             ))}

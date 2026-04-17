@@ -65,6 +65,7 @@ function ProductsContent() {
   const [hov, setHov]             = useState<string | null>(null);
   const [wishlist, setWishlist]   = useState<string[]>([]);
   const [userToken, setUserToken] = useState<string | null>(null);
+  const [customCats, setCustomCats] = useState<{key:string;label:string;icon:string;color:string}[]>([]);
 
   // Helper: fetch wishlist from backend and update state + cache
   function fetchWishlistFromBackend(token: string) {
@@ -88,6 +89,16 @@ function ProductsContent() {
       const c = localStorage.getItem("qf_cart");
       if (c) setCart(JSON.parse(c));
       setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false");
+      // Load admin custom categories + overrides from localStorage (same source as home page)
+      try {
+        const cc = localStorage.getItem("qf_custom_categories");
+        const co = localStorage.getItem("qf_category_overrides");
+        const parsed: {key:string;label:string;icon:string;color:string}[] = cc ? JSON.parse(cc) : [];
+        const overrides: Record<string,string> = co ? JSON.parse(co) : {};
+        const base = siteConfig.categories.map(c => ({ ...c, label: overrides[c.key] ?? c.label }));
+        const extras = parsed.filter(c => !base.find(b => b.key === c.key));
+        setCustomCats([...base, ...extras]);
+      } catch { setCustomCats([]); }
       const saved = localStorage.getItem("qf_user");
       if (saved) {
         const u = JSON.parse(saved);
@@ -114,6 +125,17 @@ function ProductsContent() {
           setWishlist([]);
           localStorage.removeItem("qf_wishlist");
         }
+      }
+      if (e.key === "qf_custom_categories" || e.key === "qf_category_overrides") {
+        try {
+          const cc = localStorage.getItem("qf_custom_categories");
+          const co = localStorage.getItem("qf_category_overrides");
+          const parsed: {key:string;label:string;icon:string;color:string}[] = cc ? JSON.parse(cc) : [];
+          const overrides: Record<string,string> = co ? JSON.parse(co) : {};
+          const base = siteConfig.categories.map(c => ({ ...c, label: overrides[c.key] ?? c.label }));
+          const extras = parsed.filter(c => !base.find(b => b.key === c.key));
+          setCustomCats([...base, ...extras]);
+        } catch {}
       }
     };
     window.addEventListener("storage", onStorage);
@@ -202,9 +224,10 @@ function ProductsContent() {
     });
   }
 
-  const allCats = [{ key: "all", label: "All", icon: "🌿" }, ...siteConfig.categories];
+  const baseCats = customCats.length > 0 ? customCats : siteConfig.categories;
+  const allCats = [{ key: "all", label: "All", icon: "🌿", color: "#2d8a4e" }, ...baseCats];
   const allCatLabel = Object.fromEntries(allCats.map(c => [c.key, c.label]));
-  const allCatColor: Record<string, string> = Object.fromEntries(siteConfig.categories.map(c => [c.key, c.color]));
+  const allCatColor: Record<string, string> = Object.fromEntries(baseCats.map(c => [c.key, c.color]));
   const cartItems = products.filter(p => (cart[p._id] || 0) > 0);
   const cartTotal = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;

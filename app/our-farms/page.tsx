@@ -47,6 +47,7 @@ function WhatsAppIcon({ size = 17 }: { size?: number }) {
 
 export default function OurFarmsPage() {
   const [farmPhotos, setFarmPhotos] = useState<FarmPhoto[]>([]);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   // Cart-aware WhatsApp state (reads localStorage product cache set by SiteNav)
   const [waCart, setWaCart]   = useState<Record<string, number>>({});
@@ -85,7 +86,7 @@ export default function OurFarmsPage() {
       )}`
     : `https://wa.me/${siteConfig.whatsapp}`;
 
-  const photos = farmPhotos.slice(0, 6);
+  const photos = farmPhotos;
 
   return (
     <div style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
@@ -118,10 +119,11 @@ export default function OurFarmsPage() {
         .lift:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.14)!important;}
 
         /* Mobile responsiveness */
+        .farm-grid-f{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+        .farm-photo-f{border-radius:20px;overflow:hidden;position:relative;height:240px;box-shadow:0 8px 30px rgba(0,0,0,0.12);cursor:zoom-in;}
         @media(max-width:768px){
           .farm-grid-f{grid-template-columns:1fr 1fr!important;gap:10px!important;}
-          .farm-hero-f{height:220px!important;grid-row:span 1!important;}
-          .farm-other-f{height:160px!important;}
+          .farm-photo-f{height:180px!important;}
           .trust-grid-f{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0.75rem!important;}
           .trust-card-f{max-width:100%!important;flex:none!important;padding:12px 14px!important;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}
@@ -129,13 +131,16 @@ export default function OurFarmsPage() {
         }
         @media(max-width:480px){
           .farm-grid-f{grid-template-columns:1fr!important;}
-          .farm-hero-f,.farm-other-f{height:200px!important;grid-row:span 1!important;}
+          .farm-photo-f{height:200px!important;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1rem!important;}
           .nav-bar-f{padding:0 1rem!important;}
           .trust-grid-f{grid-template-columns:1fr 1fr!important;gap:0.6rem!important;}
           .trust-card-f{padding:10px 10px!important;gap:10px!important;}
           .trust-card-f .trust-icon-f{width:38px!important;height:38px!important;font-size:18px!important;}
         }
+        /* Lightbox */
+        @keyframes lbFadeIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
+        .farm-lb-img{animation:lbFadeIn .22s cubic-bezier(.22,1,.36,1) both}
         nextjs-portal{display:none!important}
       `}</style>
 
@@ -212,29 +217,43 @@ export default function OurFarmsPage() {
 
         {/* Photo grid */}
         {photos.length > 0 && (
-          <div className="farm-grid-f" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "16px" }}>
+          <div className="farm-grid-f">
             {photos.map((photo, idx) => (
-              <div key={photo.id} className={`lift ${idx === 0 ? "farm-hero-f" : "farm-other-f"}`}
-                style={{ borderRadius: "20px", overflow: "hidden", position: "relative", gridRow: idx === 0 ? "span 2" : undefined, height: idx === 0 ? "460px" : "210px", boxShadow: "0 8px 30px rgba(0,0,0,0.12)" }}>
+              <div key={photo.id} className="farm-photo-f lift"
+                onClick={() => setLightboxImg(photo.imageUrl)}>
                 <img src={photo.imageUrl} alt={photo.title || "Farm"}
                   style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .5s cubic-bezier(.4,0,.2,1)", display: "block" }}
                   onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.06)")}
                   onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(7,24,18,0.75) 0%,rgba(7,24,18,0.1) 50%,transparent 100%)" }} />
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(7,24,18,0.72) 0%,rgba(7,24,18,0.08) 55%,transparent 100%)" }} />
                 {photo.title && (
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "1.2rem 1.4rem" }}>
-                    <div style={{ color: "#fff", fontWeight: 700, fontSize: idx === 0 ? "17px" : "13.5px", marginBottom: "3px", fontFamily: "'Poppins','Inter',sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{photo.title}</div>
-                    {photo.description && <div style={{ color: "rgba(255,255,255,0.75)", fontSize: idx === 0 ? "13px" : "11.5px", lineHeight: 1.5 }}>{photo.description}</div>}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "1rem 1.2rem" }}>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: "14px", marginBottom: "2px", fontFamily: "'Poppins','Inter',sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{photo.title}</div>
+                    {photo.description && <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "12px", lineHeight: 1.5 }}>{photo.description}</div>}
                   </div>
                 )}
                 {idx === 0 && (
-                  <div style={{ position: "absolute", top: "16px", right: "16px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", borderRadius: "20px", padding: "6px 14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "14px" }}>🌿</span>
+                  <div style={{ position: "absolute", top: "14px", right: "14px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", borderRadius: "20px", padding: "5px 12px", display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ fontSize: "13px" }}>🌿</span>
                     <span style={{ color: "#fff", fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em" }}>Farm Fresh</span>
                   </div>
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Lightbox */}
+        {lightboxImg && (
+          <div onClick={() => setLightboxImg(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", cursor: "zoom-out" }}>
+            <img src={lightboxImg} alt="Farm" className="farm-lb-img"
+              style={{ maxWidth: "90vw", maxHeight: "86vh", objectFit: "contain", borderRadius: "16px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}
+              onClick={e => e.stopPropagation()} />
+            <button onClick={() => setLightboxImg(null)}
+              style={{ position: "fixed", top: "18px", right: "22px", background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: "50%", width: "46px", height: "46px", color: "#fff", fontSize: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, fontFamily: "inherit" }}>
+              ×
+            </button>
           </div>
         )}
 

@@ -3,16 +3,18 @@ import path from "path";
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 const ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
+const VALID_BUCKETS = new Set(["product-images", "farm-images"]);
 
-const SUPABASE_URL    = process.env.SUPABASE_URL    || "";
-const SUPABASE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const BUCKET          = "product-images";
+const SUPABASE_URL = process.env.SUPABASE_URL            || "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file     = formData.get("image") as File | null;
-    const slug     = (formData.get("slug") as string | null) || "";
+    const slug     = (formData.get("slug")   as string | null) || "";
+    const bucketParam = (formData.get("bucket") as string | null) || "";
+    const bucket  = VALID_BUCKETS.has(bucketParam) ? bucketParam : "product-images";
 
     if (!file) return NextResponse.json({ message: "No file provided" }, { status: 400 });
 
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
 
     const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,
+      `${SUPABASE_URL}/storage/v1/object/${bucket}/${fileName}`,
       {
         method:  "POST",
         headers: {
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Storage upload failed" }, { status: 500 });
     }
 
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
     return NextResponse.json({ success: true, url: publicUrl, filename: fileName });
   } catch (err) {
     console.error("Upload error:", err);

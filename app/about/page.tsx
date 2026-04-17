@@ -52,9 +52,12 @@ export default function AboutPage() {
 
   useEffect(() => {
     try {
-      const photos = JSON.parse(localStorage.getItem("qf_farm_photos") || "[]");
-      const first = (photos as {imageUrl:string}[]).find(p => p.imageUrl && p.imageUrl.startsWith("http"));
-      if (first) setStoryImg(first.imageUrl);
+      const FARM_BASE = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
+      const DEFAULT_STORY = `${FARM_BASE}/farm-1776104049239.png`;
+      const saved = localStorage.getItem("qf_farm_photos");
+      const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
+      const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
+      setStoryImg(first ? first.imageUrl : DEFAULT_STORY);
     } catch {}
   }, []);
 

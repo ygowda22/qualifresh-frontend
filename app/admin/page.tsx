@@ -11,7 +11,15 @@ interface FarmPhoto { id: string; title: string; description: string; imageUrl: 
 interface CustomCategory { id: string; key: string; label: string; image: string; color: string; icon: string; }
 const CAT_COLOR_OPTIONS = ["#1d4ed8","#16a34a","#15803d","#b91c1c","#0d9488","#ca8a04","#7c3aed","#b45309","#db2777","#0369a1"];
 
-const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [];
+const SUPABASE_FARM = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
+const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
+  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",    imageUrl: `${SUPABASE_FARM}/farm-1776104049239.png` },
+  { id: "f2", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: `${SUPABASE_FARM}/farm-1776104159959.png` },
+  { id: "f3", title: "Growing Fields",  description: "Exotic varieties cultivated with care",          imageUrl: `${SUPABASE_FARM}/farm-1776104172608.png` },
+  { id: "f4", title: "Farm Fresh",      description: "Inspected and packed the same morning",          imageUrl: `${SUPABASE_FARM}/farm-1776104179499.png` },
+  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: `${SUPABASE_FARM}/farm-1776104186856.png` },
+  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: `${SUPABASE_FARM}/farm-1776104413238.png` },
+];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -446,11 +454,13 @@ export default function AdminPage() {
 
   function saveFarmPhoto() {
     if (!farmForm.imageUrl) { setFarmUploadError("Please upload or paste an image URL."); return; }
+    const cleanUrl = farmForm.imageUrl.split("?")[0];
+    const cleanForm = { ...farmForm, imageUrl: cleanUrl };
     let updated: FarmPhoto[];
     if (editingFarm) {
-      updated = farmPhotos.map(p => p.id === editingFarm.id ? { ...p, ...farmForm } : p);
+      updated = farmPhotos.map(p => p.id === editingFarm.id ? { ...p, ...cleanForm } : p);
     } else {
-      updated = [...farmPhotos, { id: `f${Date.now()}`, ...farmForm }];
+      updated = [...farmPhotos, { id: `f${Date.now()}`, ...cleanForm }];
     }
     setFarmPhotos(updated);
     setShowFarmModal(false);
@@ -474,6 +484,7 @@ export default function AdminPage() {
       const fd = new FormData();
       fd.append("image", file);
       fd.append("slug", `farm-${Date.now()}`);
+      fd.append("bucket", "farm-images");
       const r = await fetch(`/api/upload`, {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -481,7 +492,7 @@ export default function AdminPage() {
       });
       if (!r.ok) throw new Error("Upload failed");
       const d = await r.json();
-      setFarmForm(f => ({ ...f, imageUrl: `${d.url}?t=${Date.now()}` }));
+      setFarmForm(f => ({ ...f, imageUrl: d.url }));
     } catch (err: any) { setFarmUploadError(err.message || "Upload failed"); }
     finally { setFarmUploading(false); e.target.value = ""; }
   }

@@ -11,14 +11,7 @@ interface FarmPhoto { id: string; title: string; description: string; imageUrl: 
 interface CustomCategory { id: string; key: string; label: string; image: string; color: string; icon: string; }
 const CAT_COLOR_OPTIONS = ["#1d4ed8","#16a34a","#15803d","#b91c1c","#0d9488","#ca8a04","#7c3aed","#b45309","#db2777","#0369a1"];
 
-const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
-  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",   imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80&fit=crop" },
-  { id: "f2", title: "Herb Garden",     description: "Fresh herbs cultivated with care every morning", imageUrl: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80&fit=crop" },
-  { id: "f3", title: "Mushroom House",  description: "Climate-controlled growing chambers",            imageUrl: "https://images.unsplash.com/photo-1504382262782-5b4ece78642b?w=800&q=80&fit=crop" },
-  { id: "f4", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800&q=80&fit=crop" },
-  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80&fit=crop" },
-  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80&fit=crop" },
-];
+const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -1103,7 +1096,7 @@ export default function AdminPage() {
                     <div key={photo.id} style={{ borderRadius: "12px", overflow: "hidden", border: "1.5px solid #e9ede4", background: "#f9fafb", position: "relative" }}>
                       <div style={{ height: "130px", overflow: "hidden", position: "relative" }}>
                         <img src={photo.imageUrl} alt={photo.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          onError={e => { (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=400&q=60&fit=crop"; }} />
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 50%)" }} />
                         <div style={{ position: "absolute", bottom: "8px", left: "10px", right: "10px" }}>
                           <div style={{ color: "#fff", fontSize: "12px", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{photo.title || "Untitled"}</div>

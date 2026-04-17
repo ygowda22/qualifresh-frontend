@@ -57,11 +57,20 @@ export default function AboutPage() {
   const [cMsg, setCMsg]                 = useState("");
   const [cSent, setCSent]               = useState(false);
 
+  const [storyImg, setStoryImg]   = useState<string>("");
+
   // Cart-aware WhatsApp state (reads localStorage product cache set by SiteNav)
   const [waCart, setWaCart]       = useState<Record<string, number>>({});
   const [waProds, setWaProds]     = useState<{_id:string;name:string;price:number}[]>([]);
 
-  useEffect(() => { document.title = siteConfig.pageTitles.aboutUs; }, []);
+  useEffect(() => {
+    document.title = siteConfig.pageTitles.aboutUs;
+    try {
+      const photos = JSON.parse(localStorage.getItem("qf_farm_photos") || "[]");
+      const first = (photos as {imageUrl:string}[]).find(p => p.imageUrl && p.imageUrl.startsWith("http"));
+      if (first) setStoryImg(first.imageUrl);
+    } catch {}
+  }, []);
 
   // Scroll-in animation observer
   useEffect(() => {
@@ -265,9 +274,11 @@ export default function AboutPage() {
                 <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
               </blockquote>
             </div>
-            <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-              <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=75&fit=crop" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
+            {storyImg && (
+              <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
           </div>
         </div>
       </div>

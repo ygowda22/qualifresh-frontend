@@ -299,8 +299,6 @@ export default function SiteNav({ activePage }: Props) {
     boxSizing: "border-box", outline: "none",
   };
 
-  const FALLBACK = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=100&q=60";
-
   return (
     <>
       <style>{`

@@ -7,83 +7,6 @@ import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
 
 const { delivery: DEL } = siteConfig;
 
-const IMG: Record<string, string> = {
-  // ── Vegetables ───────────────────────────────────────────────────────────
-  "asparagus-250gm":             "https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=400&q=80&fit=crop",
-  "baby-corn-200gm":             "https://images.unsplash.com/photo-1601593346740-925612772716?w=400&q=80&fit=crop",
-  "baby-potato-500gm":           "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&q=80&fit=crop",
-  "capsicum-red-yellow-mix-500gm":"https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80&fit=crop",
-  "celery-500gm":                "https://images.unsplash.com/photo-1628773822503-930a7eaab43a?w=400&q=80&fit=crop",
-  "cherry-tomato-200gm":         "https://images.unsplash.com/photo-1546094096-0df4bcaad337?w=400&q=80&fit=crop",
-  "galangal-100gm":              "https://images.unsplash.com/photo-1559181567-c3190ca9d1d7?w=400&q=80&fit=crop",
-  "baby-carrots-8-10sticks":     "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80&fit=crop",
-  "kholrabi-500gm":              "https://images.unsplash.com/photo-1550411294-2b0f09e63b5c?w=400&q=80&fit=crop",
-  "peeled-garlic-250gm":         "https://images.unsplash.com/photo-1583822645289-bd1de5d4e8fb?w=400&q=80&fit=crop",
-  "shelled-sweet-corn-250gm":    "https://images.unsplash.com/photo-1473101088335-c2c928e5df15?w=400&q=80&fit=crop",
-  "zucchini-green-yellow-500gm": "https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=400&q=80&fit=crop",
-  "thai-mix-125gm":              "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=400&q=80&fit=crop",
-  "edible-flowers-20-25pc":      "https://images.unsplash.com/photo-1490750967868-88df5691cc31?w=400&q=80&fit=crop",
-  "green-jalapeno-250gm":        "https://images.unsplash.com/photo-1528826007177-f38517ce2b28?w=400&q=80&fit=crop",
-  "butternut-squash-500-600gm":  "https://images.unsplash.com/photo-1570197788417-0e82375c9371?w=400&q=80&fit=crop",
-  "red-radish-250gm":            "https://images.unsplash.com/photo-1585666048030-01abca37a2f1?w=400&q=80&fit=crop",
-  "broccoli-500gm":              "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=400&q=80&fit=crop",
-  "lotus-root-250gm":            "https://images.unsplash.com/photo-1553980501-f2f75f8c54e3?w=400&q=80&fit=crop",
-  "leeks-250gm":                 "https://images.unsplash.com/photo-1605209971703-f2b8c57aef44?w=400&q=80&fit=crop",
-  "fennel-with-leaves-500gm":    "https://images.unsplash.com/photo-1551123892-85a29e37a5ec?w=400&q=80&fit=crop",
-  "brussels-sprouts-200gm":      "https://images.unsplash.com/photo-1584270355706-c0f6c1d4fe4e?w=400&q=80&fit=crop",
-
-  // ── Leafy Greens ─────────────────────────────────────────────────────────
-  "american-kale-curled-250gm":  "https://images.unsplash.com/photo-1524179091875-bf99a9a6af57?w=400&q=80&fit=crop",
-  "baby-spinach-100gm":          "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=400&q=80&fit=crop",
-  "baby-kale-leaves-100gm":      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&q=80&fit=crop",
-  "baby-pakchoy-250gm":          "https://images.unsplash.com/photo-1597668158861-f7c51e75ce1a?w=400&q=80&fit=crop",
-  "bok-choy-500gm":              "https://images.unsplash.com/photo-1597668158861-f7c51e75ce1a?w=400&q=80&fit=crop",
-  "chinese-cabbage-1kg":         "https://images.unsplash.com/photo-1598512199776-e0f5e78db4b0?w=400&q=80&fit=crop",
-  "iceberg-lettuce-500gm":       "https://images.unsplash.com/photo-1622205313162-be1d5712a43f?w=400&q=80&fit=crop",
-  "morning-glory-250gm":         "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400&q=80&fit=crop",
-  "purple-red-cabbage-500gm":    "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=400&q=80&fit=crop",
-  "arugula-50gm":                "https://images.unsplash.com/photo-1607175785229-b7b7c5d31eb2?w=400&q=80&fit=crop",
-  "swiss-chard-250gm":           "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&q=80&fit=crop",
-
-  // ── Herbs ────────────────────────────────────────────────────────────────
-  "basil-50gm":                  "https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=400&q=80&fit=crop",
-  "parsley-100gm":               "https://images.unsplash.com/photo-1602165238978-7d24c50e5c43?w=400&q=80&fit=crop",
-  "kaffir-lime-leaves-50gm":     "https://images.unsplash.com/photo-1561136594-7f68413baa99?w=400&q=80&fit=crop",
-  "garlic-chives-250gm":         "https://images.unsplash.com/photo-1610725664285-7c57e6eeac3f?w=400&q=80&fit=crop",
-  "herbs-mix-10gm":              "https://images.unsplash.com/photo-1515586000433-45406d8e6662?w=400&q=80&fit=crop",
-  "lemongrass-100gm":            "https://images.unsplash.com/photo-1609501677781-2ffc15c91e62?w=400&q=80&fit=crop",
-  "minari-100gm":                "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=400&q=80&fit=crop",
-  "perilla-50gm":                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80&fit=crop",
-  "perilla-250gm":               "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80&fit=crop",
-
-  // ── Mushrooms ────────────────────────────────────────────────────────────
-  "mushroom-200gm":              "https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&q=80&fit=crop",
-  "king-oyster-mushroom-200gm":  "https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?w=400&q=80&fit=crop",
-  "enoki-mushroom-100gm":        "https://images.unsplash.com/photo-1581006218038-20b0aff42562?w=400&q=80&fit=crop",
-  "shimeji-mushroom-125gm":      "https://images.unsplash.com/photo-1504982875-cc57b0b36f18?w=400&q=80&fit=crop",
-  "portobello-mushroom-200gm":   "https://images.unsplash.com/photo-1552825897-bb4be46027b7?w=400&q=80&fit=crop",
-
-  // ── Microgreens ──────────────────────────────────────────────────────────
-  "mix-microgreens-50gm":        "https://images.unsplash.com/photo-1574185047135-d1bccc9a4cd2?w=400&q=80&fit=crop",
-
-  // ── Sprouts ──────────────────────────────────────────────────────────────
-  "moong-sprouts-250gm":         "https://images.unsplash.com/photo-1556909212-d5b604d0c90d?w=400&q=80&fit=crop",
-  "soyabean-sprouts-200gm":      "https://images.unsplash.com/photo-1556909172-8c2f041fca1e?w=400&q=80&fit=crop",
-  "edamame-fresh-200gm":         "https://images.unsplash.com/photo-1621955511272-5f7bd4d9eb35?w=400&q=80&fit=crop",
-
-  // ── Fruits ───────────────────────────────────────────────────────────────
-  "mulberry-150gm":              "https://images.unsplash.com/photo-1557800636-894a64c1696f?w=400&q=80&fit=crop",
-
-  // ── Grains ───────────────────────────────────────────────────────────────
-  "organic-ragi-flour-500gm":    "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=400&q=80&fit=crop",
-  "indrayani-rice-1kg":          "https://images.unsplash.com/photo-1536304993881-ff86e0c9e8b5?w=400&q=80&fit=crop",
-
-  // ── Other ────────────────────────────────────────────────────────────────
-  "a2-gir-cow-ghee-500ml":       "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&q=80&fit=crop",
-  "a2-gir-cow-ghee-250ml":       "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&q=80&fit=crop",
-};
-
-const FALLBACK = "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&q=80&fit=crop";
 
 // ── Config-driven category lookups (edit in src/config/site.ts, never here) ──
 const CATS = siteConfig.categories;
@@ -178,6 +101,7 @@ export default function Home() {
   const [cartEnabled, setCartEnabled]   = useState(true);
   const [customCats, setCustomCats]     = useState<{ key:string; label:string; image:string; color:string; icon:string }[]>([]);
   const [catOverrides, setCatOverrides] = useState<Record<string, { label?: string; image?: string; color?: string; icon?: string }>>({});
+  const [storyImg, setStoryImg]         = useState<string>("");
 
   // ── Contact modal ──────────────────────────────────────────────────────────
   const [showContactModal, setShowContactModal] = useState(false);
@@ -249,6 +173,11 @@ export default function Home() {
     try {
       const ovSetting = localStorage.getItem("qf_category_overrides");
       if (ovSetting) setCatOverrides(JSON.parse(ovSetting));
+    } catch {}
+    try {
+      const photos = JSON.parse(localStorage.getItem("qf_farm_photos") || "[]");
+      const first = (photos as {imageUrl:string}[]).find(p => p.imageUrl && p.imageUrl.startsWith("http"));
+      if (first) setStoryImg(first.imageUrl);
     } catch {}
   }, []);
 
@@ -1271,9 +1200,11 @@ export default function Home() {
                   <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
                 </blockquote>
               </div>
-              <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=75&fit=crop" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
+              {storyImg && (
+                <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                  <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              )}
             </div>
           </div>
         </div>

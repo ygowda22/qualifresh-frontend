@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
-    return NextResponse.json({ url: publicUrl, filename: fileName });
+    return NextResponse.json({ success: true, url: publicUrl, filename: fileName });
   } catch (err) {
     console.error("Category upload error:", err);
     return NextResponse.json({ message: "Upload failed" }, { status: 500 });

@@ -5,14 +5,6 @@ import SiteNav from "../components/SiteNav";
 
 interface FarmPhoto { id: string; title: string; description: string; imageUrl: string; }
 
-const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
-  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",    imageUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80&fit=crop" },
-  { id: "f2", title: "Herb Garden",     description: "Fresh herbs cultivated with care every morning", imageUrl: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80&fit=crop" },
-  { id: "f3", title: "Mushroom House",  description: "Climate-controlled growing chambers",            imageUrl: "https://images.unsplash.com/photo-1504382262782-5b4ece78642b?w=800&q=80&fit=crop" },
-  { id: "f4", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800&q=80&fit=crop" },
-  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80&fit=crop" },
-  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&q=80&fit=crop" },
-];
 
 const { delivery: DEL } = siteConfig;
 const TICKER_ITEMS = [
@@ -57,8 +49,8 @@ export default function OurFarmsPage() {
     document.title = siteConfig.pageTitles.ourFarms;
     try {
       const saved = localStorage.getItem("qf_farm_photos");
-      setFarmPhotos(saved ? JSON.parse(saved) : DEFAULT_FARM_PHOTOS);
-    } catch { setFarmPhotos(DEFAULT_FARM_PHOTOS); }
+      setFarmPhotos(saved ? JSON.parse(saved) : []);
+    } catch { setFarmPhotos([]); }
   }, []);
 
   useEffect(() => {
@@ -216,6 +208,13 @@ export default function OurFarmsPage() {
         </div>
 
         {/* Photo grid */}
+        {photos.length === 0 && (
+          <div style={{ textAlign: "center", padding: "4rem 1.5rem", color: "#6b7280" }}>
+            <div style={{ fontSize: "48px", marginBottom: "1rem" }}>🌾</div>
+            <p style={{ fontSize: "15px", fontWeight: 600 }}>Farm photos coming soon</p>
+            <p style={{ fontSize: "13px", marginTop: "6px" }}>Upload photos from the admin panel to showcase your farms here.</p>
+          </div>
+        )}
         {photos.length > 0 && (
           <div className="farm-grid-f">
             {photos.map((photo, idx) => (

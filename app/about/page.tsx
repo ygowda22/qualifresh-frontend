@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { siteConfig } from "../../src/config/site";
 
 const { delivery: DEL } = siteConfig;
@@ -48,6 +48,15 @@ const TICKER_ITEMS = [
 
 export default function AboutPage() {
   const [mobileMenu, setMobileMenu] = useState(false);
+  const [storyImg, setStoryImg]     = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const photos = JSON.parse(localStorage.getItem("qf_farm_photos") || "[]");
+      const first = (photos as {imageUrl:string}[]).find(p => p.imageUrl && p.imageUrl.startsWith("http"));
+      if (first) setStoryImg(first.imageUrl);
+    } catch {}
+  }, []);
 
   // Contact modal state
   const [showContact, setShowContact]   = useState(false);
@@ -243,9 +252,11 @@ export default function AboutPage() {
                 <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
               </blockquote>
             </div>
-            <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-              <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80&fit=crop" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-            </div>
+            {storyImg && (
+              <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+                <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
+            )}
           </div>
         </div>
       </div>

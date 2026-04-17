@@ -267,7 +267,7 @@ function ProductsContent() {
 
         .p-cats{display:flex;gap:8px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none;}
         .p-cats::-webkit-scrollbar{display:none}
-        .p-cat{padding:7px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;}
+        .p-cat{padding:7px 16px;min-height:34px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;}
         .p-cat.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
         .p-cat:not(.active):hover{border-color:#2d8a4e;color:#2d8a4e;}
 
@@ -293,8 +293,8 @@ function ProductsContent() {
         .p-card-name{font-size:13.5px;font-weight:700;color:#111827;margin:0 0 3px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
         .p-card-qty{font-size:11.5px;color:#9ca3af;margin:0 0 9px;}
         .p-card-price{font-weight:800;color:#1a3c2e;font-size:18px;margin:0 0 9px;}
-        .p-card-actions{height:42px;display:flex;align-items:stretch;margin-top:auto;}
-        .p-add-btn{width:100%;font-size:13px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+        .p-card-actions{min-height:42px;display:flex;align-items:stretch;margin-top:auto;}
+        .p-add-btn{width:100%;min-height:38px;font-size:13px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;}
         .p-add-btn:hover:not(:disabled){background:#1f6b3a;}
         .p-add-btn:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
         .p-qty-ctrl{display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border-radius:8px;padding:0 8px;border:1.5px solid #86efac;width:100%;}
@@ -431,7 +431,7 @@ function ProductsContent() {
                     style={{ animation: `pfadeUp .4s ${(i % perPage) * 0.03}s both` }}
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="p-card-img-wrap">
-                      {p.imageUrl ? (
+                      {p.imageUrl && p.imageUrl.startsWith("http") ? (
                         <img src={p.imageUrl} alt={p.name} className="p-card-img"
                           style={{ transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (

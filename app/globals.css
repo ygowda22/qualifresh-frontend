@@ -19,7 +19,13 @@ body {
   font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+  line-height: 1.65;
+}
+
+/* Inter/Poppins have a larger x-height than serif fonts — prevent text clipping
+   on buttons, category chips, and card action areas that used fixed heights */
+button, a, label, span, p, li, h1, h2, h3, h4, h5, h6 {
+  line-height: inherit;
 }
 
 /* Ensure the brand font cascades to every element including form controls

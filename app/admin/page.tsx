@@ -371,7 +371,9 @@ export default function AdminPage() {
     if (!prodForm.name || !prodForm.slug || !prodForm.price) {
       showToast("Name, slug, and price are required", false); return;
     }
-    const body = { ...prodForm, price: Number(prodForm.price), stock: Number(prodForm.stock) };
+    // Strip cache-bust timestamp before storing in DB — only the clean Supabase public URL should be persisted
+    const cleanImageUrl = prodForm.imageUrl ? prodForm.imageUrl.split("?")[0] : "";
+    const body = { ...prodForm, imageUrl: cleanImageUrl, price: Number(prodForm.price), stock: Number(prodForm.stock) };
     if (editProd) {
       await fetch(`${API}/api/products/${editProd._id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
     } else {

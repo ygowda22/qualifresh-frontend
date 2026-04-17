@@ -1083,7 +1083,7 @@ export default function Home() {
                     style={{ background: "#fff", borderRadius: "13px", border: "1px solid #e9ede4", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.05)", animation: `fadeUp .4s ${(i % PER_PAGE) * 0.03}s both`, display: "flex", flexDirection: "column" }}
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="prod-img" style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative", flexShrink: 0 }}>
-                      {p.imageUrl ? (
+                      {p.imageUrl && p.imageUrl.startsWith("http") ? (
                         <img src={p.imageUrl} alt={p.name}
                           style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (
@@ -1109,7 +1109,7 @@ export default function Home() {
                         <span style={{ fontWeight: 800, color: "#1a3c2e", fontSize: "18px" }}>₹{p.price}</span>
                         {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af" }}>/kg</span>}
                       </div>
-                      <div style={{ height: "42px", display: "flex", alignItems: "stretch", marginTop: "auto" }}>
+                      <div style={{ minHeight: "42px", display: "flex", alignItems: "stretch", marginTop: "auto" }}>
                         {!cartEnabled ? (
                           <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px", color: "#9ca3af", fontWeight: 500 }}>
                             Ordering paused
@@ -1540,7 +1540,7 @@ export default function Home() {
               ) : cartItems.map(p => (
                 <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
-                    {p.imageUrl ? (
+                    {p.imageUrl && p.imageUrl.startsWith("http") ? (
                       <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
                     ) : (
                       <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>

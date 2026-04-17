@@ -649,7 +649,7 @@ export default function UserPage() {
                     {wishlistProducts.map(p => (
                       <div key={p._id} className="up-wish-card">
                         <div style={{ height: "120px", overflow: "hidden", background: "#f0fdf4", position: "relative" }}>
-                          {p.imageUrl
+                          {p.imageUrl && p.imageUrl.startsWith("http")
                             ? <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                             : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>🥬</div>
                           }

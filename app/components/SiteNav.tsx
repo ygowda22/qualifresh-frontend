@@ -295,7 +295,7 @@ export default function SiteNav({ activePage }: Props) {
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "12px 14px", borderRadius: "9px",
-    border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif",
+    border: "1.5px solid #e5e7eb", fontSize: "14px",
     boxSizing: "border-box", outline: "none",
   };
 
@@ -304,19 +304,19 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);font-family:'Inter','Poppins',-apple-system,sans-serif;}
+        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
-        .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}
+        .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;letter-spacing:0.01em;}
         .sn-link:hover,.sn-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
         .sn-hamburger{display:none;background:none;border:1.5px solid #e5e7eb;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:17px;line-height:1;color:#374151;transition:all .2s;}
         .sn-search-wrap{position:relative;}
         .sn-desk-only{display:flex;}
-        .sn-btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Inter','Poppins',-apple-system,sans-serif;font-weight:700;transition:all .2s;}
+        .sn-btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;}
         .sn-btn-g:hover{background:#1f6b3a;}
         .sn-suggestion-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #f3f4f6;cursor:default;}
         .sn-suggestion-item:hover{background:#f9fafb;}
         .sn-suggestion-item:last-child{border-bottom:none;}
-        .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;font-family:'Inter','Poppins',-apple-system,sans-serif;}
+        .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;}
         @media(max-width:1024px){
           .sn-desk-nav{display:none!important;}
           .sn-search-wrap{display:none!important;}
@@ -368,8 +368,8 @@ export default function SiteNav({ activePage }: Props) {
               <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 300, overflow: "hidden", minWidth: "260px" }}>
                 {searchSuggestions.map(p => (
                   <div key={p._id} className="sn-suggestion-item">
-                    <span style={{ fontSize: "12.5px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
+                    <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
                     <button
                       onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
                       style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
@@ -384,7 +384,7 @@ export default function SiteNav({ activePage }: Props) {
           {/* Sign In / User */}
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}>
+              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}>
                 <UserSvg /><span className="sn-user-name">Hi, {user.name.split(" ")[0]}</span>
               </a>
               <button onClick={logout} className="sn-logout-btn" style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
@@ -392,7 +392,7 @@ export default function SiteNav({ activePage }: Props) {
           ) : (
             <button onClick={() => { setShowLogin(true); resetAuth("login"); }}
               className="sn-signin-btn"
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "'Inter','Poppins',-apple-system,sans-serif", transition: "all .2s" }}
+              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, transition: "all .2s" }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2d8a4e"; (e.currentTarget as HTMLButtonElement).style.color = "#2d8a4e"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.color = "#374151"; }}>
               <UserSvg /><span className="sn-signin-text">Sign In</span>
@@ -421,7 +421,7 @@ export default function SiteNav({ activePage }: Props) {
 
       {/* ── Mobile menu (nav links only — Sign In, Cart, and search are on the navbar / below it) ── */}
       {mobileMenu && (
-        <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined, fontFamily: "'Inter','Poppins',-apple-system,sans-serif" }}>
+        <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
           {navLinks.map(item => (
             <a key={item.label} href={item.href} onClick={() => setMobileMenu(false)}
               style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: `/${activePage}` === item.href ? "#f0fdf4" : "#f7faf8", border: `1px solid ${ `/${activePage}` === item.href ? "#bbf7d0" : "#e9ede4"}`, transition: "all .15s", display: "block" }}>
@@ -444,7 +444,7 @@ export default function SiteNav({ activePage }: Props) {
                   <button onClick={() => setCartStep(cartStep === 3 ? 2 : 1)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#6b7280", padding: "0 4px 0 0", lineHeight: 1 }}>←</button>
                 )}
                 <img src="/logo.png" alt="QualiFresh" style={{ height: "30px", objectFit: "contain" }} />
-                <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px", fontFamily: "sans-serif" }}>
+                <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px" }}>
                   {cartStep === 4 ? "Order Confirmed 🎉" : cartStep === 3 ? "Payment" : cartStep === 2 ? "Checkout" : `Cart (${cartCount})`}
                 </span>
               </div>
@@ -458,8 +458,8 @@ export default function SiteNav({ activePage }: Props) {
                   {cartItems.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "3.5rem 1rem", color: "#9ca3af" }}>
                       <div style={{ fontSize: "52px", marginBottom: "1rem" }}>🛒</div>
-                      <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", fontFamily: "sans-serif", margin: "0 0 4px" }}>Your cart is empty</p>
-                      <p style={{ fontSize: "13px", fontFamily: "sans-serif", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
+                      <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", margin: "0 0 4px" }}>Your cart is empty</p>
+                      <p style={{ fontSize: "13px", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
                       <a href="/products" onClick={closeCart}
                         style={{ padding: "11px 28px", fontSize: "14px", borderRadius: "10px", background: "#2d8a4e", color: "#fff", fontWeight: 700, textDecoration: "none", display: "inline-block" }}>
                         Shop Now →
@@ -475,7 +475,7 @@ export default function SiteNav({ activePage }: Props) {
                         )}
                         <div style={{ minWidth: 0 }}>
                           <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                          {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>}
+                          {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>}
                           <p style={{ margin: "2px 0 0", fontWeight: 800, color: "#2d8a4e", fontSize: "13.5px" }}>₹{p.price * cart[p._id]}</p>
                         </div>
                       </div>
@@ -490,7 +490,7 @@ export default function SiteNav({ activePage }: Props) {
                 {cartItems.length > 0 && (
                   <div style={{ padding: "1rem 1.3rem", borderTop: "2px solid #f0fdf4" }}>
                     {[["Subtotal", `₹${cartTotal}`], ["Delivery", deliveryCost === 0 ? "FREE 🎉" : `₹${deliveryCost}`]].map(([l, v]) => (
-                      <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "5px", fontFamily: "sans-serif" }}>
+                      <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "5px" }}>
                         <span>{l}</span>
                         <span style={{ color: l === "Delivery" && deliveryCost === 0 ? "#16a34a" : undefined, fontWeight: l === "Delivery" && deliveryCost === 0 ? 700 : 400 }}>{v}</span>
                       </div>
@@ -499,7 +499,7 @@ export default function SiteNav({ activePage }: Props) {
                       <span>Total</span><span style={{ color: "#1a3c2e" }}>₹{grandTotal}</span>
                     </div>
                     {cartTotal > 0 && cartTotal < DEL.freeDeliveryAbove && (
-                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginBottom: "10px", fontFamily: "sans-serif" }}>
+                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginBottom: "10px" }}>
                         🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
                       </div>
                     )}
@@ -521,9 +521,9 @@ export default function SiteNav({ activePage }: Props) {
               <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.3rem" }}>
                 {/* Order summary (collapsed) */}
                 <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px 14px", marginBottom: "1.2rem" }}>
-                  <p style={{ margin: "0 0 6px", fontSize: "11px", fontWeight: 700, color: "#374151", fontFamily: "sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>Order Summary ({cartItems.length} items)</p>
+                  <p style={{ margin: "0 0 6px", fontSize: "11px", fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Order Summary ({cartItems.length} items)</p>
                   {cartItems.map(p => (
-                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", color: "#374151", fontFamily: "sans-serif", marginBottom: "3px" }}>
+                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", color: "#374151", marginBottom: "3px" }}>
                       <span>{p.name} × {cart[p._id]}</span><span style={{ fontWeight: 700 }}>₹{p.price * cart[p._id]}</span>
                     </div>
                   ))}
@@ -534,8 +534,8 @@ export default function SiteNav({ activePage }: Props) {
 
                 {/* Form */}
                 {(() => {
-                  const fStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", boxSizing: "border-box", outline: "none" };
-                  const lStyle: React.CSSProperties = { display: "block", fontSize: "11.5px", fontWeight: 700, color: "#374151", fontFamily: "sans-serif", marginBottom: "4px" };
+                  const fStyle: React.CSSProperties = { width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", boxSizing: "border-box", outline: "none" };
+                  const lStyle: React.CSSProperties = { display: "block", fontSize: "11.5px", fontWeight: 700, color: "#374151", marginBottom: "4px" };
                   return (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                       <div>
@@ -549,7 +549,7 @@ export default function SiteNav({ activePage }: Props) {
                           style={{ ...fStyle, borderColor: ckPhone && !ckPhoneValid ? "#ef4444" : "#e5e7eb" }}
                           onFocus={e => (e.target.style.borderColor = ckPhone && !ckPhoneValid ? "#ef4444" : "#2d8a4e")}
                           onBlur={e => (e.target.style.borderColor = ckPhone && !ckPhoneValid ? "#ef4444" : "#e5e7eb")} />
-                        {ckPhone && !ckPhoneValid && <p style={{ color: "#ef4444", fontSize: "11px", fontFamily: "sans-serif", margin: "3px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
+                        {ckPhone && !ckPhoneValid && <p style={{ color: "#ef4444", fontSize: "11px", margin: "3px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
                       </div>
                       <div>
                         <label style={lStyle}>Email (for confirmation)</label>
@@ -579,15 +579,15 @@ export default function SiteNav({ activePage }: Props) {
                           style={{ ...fStyle, resize: "none" }}
                           onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                       </div>
-                      {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", fontFamily: "sans-serif" }}>{ckError}</div>}
+                      {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626" }}>{ckError}</div>}
                       <button onClick={() => { if (ckCanSubmit) setCartStep(3); }} disabled={!ckCanSubmit}
                         style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: ckCanSubmit ? "#2d8a4e" : "#e5e7eb", color: ckCanSubmit ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: ckCanSubmit ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit" }}>
                         Proceed to Payment · ₹{grandTotal} →
                       </button>
-                      <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", margin: "0" }}>Pay on delivery · No advance required</p>
+                      <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", margin: "0" }}>Pay on delivery · No advance required</p>
                       <div style={{ textAlign: "center", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
                         <a href={waOrderUrl} target="_blank" rel="noreferrer"
-                          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#25d366", color: "#fff", padding: "10px 18px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#25d366", color: "#fff", padding: "10px 18px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                           <WhatsAppIcon size={15} /> Order via WhatsApp instead
                         </a>
                       </div>
@@ -601,19 +601,19 @@ export default function SiteNav({ activePage }: Props) {
             {cartStep === 3 && (
               <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.3rem" }}>
                 {/* Demo notice */}
-                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "9px", padding: "9px 12px", marginBottom: "1.2rem", fontSize: "11.5px", color: "#92400e", fontFamily: "sans-serif" }}>
+                <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: "9px", padding: "9px 12px", marginBottom: "1.2rem", fontSize: "11.5px", color: "#92400e" }}>
                   🚧 <strong>Payment coming soon</strong> — for now your order is placed as Pay on Delivery.
                 </div>
                 {/* Order total */}
                 <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "10px 14px", marginBottom: "1.2rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "14px" }}>
-                    <span style={{ color: "#374151", fontFamily: "sans-serif" }}>Amount to Pay</span>
+                    <span style={{ color: "#374151" }}>Amount to Pay</span>
                     <span style={{ color: "#1a3c2e" }}>₹{grandTotal}</span>
                   </div>
-                  <div style={{ fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "3px" }}>Delivery: {deliveryCost === 0 ? "FREE" : `₹${deliveryCost}`}</div>
+                  <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "3px" }}>Delivery: {deliveryCost === 0 ? "FREE" : `₹${deliveryCost}`}</div>
                 </div>
                 {/* Payment method selector */}
-                <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#374151", fontFamily: "sans-serif", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Select Payment Method</p>
+                <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#374151", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Select Payment Method</p>
                 {([
                   { id: "cod",  label: "Cash on Delivery", sub: "Pay when your order arrives",      icon: "💵" },
                   { id: "upi",  label: "UPI / GPay",       sub: "Coming soon — not yet active",     icon: "📱" },
@@ -623,20 +623,20 @@ export default function SiteNav({ activePage }: Props) {
                     style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderRadius: "10px", border: `2px solid ${payMethod === m.id ? "#2d8a4e" : "#e5e7eb"}`, background: payMethod === m.id ? "#f0fdf4" : "#fff", marginBottom: "8px", cursor: m.id === "cod" ? "pointer" : "default", opacity: m.id !== "cod" ? 0.55 : 1, transition: "all .18s" }}>
                     <span style={{ fontSize: "22px", lineHeight: 1 }}>{m.icon}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827", fontFamily: "sans-serif" }}>{m.label}</div>
-                      <div style={{ fontSize: "11px", color: "#6b7280", fontFamily: "sans-serif" }}>{m.sub}</div>
+                      <div style={{ fontSize: "13.5px", fontWeight: 700, color: "#111827" }}>{m.label}</div>
+                      <div style={{ fontSize: "11px", color: "#6b7280" }}>{m.sub}</div>
                     </div>
                     <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `2px solid ${payMethod === m.id ? "#2d8a4e" : "#d1d5db"}`, background: payMethod === m.id ? "#2d8a4e" : "#fff", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {payMethod === m.id && <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#fff" }} />}
                     </div>
                   </div>
                 ))}
-                {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", fontFamily: "sans-serif", marginBottom: "10px" }}>{ckError}</div>}
+                {ckError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", marginBottom: "10px" }}>{ckError}</div>}
                 <button onClick={placeOrder} disabled={ckLoading || payMethod !== "cod"}
                   style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: !ckLoading ? "#2d8a4e" : "#e5e7eb", color: !ckLoading ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: !ckLoading ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginTop: "4px" }}>
                   {ckLoading ? "Placing Order…" : `Confirm & Place Order · ₹${grandTotal}`}
                 </button>
-                <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", margin: "6px 0 0" }}>Secured · No advance required</p>
+                <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", margin: "6px 0 0" }}>Secured · No advance required</p>
               </div>
             )}
 
@@ -646,9 +646,9 @@ export default function SiteNav({ activePage }: Props) {
                 <div style={{ width: "68px", height: "68px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "30px", margin: "0 auto 14px" }}>🌿</div>
                 <h3 style={{ margin: "0 0 6px", fontSize: "1.2rem", fontWeight: 800, color: "#166534" }}>Order Placed!</h3>
                 <div style={{ display: "inline-block", background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: "10px", padding: "8px 22px", margin: "8px 0 14px", fontWeight: 800, fontSize: "17px", color: "#1a3c2e" }}>{ckOrderNum}</div>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "6px" }}>Thank you, <strong>{ckName}</strong>! Your order is confirmed.</p>
-                {ckEmail && <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "14px" }}>Confirmation sent to <strong>{ckEmail}</strong>.</p>}
-                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "14px 0", textAlign: "left", fontSize: "12.5px", color: "#374151", fontFamily: "sans-serif" }}>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "6px" }}>Thank you, <strong>{ckName}</strong>! Your order is confirmed.</p>
+                {ckEmail && <p style={{ fontSize: "12.5px", color: "#6b7280", marginBottom: "14px" }}>Confirmation sent to <strong>{ckEmail}</strong>.</p>}
+                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "14px 0", textAlign: "left", fontSize: "12.5px", color: "#374151" }}>
                   <div>📅 Delivery: <strong>{ckSlot}</strong></div>
                   <div style={{ marginTop: "4px" }}>📍 {ckAddress}{ckCity ? `, ${ckCity}` : ""}</div>
                 </div>
@@ -707,8 +707,8 @@ export default function SiteNav({ activePage }: Props) {
               <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 9996, overflow: "hidden" }}>
                 {searchSuggestions.map(p => (
                   <div key={p._id} className="sn-suggestion-item">
-                    <span style={{ fontSize: "12.5px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
+                    <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
                     <button
                       onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
                       style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
@@ -731,7 +731,7 @@ export default function SiteNav({ activePage }: Props) {
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={closeLogin} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
-              <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {authTab !== "forgot" && (
               <div style={{ display: "flex", background: "#f3f4f6", borderRadius: "10px", padding: "3px", marginBottom: "1.4rem" }}>
@@ -743,20 +743,20 @@ export default function SiteNav({ activePage }: Props) {
                 ))}
               </div>
             )}
-            {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", fontFamily: "sans-serif", marginBottom: "12px" }}>{authError}</div>}
+            {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", marginBottom: "12px" }}>{authError}</div>}
 
             {/* ── Forgot Password ── */}
             {authTab === "forgot" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ textAlign: "center", marginBottom: "4px" }}>
                   <p style={{ fontSize: "15px", fontWeight: 700, color: "#1a3c2e", margin: "0 0 4px" }}>Reset your password</p>
-                  <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Enter your email and we'll send a reset link.</p>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>Enter your email and we'll send a reset link.</p>
                 </div>
                 {forgotSent ? (
                   <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
                     <div style={{ fontSize: "28px", marginBottom: "8px" }}>✉️</div>
-                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", fontFamily: "sans-serif", margin: "0 0 4px" }}>Check your inbox!</p>
-                    <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
+                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", margin: "0 0 4px" }}>Check your inbox!</p>
+                    <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
                   </div>
                 ) : (
                   <>
@@ -766,14 +766,14 @@ export default function SiteNav({ activePage }: Props) {
                         onKeyDown={e => e.key === "Enter" && emailValid && doForgotPassword()}
                         style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
                         onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                     </div>
                     <button onClick={doForgotPassword} disabled={authLoading || !emailValid} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading || !emailValid ? 0.6 : 1 }}>
                       {authLoading ? "Sending…" : "Send Reset Link"}
                     </button>
                   </>
                 )}
-                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
                   <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => resetAuth("login")}>← Back to Sign In</span>
                 </p>
               </div>
@@ -783,7 +783,7 @@ export default function SiteNav({ activePage }: Props) {
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
@@ -801,7 +801,7 @@ export default function SiteNav({ activePage }: Props) {
                 <button onClick={doLogin} disabled={authLoading} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Signing in…" : "Sign In"}
                 </button>
-                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
                   No account? <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => resetAuth("register")}>Create one free</span>
                 </p>
               </div>
@@ -811,19 +811,19 @@ export default function SiteNav({ activePage }: Props) {
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Full name <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="text" placeholder="Your full name" value={regName} onChange={e => setRegName(e.target.value)} style={{ ...inputStyle, borderColor: undefined }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Name is too short</p>}
+                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Name is too short</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Mobile number <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="tel" placeholder="10-digit mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)} style={{ ...inputStyle, borderColor: regPhone && !phoneValid ? "#f87171" : undefined }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPhone && !phoneValid ? "#f87171" : "#e5e7eb")} />
-                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid 10-digit Indian mobile number</p>}
+                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
@@ -833,7 +833,7 @@ export default function SiteNav({ activePage }: Props) {
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
-                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Password must be at least 6 characters</p>}
+                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Password must be at least 6 characters</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Confirm password <span style={{ color: "#ef4444" }}>*</span></label>
@@ -844,7 +844,7 @@ export default function SiteNav({ activePage }: Props) {
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
                   </div>
-                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Passwords do not match</p>}
+                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Passwords do not match</p>}
                 </div>
                 <button onClick={doRegister} disabled={authLoading} className="sn-btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Creating account…" : "Create Account"}
@@ -853,7 +853,7 @@ export default function SiteNav({ activePage }: Props) {
             )}
             <div style={{ textAlign: "center", marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6" }}>
               <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                 <WhatsAppIcon size={16} /> Order via WhatsApp instead
               </a>
             </div>

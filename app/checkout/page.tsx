@@ -98,16 +98,16 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{overflow-x:hidden}
         .ck-grid{display:grid;grid-template-columns:1fr 420px;gap:2rem;max-width:1100px;margin:0 auto;padding:2rem 1.5rem;}
         @media(max-width:860px){.ck-grid{grid-template-columns:1fr;}}
         .ck-card{background:#fff;border-radius:16px;padding:1.8rem;box-shadow:0 2px 16px rgba(0,0,0,.07);border:1px solid #f1f5f9;}
-        .ck-field-label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px;font-family:sans-serif;}
-        .ck-err{color:#ef4444;font-size:12px;font-family:sans-serif;margin-top:4px;}
-        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:9px;cursor:pointer;font-family:inherit;font-weight:700;transition:background .2s;}
+        .ck-field-label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px;}
+        .ck-err{color:#ef4444;font-size:12px;margin-top:4px;}
+        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:9px;cursor:pointer;font-weight:700;transition:background .2s;}
         .btn-g:hover{background:#1f6b3a;}
         nextjs-portal{display:none!important}
       `}</style>
@@ -117,9 +117,9 @@ export default function CheckoutPage() {
       {/* Page header */}
       <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020)", padding: "2rem 1.5rem 1.8rem" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "10px" }}>Checkout</span>
+          <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "10px" }}>Checkout</span>
           <h1 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 6px" }}>Complete Your Order</h1>
-          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13.5px", fontFamily: "sans-serif" }}>Pay on delivery · No advance required</p>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13.5px" }}>Pay on delivery · No advance required</p>
         </div>
       </div>
       {/* Wave */}
@@ -136,9 +136,9 @@ export default function CheckoutPage() {
             <div style={{ width: "72px", height: "72px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 16px" }}>🌿</div>
             <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Order Placed!</h2>
             <div style={{ display: "inline-block", background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: "10px", padding: "10px 28px", margin: "8px 0 14px", fontWeight: 800, fontSize: "20px", color: "#1a3c2e" }}>{orderNum}</div>
-            <p style={{ fontSize: "14px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "6px" }}>Thank you, <strong>{name}</strong>! Your order is confirmed.</p>
-            {email && <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "14px" }}>Confirmation will be sent to <strong>{email}</strong>.</p>}
-            <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "14px 0", textAlign: "left", fontSize: "13px", color: "#374151", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "6px" }}>Thank you, <strong>{name}</strong>! Your order is confirmed.</p>
+            {email && <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "14px" }}>Confirmation will be sent to <strong>{email}</strong>.</p>}
+            <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "14px 0", textAlign: "left", fontSize: "13px", color: "#374151" }}>
               <div>📅 Delivery Slot: <strong>{slot}</strong></div>
               <div style={{ marginTop: "4px" }}>📍 {address}{city ? `, ${city}` : ""}</div>
             </div>
@@ -219,7 +219,7 @@ export default function CheckoutPage() {
 
             {/* Validation hint */}
             {!canSubmit && (name || phone || address) && (
-              <div style={{ marginTop: "12px", background: "#fef9ec", border: "1px solid #fde68a", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#92400e", fontFamily: "sans-serif" }}>
+              <div style={{ marginTop: "12px", background: "#fef9ec", border: "1px solid #fde68a", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#92400e" }}>
                 {!name.trim() && "• Full name is required\n"}
                 {(!phone.trim() || !phoneValid) && "• Valid 10-digit mobile number is required\n"}
                 {!address.trim() && "• Delivery address is required"}
@@ -227,22 +227,22 @@ export default function CheckoutPage() {
             )}
 
             {apiError && (
-              <div style={{ marginTop: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "13px", color: "#dc2626", fontFamily: "sans-serif" }}>{apiError}</div>
+              <div style={{ marginTop: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "13px", color: "#dc2626" }}>{apiError}</div>
             )}
 
             <button onClick={placeOrder} disabled={!canSubmit || submitting} className="btn-g"
               style={{ width: "100%", marginTop: "18px", padding: "15px", fontSize: "15px", opacity: !canSubmit || submitting ? 0.55 : 1, cursor: !canSubmit || submitting ? "not-allowed" : "pointer" }}>
               {submitting ? "Placing Order…" : cartItems.length > 0 ? `Place Order · ₹${grandTotal}` : "Place Order"}
             </button>
-            <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "9px" }}>
+            <p style={{ textAlign: "center", fontSize: "12px", color: "#9ca3af", marginTop: "9px" }}>
               Pay on delivery · No advance required
             </p>
 
             {/* WhatsApp alternative */}
             <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6", textAlign: "center" }}>
-              <p style={{ fontSize: "12px", color: "#9ca3af", fontFamily: "sans-serif", marginBottom: "10px" }}>Or order directly via WhatsApp</p>
+              <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "10px" }}>Or order directly via WhatsApp</p>
               <a href={waOrderUrl} target="_blank" rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px", fontFamily: "sans-serif" }}>
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px" }}>
                 <WhatsAppIcon size={16} /> WhatsApp Order
               </a>
             </div>
@@ -256,11 +256,11 @@ export default function CheckoutPage() {
               </h2>
 
               {loading ? (
-                <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af", fontSize: "13px", fontFamily: "sans-serif" }}>Loading cart…</div>
+                <div style={{ textAlign: "center", padding: "2rem", color: "#9ca3af", fontSize: "13px" }}>Loading cart…</div>
               ) : cartItems.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "2rem" }}>
                   <div style={{ fontSize: "40px", marginBottom: "10px" }}>🛒</div>
-                  <p style={{ fontSize: "14px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "14px" }}>Your cart is empty.</p>
+                  <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "14px" }}>Your cart is empty.</p>
                   <a href="/products" style={{ padding: "10px 22px", background: "#2d8a4e", color: "#fff", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px" }}>Browse Products</a>
                 </div>
               ) : (
@@ -270,8 +270,8 @@ export default function CheckoutPage() {
                       <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 0", borderBottom: "1px solid #f3f4f6", gap: "10px" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "13px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                          {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>}
-                          <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif" }}>₹{p.price} × {cart[p._id]}</p>
+                          {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>}
+                          <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#6b7280" }}>₹{p.price} × {cart[p._id]}</p>
                         </div>
                         <span style={{ fontWeight: 800, color: "#2d8a4e", fontSize: "14px", flexShrink: 0 }}>₹{p.price * cart[p._id]}</span>
                       </div>
@@ -280,10 +280,10 @@ export default function CheckoutPage() {
 
                   {/* Totals */}
                   <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "2px solid #f0fdf4" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "6px", fontFamily: "sans-serif" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "6px" }}>
                       <span>Subtotal</span><span>₹{cartTotal}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "10px", fontFamily: "sans-serif" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "10px" }}>
                       <span style={{ color: "#6b7280" }}>Delivery</span>
                       <span style={{ color: deliveryCost === 0 ? "#16a34a" : "#374151", fontWeight: deliveryCost === 0 ? 700 : 400 }}>
                         {deliveryCost === 0 ? "FREE 🎉" : `₹${deliveryCost}`}
@@ -293,12 +293,12 @@ export default function CheckoutPage() {
                       <span>Total</span><span style={{ color: "#1a3c2e" }}>₹{grandTotal}</span>
                     </div>
                     {cartTotal > 0 && cartTotal < DEL.freeDeliveryAbove && (
-                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginTop: "10px", fontFamily: "sans-serif" }}>
+                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginTop: "10px" }}>
                         🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
                       </div>
                     )}
                     {cartTotal < DEL.minOrder && cartTotal > 0 && (
-                      <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#9a3412", marginTop: "8px", fontFamily: "sans-serif" }}>
+                      <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#9a3412", marginTop: "8px" }}>
                         ⚠️ Min order ₹{DEL.minOrder} — add ₹{DEL.minOrder - cartTotal} more
                       </div>
                     )}
@@ -309,8 +309,8 @@ export default function CheckoutPage() {
 
             {/* Delivery info */}
             <div className="ck-card" style={{ marginTop: "1rem" }}>
-              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", margin: "0 0 10px", fontFamily: "sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>Delivery Info</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px", color: "#4b5563", fontFamily: "sans-serif" }}>
+              <h3 style={{ fontSize: "13px", fontWeight: 700, color: "#374151", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Delivery Info</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "13px", color: "#4b5563" }}>
                 <div>📅 <strong>Slots:</strong> Wednesday &amp; Saturday</div>
                 <div>📦 <strong>Min order:</strong> ₹{DEL.minOrder}</div>
                 <div>🚚 <strong>Free delivery</strong> above ₹{DEL.freeDeliveryAbove}</div>
@@ -330,10 +330,10 @@ export default function CheckoutPage() {
           </svg>
         </div>
         <div style={{ padding: "1.5rem", textAlign: "center" }}>
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif", marginBottom: "4px" }}>
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", marginBottom: "4px" }}>
             © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
           </p>
-          <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+          <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
             {siteConfig.footer.tagline}
           </p>
         </div>

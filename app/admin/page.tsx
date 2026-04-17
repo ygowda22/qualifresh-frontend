@@ -68,9 +68,9 @@ function StatCard({ label, value, icon, color, sub }: { label: string; value: st
     <div style={{ background: "#fff", borderRadius: "14px", padding: "1.3rem 1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.06)", border: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: "1rem" }}>
       <div style={{ width: "50px", height: "50px", borderRadius: "14px", background: color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", flexShrink: 0 }}>{icon}</div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: "22px", fontWeight: 800, color: "#111827", fontFamily: "sans-serif", lineHeight: 1.2 }}>{value}</div>
-        <div style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", marginTop: "2px" }}>{label}</div>
-        {sub && <div style={{ fontSize: "11px", color: color, fontWeight: 600, fontFamily: "sans-serif", marginTop: "2px" }}>{sub}</div>}
+        <div style={{ fontSize: "22px", fontWeight: 800, color: "#111827", lineHeight: 1.2 }}>{value}</div>
+        <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "2px" }}>{label}</div>
+        {sub && <div style={{ fontSize: "11px", color: color, fontWeight: 600, marginTop: "2px" }}>{sub}</div>}
       </div>
     </div>
   );
@@ -92,14 +92,14 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "12px" }}>
-      <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", marginBottom: "4px" }}>
+      <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>
         {label}{required && <span style={{ color: "#ef4444" }}> *</span>}
       </label>
       {children}
     </div>
   );
 }
-const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", boxSizing: "border-box", background: "#fff", color: "#111827" };
+const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", boxSizing: "border-box", background: "#fff", color: "#111827" };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AdminPage() {
@@ -601,14 +601,14 @@ export default function AdminPage() {
   // ── Login screen ──────────────────────────────────────────────────────────
   if (!token) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a1f12,#1a4a2e)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia,serif" }}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a1f12,#1a4a2e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ background: "#fff", borderRadius: "20px", padding: "2.5rem 2rem", width: "clamp(300px,90vw,380px)", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
             <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", margin: "0 auto 10px", display: "block", objectFit: "contain" }} />
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a3c2e", margin: "0 0 4px", fontFamily: "Georgia,serif" }}>Admin Panel</h1>
-            <p style={{ fontSize: "13px", color: "#9ca3af", fontFamily: "sans-serif", margin: 0 }}>Sign in to manage your store</p>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a3c2e", margin: "0 0 4px" }}>Admin Panel</h1>
+            <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0 }}>Sign in to manage your store</p>
           </div>
-          {loginErr && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", fontFamily: "sans-serif", marginBottom: "12px" }}>{loginErr}</div>}
+          {loginErr && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", marginBottom: "12px" }}>{loginErr}</div>}
           <input type="email" placeholder="Admin email" value={loginEmail} onChange={e => setLE(e.target.value)} onKeyDown={e => e.key === "Enter" && doLogin()}
             style={{ ...inputStyle, marginBottom: "10px", background: "#fff", color: "#111827" }} />
           <div style={{ position: "relative", marginBottom: "16px" }}>
@@ -627,7 +627,7 @@ export default function AdminPage() {
 
   // ── Admin layout ──────────────────────────────────────────────────────────
   return (
-    <div className="admin-wrap" style={{ display: "flex", minHeight: "100vh", fontFamily: "sans-serif", background: "#f1f5f9" }}>
+    <div className="admin-wrap" style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9" }}>
       <style>{`
         @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
         .admin-wrap{flex-direction:row}
@@ -666,7 +666,7 @@ export default function AdminPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
             <div>
-              <div style={{ color: "#d9f99d", fontWeight: 700, fontSize: "14px", fontFamily: "Georgia,serif" }}>QualiFresh</div>
+              <div style={{ color: "#d9f99d", fontWeight: 700, fontSize: "14px" }}>QualiFresh</div>
               <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>Admin Panel</div>
             </div>
           </div>
@@ -948,7 +948,7 @@ export default function AdminPage() {
                           <span style={{ background: p.isActive ? "#f0fdf4" : "#fef2f2", color: p.isActive ? "#16a34a" : "#ef4444", fontSize: "11.5px", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, whiteSpace: "nowrap" }}>
                             {p.isActive ? "Active" : "Inactive"}
                           </span>
-                          {!p.isActive && <span style={{ fontSize: "10px", color: "#92400e", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>Hidden from users</span>}
+                          {!p.isActive && <span style={{ fontSize: "10px", color: "#92400e", whiteSpace: "nowrap" }}>Hidden from users</span>}
                         </div>
                       </td>
                       <td style={{ padding: "10px 14px" }}>
@@ -1235,7 +1235,7 @@ export default function AdminPage() {
                 {/* Inline validation error */}
                 {uploadError && (
                   <div style={{ marginTop: "6px", padding: "7px 10px", background: "#fef2f2", borderRadius: "6px", border: "1px solid #fecaca" }}>
-                    <p style={{ margin: 0, fontSize: "11.5px", color: "#dc2626", fontFamily: "sans-serif" }}>⚠ {uploadError}</p>
+                    <p style={{ margin: 0, fontSize: "11.5px", color: "#dc2626" }}>⚠ {uploadError}</p>
                   </div>
                 )}
 
@@ -1450,7 +1450,7 @@ export default function AdminPage() {
 
       {/* ── Toast ── */}
       {toast && (
-        <div style={{ position: "fixed", bottom: "24px", right: "24px", background: toast.ok ? "#0a1f12" : "#7f1d1d", color: toast.ok ? "#a3e635" : "#fca5a5", padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", fontFamily: "sans-serif", boxShadow: "0 4px 20px rgba(0,0,0,0.25)", zIndex: 2000, display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ position: "fixed", bottom: "24px", right: "24px", background: toast.ok ? "#0a1f12" : "#7f1d1d", color: toast.ok ? "#a3e635" : "#fca5a5", padding: "12px 20px", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", boxShadow: "0 4px 20px rgba(0,0,0,0.25)", zIndex: 2000, display: "flex", alignItems: "center", gap: "8px" }}>
           {toast.msg}
         </div>
       )}

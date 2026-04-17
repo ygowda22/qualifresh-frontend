@@ -89,11 +89,11 @@ export default function OurFarmsPage() {
   const photos = farmPhotos;
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
-        body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
+        body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
         /* Ticker */
         .ticker-wrap{margin-bottom:0;}
@@ -112,7 +112,7 @@ export default function OurFarmsPage() {
         .nav-bar-f{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:68px;position:sticky;top:0;z-index:200;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
         .logo-btn-f{background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;}
         .desktop-nav-f{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
-        .nav-a-f{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s cubic-bezier(.4,0,.2,1);font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em;}
+        .nav-a-f{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s cubic-bezier(.4,0,.2,1);letter-spacing:0.01em;}
         .nav-a-f:hover,.nav-a-f.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
         .mobile-hamburger-f{display:none;background:none;border:1.5px solid #e5e7eb;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:17px;line-height:1;color:#374151;transition:all .2s;}
         .lift{transition:all .25s cubic-bezier(.4,0,.2,1);}
@@ -148,7 +148,7 @@ export default function OurFarmsPage() {
       <div className="ticker-wrap">
         <div className="ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontFamily: "'Inter','Poppins',sans-serif", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
               {item}
               {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "18px", color: "rgba(163,230,53,0.35)", fontSize: "14px", fontWeight: 300 }}>|</span>}
             </span>
@@ -157,7 +157,7 @@ export default function OurFarmsPage() {
         <div className="ticker-mobile">
           <div className="ticker-scroll">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
                 {item}
                 <span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
               </span>
@@ -177,7 +177,7 @@ export default function OurFarmsPage() {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.28)", borderRadius: "24px", padding: "6px 18px", fontSize: "11px", color: "#bef264", marginBottom: "1.4rem", letterSpacing: "0.1em", fontWeight: 600, textTransform: "uppercase" }}>
             🌾 Farm to Doorstep
           </span>
-          <h1 style={{ fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: "1rem", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: "1rem", letterSpacing: "-0.02em" }}>
             Where Freshness Begins
           </h1>
           <p style={{ fontSize: "clamp(13px,1.5vw,16px)", color: "rgba(255,255,255,0.65)", maxWidth: "560px", margin: "0 auto 1.8rem", lineHeight: 1.85 }}>
@@ -206,7 +206,7 @@ export default function OurFarmsPage() {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>
             📸 Farm Gallery
           </span>
-          <h2 style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", letterSpacing: "-0.02em" }}>
             Behind the Freshness
           </h2>
           <p style={{ fontSize: "clamp(13px,1.4vw,15px)", color: "#4b5563", maxWidth: "480px", margin: "0 auto", lineHeight: 1.8 }}>
@@ -228,7 +228,7 @@ export default function OurFarmsPage() {
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(7,24,18,0.72) 0%,rgba(7,24,18,0.08) 55%,transparent 100%)" }} />
                 {photo.title && (
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "1rem 1.2rem" }}>
-                    <div style={{ color: "#fff", fontWeight: 700, fontSize: "14px", marginBottom: "2px", fontFamily: "'Poppins','Inter',sans-serif", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{photo.title}</div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: "14px", marginBottom: "2px", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{photo.title}</div>
                     {photo.description && <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "12px", lineHeight: 1.5 }}>{photo.description}</div>}
                   </div>
                 )}
@@ -281,7 +281,7 @@ export default function OurFarmsPage() {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.25)", borderRadius: "20px", padding: "5px 16px", fontSize: "11px", color: "#bef264", marginBottom: "1rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
             🚚 Delivered Twice a Week
           </span>
-          <h3 style={{ fontSize: "clamp(1.3rem,2.5vw,1.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 10px", fontFamily: "'Poppins','Inter',sans-serif" }}>
+          <h3 style={{ fontSize: "clamp(1.3rem,2.5vw,1.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 10px" }}>
             Ready to taste farm-fresh produce?
           </h3>
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", margin: "0 auto 1.8rem", maxWidth: "420px", lineHeight: 1.8 }}>
@@ -313,7 +313,7 @@ export default function OurFarmsPage() {
               <div style={{ marginBottom: "14px" }}>
                 <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
               </div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 {siteConfig.social.instagram && (
                   <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
@@ -334,7 +334,7 @@ export default function OurFarmsPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Quick Links</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
               {[
                 { label: "Home",       href: "/"          },
                 { label: "Products",   href: "/products"  },
@@ -343,7 +343,7 @@ export default function OurFarmsPage() {
                 { label: "Contact Us", href: "/contact"   },
               ].map(link => (
                 <a key={link.label} href={link.href}
-                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
                   onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
                   {link.label}
@@ -351,8 +351,8 @@ export default function OurFarmsPage() {
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
                 <div>📍 {siteConfig.address}</div>
@@ -360,8 +360,8 @@ export default function OurFarmsPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
                 <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
@@ -371,10 +371,10 @@ export default function OurFarmsPage() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
               © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
             </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}
             </p>
           </div>

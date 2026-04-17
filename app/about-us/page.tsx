@@ -105,7 +105,7 @@ export default function AboutPage() {
   const canSend  = cEmail.trim() && emailOk && cMsg.trim() && phoneOk;
 
   return (
-    <div style={{ fontFamily: "Georgia,'Times New Roman',serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -124,7 +124,7 @@ export default function AboutPage() {
         @keyframes aticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
         /* Buttons */
-        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
+        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s}
         .btn-g:hover{background:#1f6b3a;transform:translateY(-1px);box-shadow:0 4px 14px rgba(45,138,78,.35)}
         .lift{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
         .lift:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.15)!important;border-color:rgba(45,138,78,0.35)!important}
@@ -185,7 +185,7 @@ export default function AboutPage() {
       <div className="a-ticker-wrap">
         <div className="a-ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
               {item}
               {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)" }}>·</span>}
             </span>
@@ -194,7 +194,7 @@ export default function AboutPage() {
         <div className="a-ticker-mobile">
           <div className="a-ticker-scroll">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
                 {item}<span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
               </span>
             ))}
@@ -215,11 +215,11 @@ export default function AboutPage() {
         <div style={{ position: "absolute", bottom: "-60px", left: "-60px", width: "280px", height: "280px", borderRadius: "50%", background: "radial-gradient(circle,rgba(163,230,53,0.06) 0%,transparent 70%)", pointerEvents: "none" }} />
         <div style={{ maxWidth: "1300px", margin: "0 auto", position: "relative" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "16px" }}>Our Story</span>
+            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "16px" }}>Our Story</span>
             <h1 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.15 }}>
               Bringing <span style={{ color: "#a3e635" }}>Restaurant-Grade</span><br />Freshness to Your Home
             </h1>
-            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", fontFamily: "sans-serif", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
+            <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
               QualiFresh was born from a simple belief that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We grow everything ourselves on our farms in Pune - no middlemen, no sourcing, just pure farm-fresh produce.
             </p>
           </div>
@@ -232,8 +232,8 @@ export default function AboutPage() {
             ].map(s => (
               <div key={s.label} className="about-stats-cell">
                 <div style={{ fontSize: "clamp(1.6rem,2.8vw,2.2rem)", fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", fontFamily: "sans-serif", marginBottom: "3px" }}>{s.label}</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "sans-serif" }}>{s.sub}</div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", marginBottom: "3px" }}>{s.label}</div>
+                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)" }}>{s.sub}</div>
               </div>
             ))}
           </div>
@@ -252,17 +252,17 @@ export default function AboutPage() {
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div className="about-story-grid">
             <div>
-              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Roots</span>
+              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "14px" }}>Our Roots</span>
               <h2 style={{ fontSize: "clamp(1.4rem,2.5vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 16px", lineHeight: 1.25 }}>From Pune's Farms<br />to Your Kitchen</h2>
-              <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "16px" }}>
+              <p style={{ fontSize: "14px", color: "#4b5563", lineHeight: 1.9, marginBottom: "16px" }}>
                 We started QualiFresh after seeing a gap - home cooks and health-conscious families in Pune &amp; Mumbai had no reliable way to access the specialty produce that only high-end restaurants could source. We changed that.
               </p>
-              <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "24px" }}>
+              <p style={{ fontSize: "14px", color: "#4b5563", lineHeight: 1.9, marginBottom: "24px" }}>
                 Today we grow with <strong style={{ color: "#166534" }}>20+ dedicated farms</strong> across the Pune region, maintain a strict cold chain, and personally inspect every batch before it ships. Every order is packed with care and delivered on your chosen day — Wednesday or Saturday.
               </p>
               <blockquote style={{ borderLeft: "4px solid #2d8a4e", paddingLeft: "1.2rem", margin: 0 }}>
                 <p style={{ fontSize: "15px", color: "#1a3c2e", fontStyle: "italic", fontWeight: 600, lineHeight: 1.7, margin: "0 0 6px" }}>"Quality isn't just a word for us — it's the reason we wake up every morning."</p>
-                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
+                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
               </blockquote>
             </div>
             <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
@@ -276,7 +276,7 @@ export default function AboutPage() {
       <div style={{ background: "#f8fdf9", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "12px" }}>What Drives Us</span>
             <h2 className="section-heading">Mission, Vision &amp; Promise</h2>
           </div>
           <div className="about-mv-grid">
@@ -294,12 +294,12 @@ export default function AboutPage() {
                   </div>
                   <div style={{ position: "absolute", top: "12px", right: "14px", background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "4px 10px", textAlign: "right", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                     <div style={{ fontSize: "15px", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>{card.stat}</div>
-                    <div style={{ fontSize: "10px", color: "#4b5563", fontFamily: "sans-serif" }}>{card.statSub}</div>
+                    <div style={{ fontSize: "10px", color: "#4b5563" }}>{card.statSub}</div>
                   </div>
                 </div>
                 <div style={{ padding: "1.4rem" }}>
                   <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{card.title}</h3>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{card.text}</p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85 }}>{card.text}</p>
                 </div>
               </div>
             ))}
@@ -311,9 +311,9 @@ export default function AboutPage() {
       <div className="about-how-section" style={{ background: "#fff", padding: "4rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
+            <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "12px" }}>The Process</span>
             <h2 className="section-heading">From Farm to Your Doorstep</h2>
-            <p style={{ color: "#6b7280", fontSize: "15px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0", lineHeight: 1.8 }}>A transparent, quality-controlled journey every single order.</p>
+            <p style={{ color: "#6b7280", fontSize: "15px", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0", lineHeight: 1.8 }}>A transparent, quality-controlled journey every single order.</p>
           </div>
           <div className="about-steps-grid">
             {[
@@ -336,7 +336,7 @@ export default function AboutPage() {
                 </div>
                 <div style={{ padding: "1.4rem" }}>
                   <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{s.title}</h3>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{s.desc}</p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85 }}>{s.desc}</p>
                 </div>
               </div>
             ))}
@@ -347,7 +347,7 @@ export default function AboutPage() {
       {/* ── 5. Quality Guarantee strip ── */}
       <div className="about-guar-section" style={{ background: "#f4f8f5", padding: "3.5rem 1.5rem" }}>
         <div style={{ maxWidth: "1160px", margin: "0 auto", textAlign: "center" }}>
-          <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
+          <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "14px" }}>Our Guarantee</span>
           <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
           <div className="about-stats-grid">
             {[
@@ -365,12 +365,12 @@ export default function AboutPage() {
                   </div>
                   <div style={{ position: "absolute", top: "12px", right: "14px", background: "rgba(255,255,255,0.92)", borderRadius: "12px", padding: "4px 10px", textAlign: "right", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                     <div style={{ fontSize: "15px", fontWeight: 800, color: "#16a34a", lineHeight: 1 }}>{g.stat}</div>
-                    <div style={{ fontSize: "10px", color: "#4b5563", fontFamily: "sans-serif" }}>{g.statSub}</div>
+                    <div style={{ fontSize: "10px", color: "#4b5563" }}>{g.statSub}</div>
                   </div>
                 </div>
                 <div style={{ padding: "1.4rem" }}>
                   <h3 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 800, color: "#0f1a0f" }}>{g.title}</h3>
-                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85, fontFamily: "sans-serif" }}>{g.desc}</p>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#4b5563", lineHeight: 1.85 }}>{g.desc}</p>
                 </div>
               </div>
             ))}
@@ -396,7 +396,7 @@ export default function AboutPage() {
           <div className="footer-grid" style={{ marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}><QFLogo height={38} dark /></div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 {siteConfig.social.instagram && (
                   <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
@@ -417,7 +417,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Quick Links</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase" }}>Quick Links</h4>
               {[
                 { label: "Home",       href: "/"          },
                 { label: "Products",   href: "/products"  },
@@ -426,7 +426,7 @@ export default function AboutPage() {
                 { label: "Contact Us", href: "/contact"   },
               ].map(link => (
                 <a key={link.label} href={link.href}
-                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "#d4a017")}
                   onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
                   {link.label}
@@ -434,8 +434,8 @@ export default function AboutPage() {
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
                 <div>📍 {siteConfig.address}</div>
@@ -443,8 +443,8 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase", fontFamily: "sans-serif" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "12.5px", letterSpacing: "1.5px", textTransform: "uppercase" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
                 <div>🚚 Free Delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
@@ -454,10 +454,10 @@ export default function AboutPage() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
               © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
             </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}
             </p>
           </div>

@@ -22,6 +22,21 @@ body {
   line-height: 1.6;
 }
 
+/* Ensure the brand font cascades to every element including form controls
+   (browsers don't inherit font-family into inputs/buttons by default) */
+*,
+*::before,
+*::after {
+  font-family: inherit;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: var(--font-primary);
+}
+
 /* ── Shared Navbar (homepage .nav-bar + SiteNav .sn-nav) ── */
 .nav-bar,
 .sn-nav {

@@ -617,13 +617,13 @@ export default function Home() {
   const catCounts = products.reduce((a, p) => { a[p.category] = (a[p.category] || 0) + 1; return a; }, {} as Record<string, number>);
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif", background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
 
       {/* ═══ GLOBAL STYLES ═══ */}
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
-        body{overflow-x:hidden;-webkit-text-size-adjust:100%;font-family:'Inter','Poppins',-apple-system,BlinkMacSystemFont,sans-serif;}
+        body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
         /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
         .ticker-wrap { margin-bottom:0; }
@@ -662,13 +662,13 @@ export default function Home() {
         @keyframes floatImg { 0%,100%{transform:rotate(-2deg) translateY(0)} 50%{transform:rotate(-2deg) translateY(-8px)} }
 
         .fade-up { animation: fadeUp .45s ease both; }
-        .btn-g   { background:linear-gradient(135deg,#2d8a4e,#1f6b3a);color:#fff;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .22s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(45,138,78,.25); }
+        .btn-g   { background:linear-gradient(135deg,#2d8a4e,#1f6b3a);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:700;transition:all .22s cubic-bezier(.4,0,.2,1);box-shadow:0 2px 8px rgba(45,138,78,.25); }
         .btn-g:hover:not(:disabled){ background:linear-gradient(135deg,#1f6b3a,#155c2e);transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(45,138,78,.4); }
         .btn-g:active:not(:disabled){ transform:translateY(0) scale(0.99); }
         .btn-g:disabled{ background:#e5e7eb;color:#9ca3af;cursor:not-allowed;box-shadow:none; }
-        .nav-a  { color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s cubic-bezier(.4,0,.2,1);font-family:'Inter','Poppins',sans-serif;letter-spacing:0.01em; }
+        .nav-a  { color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s cubic-bezier(.4,0,.2,1);letter-spacing:0.01em; }
         .nav-a:hover,.nav-a.active{ color:#2d8a4e;border-bottom-color:#2d8a4e; }
-        .hero-btn-secondary { background:rgba(255,255,255,0.06);color:#fff;border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:13px 22px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-family:inherit;transition:all .22s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(8px); }
+        .hero-btn-secondary { background:rgba(255,255,255,0.06);color:#fff;border:1.5px solid rgba(255,255,255,0.3);border-radius:10px;padding:13px 22px;font-weight:600;font-size:14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;transition:all .22s cubic-bezier(.4,0,.2,1);backdrop-filter:blur(8px); }
         .hero-btn-secondary:hover { background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.55);transform:translateY(-2px) scale(1.02); }
         .lift   { transition:all .25s cubic-bezier(.4,0,.2,1); }
         .lift:hover { transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.14)!important; }
@@ -772,7 +772,7 @@ export default function Home() {
         {/* Desktop: centered single line */}
         <div className="ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontFamily: "'Inter','Poppins',sans-serif", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
               {item}
               {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "18px", color: "rgba(163,230,53,0.35)", fontSize: "14px", fontWeight: 300 }}>|</span>}
             </span>
@@ -782,7 +782,7 @@ export default function Home() {
         <div className="ticker-mobile">
           <div className="ticker-scroll">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "'Helvetica Neue',Arial,sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
                 {item}
                 <span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
               </span>
@@ -834,8 +834,8 @@ export default function Home() {
                   <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
                     onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                    <span style={{ fontSize: "12.5px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0 }}>₹{p.price}</span>
+                    <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                    <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0 }}>₹{p.price}</span>
                     <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
                       style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
                   </div>
@@ -847,7 +847,7 @@ export default function Home() {
           {/* Sign In / User button */}
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none" }} className="desktop-nav">Hi, {user.name.split(" ")[0]}</a>
+              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", textDecoration: "none" }} className="desktop-nav">Hi, {user.name.split(" ")[0]}</a>
               <button onClick={logout} style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
             </div>
           ) : (
@@ -894,8 +894,8 @@ export default function Home() {
                 <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
                   onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                  <span style={{ fontSize: "13px", color: "#111827", fontFamily: "sans-serif", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                  <span style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", flexShrink: 0 }}>₹{p.price}</span>
+                  <span style={{ fontSize: "13px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
+                  <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0 }}>₹{p.price}</span>
                   <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
                     style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "12px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
                 </div>
@@ -946,7 +946,7 @@ export default function Home() {
             <div className="hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.28)", borderRadius: "24px", padding: "6px 16px", fontSize: "11px", color: "#bef264", marginBottom: "1.5rem", fontFamily: "inherit", letterSpacing: "0.06em", fontWeight: 600, textTransform: "uppercase", whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
               {siteConfig.hero.badge}
             </div>
-            <h1 className="hero-h1" style={{ fontSize: "clamp(2rem,3.8vw,3.2rem)", fontWeight: 800, color: "#fff", lineHeight: 1.13, marginBottom: "1.2rem", letterSpacing: "-0.02em", fontFamily: "'Poppins','Inter',sans-serif" }}>
+            <h1 className="hero-h1" style={{ fontSize: "clamp(2rem,3.8vw,3.2rem)", fontWeight: 800, color: "#fff", lineHeight: 1.13, marginBottom: "1.2rem", letterSpacing: "-0.02em" }}>
               {siteConfig.hero.line1}<br />
               <span style={{ background: "linear-gradient(90deg,#d4a017,#f0c040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "italic" }}>{siteConfig.hero.lineAccent}</span><br />
               {siteConfig.hero.line2}
@@ -966,7 +966,7 @@ export default function Home() {
             <div className="hero-stats" style={{ display: "flex", gap: "2rem", marginTop: "2.2rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.09)" }}>
               {siteConfig.stats.map(s => (
                 <div key={s.label}>
-                  <div className="hero-stats-val" style={{ fontSize: "clamp(1.2rem,2.5vw,1.9rem)", fontWeight: 800, color: "#f0c040", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.01em" }}>{s.value}</div>
+                  <div className="hero-stats-val" style={{ fontSize: "clamp(1.2rem,2.5vw,1.9rem)", fontWeight: 800, color: "#f0c040", letterSpacing: "-0.01em" }}>{s.value}</div>
                   <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginTop: "2px", fontWeight: 500, letterSpacing: "0.03em" }}>{s.label}</div>
                 </div>
               ))}
@@ -1013,7 +1013,7 @@ export default function Home() {
         <div style={{ maxWidth: "1300px", margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: "2.2rem" }}>
             <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "10px" }}>Browse by Category</span>
-            <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>Fresh Produce Categories</h2>
+            <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f", letterSpacing: "-0.02em" }}>Fresh Produce Categories</h2>
             <div style={{ width: "48px", height: "3px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", borderRadius: "2px", margin: "12px auto 0" }} />
           </div>
           <div className="cat-scroll-wrap">
@@ -1047,18 +1047,18 @@ export default function Home() {
           <div className="prod-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "1.2rem", flexWrap: "wrap", gap: "10px" }}>
             <div>
               <p style={{ color: "#2d8a4e", fontWeight: 700, fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "4px" }}>{cat === "all" ? "All Products" : allCatLabel[cat]}</p>
-              <h2 className="section-heading" style={{ fontSize: "clamp(1.3rem,2.5vw,1.75rem)", fontWeight: 800, color: "#0f1a0f", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>Our Fresh Picks</h2>
+              <h2 className="section-heading" style={{ fontSize: "clamp(1.3rem,2.5vw,1.75rem)", fontWeight: 800, color: "#0f1a0f", letterSpacing: "-0.02em" }}>Our Fresh Picks</h2>
             </div>
             <div className="filter-wrap">
               <button className="filter-arrow" style={{ left: 0, display: showLeftArrow ? "flex" : "none" }} onClick={() => filterRowRef.current?.scrollBy({ left: -150, behavior: "smooth" })}>‹</button>
               <div ref={filterRowRef} className="filter-row" style={{ display: "flex", gap: "6px", flexWrap: "nowrap", overflowX: "auto", paddingBottom: "4px", padding: `2px ${showRightArrow ? "32px" : "0"} 4px ${showLeftArrow ? "32px" : "0"}` }}>
                 <button onClick={() => setCat("all")}
-                  style={{ padding: "6px 14px", borderRadius: "18px", border: cat === "all" ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: cat === "all" ? "#2d8a4e" : "#fff", color: cat === "all" ? "#fff" : "#374151", fontWeight: 600, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  style={{ padding: "6px 14px", borderRadius: "18px", border: cat === "all" ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: cat === "all" ? "#2d8a4e" : "#fff", color: cat === "all" ? "#fff" : "#374151", fontWeight: 600, cursor: "pointer", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0 }}>
                   All
                 </button>
                 {Object.entries(allCatLabel).map(([key, label]) => (
                   <button key={key} onClick={() => setCat(key)}
-                    style={{ padding: "6px 12px", borderRadius: "18px", border: cat === key ? `2px solid ${allCatColor[key]}` : "1.5px solid #d1d5db", background: cat === key ? allCatColor[key] : "#fff", color: cat === key ? "#fff" : "#374151", fontWeight: cat === key ? 700 : 400, cursor: "pointer", fontSize: "12px", fontFamily: "sans-serif", whiteSpace: "nowrap", flexShrink: 0, transition: "all .18s" }}>
+                    style={{ padding: "6px 12px", borderRadius: "18px", border: cat === key ? `2px solid ${allCatColor[key]}` : "1.5px solid #d1d5db", background: cat === key ? allCatColor[key] : "#fff", color: cat === key ? "#fff" : "#374151", fontWeight: cat === key ? 700 : 400, cursor: "pointer", fontSize: "12px", whiteSpace: "nowrap", flexShrink: 0, transition: "all .18s" }}>
                     {label}
                   </button>
                 ))}
@@ -1067,12 +1067,12 @@ export default function Home() {
             </div>
           </div>
 
-          {!loading && <p style={{ color: "#9ca3af", fontSize: "12px", marginBottom: "1rem", fontFamily: "sans-serif" }}>{filtered.length} products · page {page} of {totalPages || 1}</p>}
+          {!loading && <p style={{ color: "#9ca3af", fontSize: "12px", marginBottom: "1rem" }}>{filtered.length} products · page {page} of {totalPages || 1}</p>}
 
           {loading ? (
             <div style={{ textAlign: "center", padding: "5rem", color: "#6b7280" }}>
               <div style={{ fontSize: "44px", animation: "shimmer 1s ease-in-out infinite alternate", marginBottom: "1rem" }}>🌿</div>
-              <p style={{ fontFamily: "sans-serif" }}>Loading fresh products…</p>
+              <p style={{  }}>Loading fresh products…</p>
             </div>
           ) : (
             <div className="prod-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: "1.1rem" }}>
@@ -1090,7 +1090,7 @@ export default function Home() {
                         <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
                       )}
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%)" }} />
-                      <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock > 0 ? "rgba(22,163,74,.9)" : "rgba(220,38,38,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600, fontFamily: "sans-serif" }}>
+                      <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock > 0 ? "rgba(22,163,74,.9)" : "rgba(220,38,38,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600 }}>
                         {p.stock > 0 ? "In Stock" : "Out"}
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(p._id); }}
@@ -1102,12 +1102,12 @@ export default function Home() {
                       </button>
                     </div>
                     <div style={{ padding: "0.85rem 0.95rem", display: "flex", flexDirection: "column", flex: 1 }}>
-                      <span style={{ fontSize: "10px", color: allCatColor[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", fontFamily: "sans-serif" }}>{allCatLabel[p.category]}</span>
-                      <h3 className="prod-name" style={{ margin: "4px 0 3px", fontSize: "13.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3, fontFamily: "'Inter','Poppins',sans-serif" }}>{p.name}</h3>
-                      <p style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "9px", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>
+                      <span style={{ fontSize: "10px", color: allCatColor[p.category] || "#6b7280", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px" }}>{allCatLabel[p.category]}</span>
+                      <h3 className="prod-name" style={{ margin: "4px 0 3px", fontSize: "13.5px", fontWeight: 700, color: "#111827", lineHeight: 1.3 }}>{p.name}</h3>
+                      <p style={{ fontSize: "11.5px", color: "#9ca3af", marginBottom: "9px" }}>{p.quantityLabel}</p>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "9px" }}>
                         <span style={{ fontWeight: 800, color: "#1a3c2e", fontSize: "18px" }}>₹{p.price}</span>
-                        {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af", fontFamily: "sans-serif" }}>/kg</span>}
+                        {p.priceUnit === "per_kg" && <span style={{ fontSize: "10px", color: "#9ca3af" }}>/kg</span>}
                       </div>
                       <div style={{ height: "42px", display: "flex", alignItems: "stretch", marginTop: "auto" }}>
                         {!cartEnabled ? (
@@ -1138,7 +1138,7 @@ export default function Home() {
           {totalPages > 1 && (
             <div className="page-btns" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "2rem", flexWrap: "wrap" }}>
               <button onClick={() => { setPage(p => Math.max(1, p - 1)); scrollToProducts(); }} disabled={page === 1}
-                style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: page === 1 ? "#f9fafb" : "#fff", color: page === 1 ? "#9ca3af" : "#374151", cursor: page === 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px", fontFamily: "sans-serif" }}>
+                style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: page === 1 ? "#f9fafb" : "#fff", color: page === 1 ? "#9ca3af" : "#374151", cursor: page === 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
                 ← Prev
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -1147,13 +1147,13 @@ export default function Home() {
                 .map((n, idx) =>
                   n === "…" ? <span key={`e${idx}`} style={{ color: "#9ca3af" }}>…</span> : (
                     <button key={n} className="page-btn" onClick={() => { setPage(n as number); scrollToProducts(); }}
-                      style={{ width: "36px", height: "36px", borderRadius: "8px", border: page === n ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: page === n ? "#2d8a4e" : "#fff", color: page === n ? "#fff" : "#374151", cursor: "pointer", fontWeight: page === n ? 700 : 400, fontSize: "13px", fontFamily: "sans-serif" }}>
+                      style={{ width: "36px", height: "36px", borderRadius: "8px", border: page === n ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: page === n ? "#2d8a4e" : "#fff", color: page === n ? "#fff" : "#374151", cursor: "pointer", fontWeight: page === n ? 700 : 400, fontSize: "13px" }}>
                       {n}
                     </button>
                   )
                 )}
               <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); scrollToProducts(); }} disabled={page === totalPages}
-                style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: page === totalPages ? "#f9fafb" : "#fff", color: page === totalPages ? "#9ca3af" : "#374151", cursor: page === totalPages ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px", fontFamily: "sans-serif" }}>
+                style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: page === totalPages ? "#f9fafb" : "#fff", color: page === totalPages ? "#9ca3af" : "#374151", cursor: page === totalPages ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
                 Next →
               </button>
             </div>
@@ -1169,8 +1169,8 @@ export default function Home() {
         <div style={{ maxWidth: "1160px", margin: "0 auto", position: "relative" }}>
           <div style={{ textAlign: "center", marginBottom: "3rem" }}>
             <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "24px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "12px" }}>Why Choose Us</span>
-            <h2 className="section-heading" style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>The <span style={{ color: "#2d8a4e" }}>QualiFresh</span> Difference</h2>
-            <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", maxWidth: "500px", margin: "0 auto", lineHeight: 1.7 }}>From our farms to your table - we obsess over quality at every step so you don't have to.</p>
+            <h2 className="section-heading" style={{ fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 10px", letterSpacing: "-0.02em" }}>The <span style={{ color: "#2d8a4e" }}>QualiFresh</span> Difference</h2>
+            <p style={{ color: "#6b7280", fontSize: "14px", maxWidth: "500px", margin: "0 auto", lineHeight: 1.7 }}>From our farms to your table - we obsess over quality at every step so you don't have to.</p>
           </div>
 
           {/* Top 3 big cards */}
@@ -1189,12 +1189,12 @@ export default function Home() {
                   </div>
                   <div style={{ position: "absolute", top: "14px", right: "16px", textAlign: "right" }}>
                     <div style={{ fontSize: "22px", fontWeight: 800, color: "#a3e635", lineHeight: 1 }}>{card.stat}</div>
-                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)", fontFamily: "sans-serif" }}>{card.statSub}</div>
+                    <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)" }}>{card.statSub}</div>
                   </div>
                 </div>
                 <div style={{ padding: "1.2rem" }}>
                   <h3 style={{ margin: "0 0 7px", fontSize: "16px", fontWeight: 800, color: "#fff" }}>{card.title}</h3>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{card.desc}</p>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.72)", lineHeight: 1.7 }}>{card.desc}</p>
                 </div>
               </div>
             ))}
@@ -1211,7 +1211,7 @@ export default function Home() {
                 <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: card.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>{card.icon}</div>
                 <div>
                   <h3 style={{ margin: "0 0 6px", fontSize: "14px", fontWeight: 800, color: card.iconColor }}>{card.title}</h3>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.65, fontFamily: "sans-serif" }}>{card.desc}</p>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.65 }}>{card.desc}</p>
                 </div>
               </div>
             ))}
@@ -1229,9 +1229,9 @@ export default function Home() {
           <div style={{ position: "absolute", bottom: "-60px", left: "-60px", width: "260px", height: "260px", borderRadius: "50%", background: "rgba(45,138,78,0.06)", pointerEvents: "none" }} />
           <div style={{ maxWidth: "1160px", margin: "0 auto", position: "relative" }}>
             <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-              <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "16px" }}>Our Story</span>
+              <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "16px" }}>Our Story</span>
               <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.15 }}>Bringing <span style={{ color: "#a3e635" }}>Restaurant-Grade</span><br />Freshness to Your Home</h2>
-              <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", fontFamily: "sans-serif", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
+              <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
                 QualiFresh was born from a simple belief — that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We source directly from trusted farms in Pune and deliver twice a week so freshness is never a compromise.
               </p>
             </div>
@@ -1245,8 +1245,8 @@ export default function Home() {
               ].map(s => (
                 <div key={s.label} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.5rem 1.2rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
                   <div style={{ fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 800, color: s.color, lineHeight: 1, marginBottom: "6px" }}>{s.value}</div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", fontFamily: "sans-serif", marginBottom: "3px" }}>{s.label}</div>
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontFamily: "sans-serif" }}>{s.sub}</div>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#fff", marginBottom: "3px" }}>{s.label}</div>
+                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)" }}>{s.sub}</div>
                 </div>
               ))}
             </div>
@@ -1258,17 +1258,17 @@ export default function Home() {
           <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
             <div className="about-story-grid">
               <div>
-                <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Roots</span>
+                <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "14px" }}>Our Roots</span>
                 <h3 style={{ fontSize: "clamp(1.4rem,2.5vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 16px", lineHeight: 1.25 }}>From Pune's Farms<br />to Your Kitchen</h3>
-                <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "16px" }}>
+                <p style={{ fontSize: "14px", color: "#4b5563", lineHeight: 1.9, marginBottom: "16px" }}>
                   We started QualiFresh after seeing a gap — home cooks and health-conscious families in Pune & Mumbai had no reliable way to access the specialty produce that only high-end restaurants could source. We changed that.
                 </p>
-                <p style={{ fontSize: "14px", color: "#4b5563", fontFamily: "sans-serif", lineHeight: 1.9, marginBottom: "24px" }}>
+                <p style={{ fontSize: "14px", color: "#4b5563", lineHeight: 1.9, marginBottom: "24px" }}>
                   Today we partner with <strong style={{ color: "#166534" }}>20+ dedicated farms</strong> across the Pune region, maintain a strict cold chain, and personally inspect every batch before it ships. Every order is packed with care and delivered on your chosen day — Wednesday or Saturday.
                 </p>
                 <blockquote style={{ borderLeft: "4px solid #2d8a4e", paddingLeft: "1.2rem", margin: 0 }}>
                   <p style={{ fontSize: "15px", color: "#1a3c2e", fontStyle: "italic", fontWeight: 600, lineHeight: 1.7, margin: "0 0 6px" }}>"Quality isn't just a word for us — it's the reason we wake up every morning."</p>
-                  <cite style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
+                  <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit, Founder, QualiFresh</cite>
                 </blockquote>
               </div>
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
@@ -1282,7 +1282,7 @@ export default function Home() {
         <div style={{ background: "linear-gradient(135deg,#f0fdf4 0%,#fff 50%,#f0fdf4 100%)", padding: "4rem 1.5rem" }}>
           <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>What Drives Us</span>
+              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "12px" }}>What Drives Us</span>
               <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f" }}>Mission, Vision & Promise</h2>
             </div>
             <div className="about-mv-grid">
@@ -1294,7 +1294,7 @@ export default function Home() {
                 <div key={card.title} className="lift" style={{ background: card.bg, border: `1.5px solid ${card.border}`, borderRadius: "18px", padding: "2rem 1.6rem" }}>
                   <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", marginBottom: "16px", boxShadow: `0 4px 14px ${card.border}` }}>{card.icon}</div>
                   <h3 style={{ margin: "0 0 10px", fontSize: "17px", fontWeight: 800, color: card.color }}>{card.title}</h3>
-                  <p style={{ margin: 0, fontSize: "13.5px", color: "#4b5563", lineHeight: 1.8, fontFamily: "sans-serif" }}>{card.text}</p>
+                  <p style={{ margin: 0, fontSize: "13.5px", color: "#4b5563", lineHeight: 1.8 }}>{card.text}</p>
                 </div>
               ))}
             </div>
@@ -1305,9 +1305,9 @@ export default function Home() {
         <div style={{ background: "#fff", padding: "4rem 1.5rem" }}>
           <div style={{ maxWidth: "1160px", margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>The Process</span>
+              <span style={{ display: "inline-block", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "20px", padding: "4px 14px", fontSize: "11px", fontWeight: 700, color: "#16a34a", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: "12px" }}>The Process</span>
               <h2 className="section-heading" style={{ fontSize: "clamp(1.5rem,3vw,2.1rem)", fontWeight: 800, color: "#0f1a0f" }}>From Farm to Your Doorstep</h2>
-              <p style={{ color: "#6b7280", fontSize: "14px", fontFamily: "sans-serif", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
+              <p style={{ color: "#6b7280", fontSize: "14px", marginTop: "8px", maxWidth: "500px", margin: "8px auto 0" }}>A transparent, quality-controlled journey every single order.</p>
             </div>
             <div className="about-steps-grid">
               {[
@@ -1320,9 +1320,9 @@ export default function Home() {
                   {i < 3 && <div style={{ position: "absolute", top: "28px", left: "calc(50% + 28px)", right: "-50%", height: "2px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", zIndex: 0, display: "block" }} className="about-step-line" />}
                   <div className="lift" style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: "18px", padding: "1.8rem 1.4rem", textAlign: "center", position: "relative", zIndex: 1 }}>
                     <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", margin: "0 auto 12px", boxShadow: `0 4px 14px ${s.border}` }}>{s.icon}</div>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: s.color, letterSpacing: "1.5px", fontFamily: "sans-serif", marginBottom: "6px" }}>STEP {s.step}</div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: s.color, letterSpacing: "1.5px", marginBottom: "6px" }}>STEP {s.step}</div>
                     <h4 style={{ margin: "0 0 8px", fontSize: "15px", fontWeight: 800, color: "#0f1a0f" }}>{s.title}</h4>
-                    <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.7, fontFamily: "sans-serif" }}>{s.desc}</p>
+                    <p style={{ margin: 0, fontSize: "12.5px", color: "#6b7280", lineHeight: 1.7 }}>{s.desc}</p>
                   </div>
                 </div>
               ))}
@@ -1333,7 +1333,7 @@ export default function Home() {
         {/* ── Quality Guarantee strip ── */}
         <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020,#1a4a2e)", padding: "3.5rem 1.5rem" }}>
           <div style={{ maxWidth: "1160px", margin: "0 auto", textAlign: "center" }}>
-            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "14px" }}>Our Guarantee</span>
+            <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "14px" }}>Our Guarantee</span>
             <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#fff", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
             <div className="about-stats-grid">
               {[
@@ -1345,7 +1345,7 @@ export default function Home() {
                 <div key={g.title} className="lift" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.8rem 1.4rem", textAlign: "center", backdropFilter: "blur(6px)" }}>
                   <div style={{ fontSize: "32px", marginBottom: "12px" }}>{g.icon}</div>
                   <h4 style={{ margin: "0 0 8px", fontSize: "14px", fontWeight: 800, color: g.color }}>{g.title}</h4>
-                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7, fontFamily: "sans-serif" }}>{g.desc}</p>
+                  <p style={{ margin: 0, fontSize: "12.5px", color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>{g.desc}</p>
                 </div>
               ))}
             </div>
@@ -1369,7 +1369,7 @@ export default function Home() {
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
               <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
-              <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
+              <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {/* Tabs */}
             {authTab !== "forgot" && (
@@ -1383,20 +1383,20 @@ export default function Home() {
               </div>
             )}
 
-            {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", fontFamily: "sans-serif", marginBottom: "12px" }}>{authError}</div>}
+            {authError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "10px 12px", color: "#dc2626", fontSize: "13px", marginBottom: "12px" }}>{authError}</div>}
 
             {/* ── Forgot Password ── */}
             {authTab === "forgot" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ textAlign: "center", marginBottom: "4px" }}>
                   <p style={{ fontSize: "15px", fontWeight: 700, color: "#1a3c2e", margin: "0 0 4px" }}>Reset your password</p>
-                  <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>Enter your email and we'll send a reset link.</p>
+                  <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>Enter your email and we'll send a reset link.</p>
                 </div>
                 {forgotSent ? (
                   <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "16px", textAlign: "center" }}>
                     <div style={{ fontSize: "28px", marginBottom: "8px" }}>✉️</div>
-                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", fontFamily: "sans-serif", margin: "0 0 4px" }}>Check your inbox!</p>
-                    <p style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
+                    <p style={{ fontWeight: 700, color: "#166534", fontSize: "14px", margin: "0 0 4px" }}>Check your inbox!</p>
+                    <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>A password reset link has been sent to <strong>{authEmail}</strong></p>
                   </div>
                 ) : (
                   <>
@@ -1404,16 +1404,16 @@ export default function Home() {
                       <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
                       <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
                         onKeyDown={e => e.key === "Enter" && emailValid && doForgotPassword()}
-                        style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                        style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                         onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                      {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                     </div>
                     <button onClick={doForgotPassword} disabled={authLoading || !emailValid} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading || !emailValid ? 0.6 : 1 }}>
                       {authLoading ? "Sending…" : "Send Reset Link"}
                     </button>
                   </>
                 )}
-                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
                   <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => { setAuthTab("login"); setAuthError(""); setForgotSent(false); }}>← Back to Sign In</span>
                 </p>
               </div>
@@ -1422,16 +1422,16 @@ export default function Home() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input type={showPass ? "text" : "password"} placeholder="Your password" value={authPass} onChange={e => setAuthPass(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && doLogin()}
-                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", boxSizing: "border-box" }}
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
@@ -1442,7 +1442,7 @@ export default function Home() {
                 <button onClick={doLogin} disabled={authLoading} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Signing in…" : "Sign In"}
                 </button>
-                <p style={{ textAlign: "center", fontSize: "13px", fontFamily: "sans-serif", color: "#6b7280", margin: 0 }}>
+                <p style={{ textAlign: "center", fontSize: "13px", color: "#6b7280", margin: 0 }}>
                   No account? <span style={{ color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => { setAuthTab("register"); setAuthError(""); }}>Create one free</span>
                 </p>
               </div>
@@ -1451,44 +1451,44 @@ export default function Home() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Full name <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="text" placeholder="Your full name" value={regName} onChange={e => setRegName(e.target.value)}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: "1.5px solid #e5e7eb", fontSize: "14px", boxSizing: "border-box" }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Name is too short</p>}
+                  {regName.trim().length > 0 && regName.trim().length < 2 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Name is too short</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${authEmail && !emailValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
-                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid email address</p>}
+                  {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Mobile number <span style={{ color: "#ef4444" }}>*</span></label>
                   <input type="tel" placeholder="10-digit mobile number" value={regPhone} onChange={e => setRegPhone(e.target.value)}
-                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${regPhone && !phoneValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                    style={{ width: "100%", padding: "12px 14px", borderRadius: "9px", border: `1.5px solid ${regPhone && !phoneValid ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                     onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPhone && !phoneValid ? "#f87171" : "#e5e7eb")} />
-                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Enter a valid 10-digit Indian mobile number</p>}
+                  {regPhone && !phoneValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input type={showPass ? "text" : "password"} placeholder="Min 6 characters" value={authPass} onChange={e => setAuthPass(e.target.value)}
-                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authPass && authPass.length < 6 ? "#f87171" : "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
-                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Password must be at least 6 characters</p>}
+                  {authPass && authPass.length < 6 && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Password must be at least 6 characters</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Confirm password <span style={{ color: "#ef4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
                     <input type={showPass2 ? "text" : "password"} placeholder="Re-enter password" value={regPass2} onChange={e => setRegPass2(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && doRegister()}
-                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", fontFamily: "sans-serif", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "12px 40px 12px 14px", borderRadius: "9px", border: `1.5px solid ${regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb"}`, fontSize: "14px", boxSizing: "border-box" }}
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = regPass2 && regPass2 !== authPass ? "#f87171" : "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass2(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass2 ? "🙈" : "👁"}</button>
                   </div>
-                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0", fontFamily: "sans-serif" }}>Passwords do not match</p>}
+                  {regPass2 && regPass2 !== authPass && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Passwords do not match</p>}
                 </div>
                 <button onClick={doRegister} disabled={authLoading} className="btn-g" style={{ padding: "13px", fontSize: "15px", opacity: authLoading ? 0.7 : 1 }}>
                   {authLoading ? "Creating account…" : "Create Account"}
@@ -1504,7 +1504,7 @@ export default function Home() {
                     `\n\nTotal: ₹${cartTotal + deliveryCost}${deliveryCost === 0 ? " (Free delivery!)" : ""}`
                   : "Hi QualiFresh! I'd like to place an order."
               )}`} target="_blank" rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                 <WhatsAppIcon size={16} /> Order via WhatsApp instead
               </a>
             </div>
@@ -1520,7 +1520,7 @@ export default function Home() {
             <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <QFLogo height={30} />
-                <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px", fontFamily: "sans-serif" }}>Cart ({cartCount})</span>
+                <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px" }}>Cart ({cartCount})</span>
               </div>
               <button onClick={() => setShowCart(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
             </div>
@@ -1528,8 +1528,8 @@ export default function Home() {
               {cartItems.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "3.5rem 1rem", color: "#9ca3af" }}>
                   <div style={{ fontSize: "52px", marginBottom: "1rem" }}>🛒</div>
-                  <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", fontFamily: "sans-serif", margin: "0 0 4px" }}>Your cart is empty</p>
-                  <p style={{ fontSize: "13px", fontFamily: "sans-serif", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
+                  <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", margin: "0 0 4px" }}>Your cart is empty</p>
+                  <p style={{ fontSize: "13px", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
                   <a href="/products"
                     onClick={() => setShowCart(false)}
                     className="btn-g"
@@ -1547,7 +1547,7 @@ export default function Home() {
                     )}
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                      <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>
+                      <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>
                       <p style={{ margin: "2px 0 0", fontWeight: 800, color: "#2d8a4e", fontSize: "13.5px" }}>₹{p.price * cart[p._id]}</p>
                     </div>
                   </div>
@@ -1562,7 +1562,7 @@ export default function Home() {
             {cartItems.length > 0 && (
               <div style={{ padding: "1rem 1.3rem", borderTop: "2px solid #f0fdf4" }}>
                 {[["Subtotal", `₹${cartTotal}`], ["Delivery", deliveryCost === 0 ? "FREE 🎉" : `₹${deliveryCost}`]].map(([l, v]) => (
-                  <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "5px", fontFamily: "sans-serif" }}>
+                  <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "5px" }}>
                     <span>{l}</span>
                     <span style={{ color: l === "Delivery" && deliveryCost === 0 ? "#16a34a" : undefined, fontWeight: l === "Delivery" && deliveryCost === 0 ? 700 : 400 }}>{v}</span>
                   </div>
@@ -1571,7 +1571,7 @@ export default function Home() {
                   <span>Total</span><span style={{ color: "#1a3c2e" }}>₹{cartTotal + deliveryCost}</span>
                 </div>
                 {cartTotal > 0 && cartTotal < DEL.freeDeliveryAbove && (
-                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginBottom: "10px", fontFamily: "sans-serif" }}>
+                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginBottom: "10px" }}>
                     🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
                   </div>
                 )}
@@ -1617,7 +1617,7 @@ export default function Home() {
               <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
                 <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
                 <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Email Client Opened!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
                 <button onClick={() => { setShowContactModal(false); setContactSent(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); }} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Close</button>
               </div>
             ) : (
@@ -1628,10 +1628,10 @@ export default function Home() {
                   <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                    <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
+                    <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
                       <span style={{ fontSize: "13px" }}>✉️</span>{siteConfig.email}
                     </a>
-                    <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", fontFamily: "sans-serif", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
+                    <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
                       <span style={{ fontSize: "13px" }}>📞</span>{siteConfig.phoneDisplay}
                     </a>
                   </div>
@@ -1643,18 +1643,18 @@ export default function Home() {
                     { label: "Mobile Number", placeholder: "e.g. 9876543210",     value: contactMobile, set: setContactMobile, type: "tel" },
                   ] as { label: string; placeholder: string; value: string; set: (v: string) => void; type: string; required?: boolean }[]).map(f => (
                     <div key={f.label}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>
+                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>
                         {f.label}{f.required && <span style={{ color: "#ef4444" }}> *</span>}
                       </label>
                       <input type={f.type} placeholder={f.placeholder} value={f.value} onChange={e => f.set(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", background: "#fff", color: "#111827" }}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", background: "#fff", color: "#111827" }}
                         onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                     </div>
                   ))}
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>Message <span style={{ color: "#ef4444" }}>*</span></label>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Message <span style={{ color: "#ef4444" }}>*</span></label>
                     <textarea placeholder="How can we help you?" value={contactMsg} onChange={e => setContactMsg(e.target.value)} rows={4}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", resize: "vertical", background: "#fff", color: "#111827" }}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", resize: "vertical", background: "#fff", color: "#111827" }}
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                   </div>
                 </div>
@@ -1665,8 +1665,8 @@ export default function Home() {
                   const canSend = contactEmail.trim() && emailOk && contactMsg.trim() && phoneOk;
                   return (
                     <>
-                      {contactEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", fontFamily: "sans-serif", margin: "4px 0 0" }}>Please enter a valid email address</p>}
-                      {contactMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", fontFamily: "sans-serif", margin: "4px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
+                      {contactEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid email address</p>}
+                      {contactMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
                       <button disabled={!canSend}
                         onClick={() => {
                           if (!canSend) return;
@@ -1684,7 +1684,7 @@ export default function Home() {
                         style={{ width: "100%", marginTop: "14px", padding: "12px", fontSize: "14px", background: !canSend ? "#e5e7eb" : "#2d8a4e", color: !canSend ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: !canSend ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
                         <MailSvg size={16} color={!canSend ? "#9ca3af" : "#fff"} /> Open Email to Send
                       </button>
-                      <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "8px" }}>
+                      <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", marginTop: "8px" }}>
                         Or reach us directly at{" "}
                         <a href={`tel:${siteConfig.phone}`} style={{ color: "#2d8a4e" }}>{siteConfig.phoneDisplay}</a>
                       </p>
@@ -1706,7 +1706,7 @@ export default function Home() {
             <div style={{ padding: "1.3rem 1.5rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 2 }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f" }}>{checkoutStep === 2 ? "Order Confirmed! 🎉" : "Checkout"}</h2>
-                {checkoutStep === 1 && <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af", fontFamily: "sans-serif" }}>Step 1 of 1 — Delivery Details</p>}
+                {checkoutStep === 1 && <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Step 1 of 1 — Delivery Details</p>}
               </div>
               {!ckLoading && <button onClick={() => setShowCheckout(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>}
             </div>
@@ -1717,9 +1717,9 @@ export default function Home() {
                 <div style={{ width: "72px", height: "72px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 16px" }}>🌿</div>
                 <h3 style={{ margin: "0 0 6px", fontSize: "1.3rem", fontWeight: 800, color: "#166534" }}>Order Placed!</h3>
                 <div style={{ display: "inline-block", background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: "10px", padding: "10px 24px", margin: "10px 0 16px", fontWeight: 800, fontSize: "18px", color: "#1a3c2e" }}>{ckOrderNum}</div>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "6px" }}>Thank you, <strong>{ckName}</strong>! Your order is confirmed.</p>
-                {ckEmail && <p style={{ fontSize: "13px", color: "#6b7280", fontFamily: "sans-serif" }}>A confirmation email has been sent to <strong>{ckEmail}</strong>.</p>}
-                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "16px 0", textAlign: "left", fontSize: "13px", color: "#374151", fontFamily: "sans-serif" }}>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "6px" }}>Thank you, <strong>{ckName}</strong>! Your order is confirmed.</p>
+                {ckEmail && <p style={{ fontSize: "13px", color: "#6b7280" }}>A confirmation email has been sent to <strong>{ckEmail}</strong>.</p>}
+                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "16px 0", textAlign: "left", fontSize: "13px", color: "#374151" }}>
                   <div>📅 Delivery Slot: <strong>{ckSlot}</strong></div>
                   <div style={{ marginTop: "4px" }}>📍 {ckAddress}, {ckCity}</div>
                 </div>
@@ -1727,7 +1727,7 @@ export default function Home() {
                 <div style={{ marginTop: "10px" }}>
                   <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`Hi QualiFresh! Order ${ckOrderNum} confirmed.\nName: ${ckName} | Phone: ${ckPhone}\nDelivery: ${ckSlot}${ckAddress ? `\nAddress: ${ckAddress}${ckCity ? ", " + ckCity : ""}` : ""}`)}`}
                     target="_blank" rel="noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 24px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                    style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 24px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                     <WhatsAppIcon size={16} /> Share on WhatsApp
                   </a>
                 </div>
@@ -1737,9 +1737,9 @@ export default function Home() {
               <div style={{ padding: "1.5rem" }}>
                 {/* Order summary */}
                 <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 14px", marginBottom: "1.3rem" }}>
-                  <p style={{ margin: "0 0 8px", fontSize: "12px", fontWeight: 700, color: "#374151", fontFamily: "sans-serif", textTransform: "uppercase", letterSpacing: "0.5px" }}>Order Summary ({products.filter(p=>cart[p._id]).length} items)</p>
+                  <p style={{ margin: "0 0 8px", fontSize: "12px", fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Order Summary ({products.filter(p=>cart[p._id]).length} items)</p>
                   {products.filter(p => cart[p._id]).map(p => (
-                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#374151", fontFamily: "sans-serif", marginBottom: "4px" }}>
+                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#374151", marginBottom: "4px" }}>
                       <span>{p.name} × {cart[p._id]}</span><span style={{ fontWeight: 700 }}>₹{p.price * cart[p._id]}</span>
                     </div>
                   ))}
@@ -1758,24 +1758,24 @@ export default function Home() {
                     { label: "City", ph: "Pune / Mumbai", val: ckCity, set: setCkCity, type: "text" },
                   ].map(f => (
                     <div key={f.label}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>{f.label}{f.req && <span style={{ color: "#ef4444" }}> *</span>}</label>
+                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>{f.label}{f.req && <span style={{ color: "#ef4444" }}> *</span>}</label>
                       <input type={f.type} placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif" }}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px" }}
                         onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                     </div>
                   ))}
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>Delivery Slot <span style={{ color: "#ef4444" }}>*</span></label>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Slot <span style={{ color: "#ef4444" }}>*</span></label>
                     <select value={ckSlot} onChange={e => setCkSlot(e.target.value)}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", background: "#fff" }}>
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", background: "#fff" }}>
                       <option>Wednesday</option>
                       <option>Saturday</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", display: "block", marginBottom: "4px" }}>Special Instructions (optional)</label>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Special Instructions (optional)</label>
                     <textarea placeholder="e.g. Leave at door, call on arrival…" value={ckNotes} onChange={e => setCkNotes(e.target.value)} rows={2}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif", resize: "none" }}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", resize: "none" }}
                       onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
                   </div>
                 </div>
@@ -1784,7 +1784,7 @@ export default function Home() {
                   style={{ width: "100%", marginTop: "16px", padding: "14px", fontSize: "15px", background: (!ckName||!ckPhone||!ckAddress) ? "#e5e7eb" : "#2d8a4e", color: (!ckName||!ckPhone||!ckAddress) ? "#9ca3af" : "#fff", border: "none", borderRadius: "10px", cursor: (!ckName||!ckPhone||!ckAddress||ckLoading) ? "not-allowed" : "pointer", fontWeight: 800, fontFamily: "inherit" }}>
                   {ckLoading ? "Placing Order…" : `Place Order · ₹${cartTotal + deliveryCost}`}
                 </button>
-                <p style={{ textAlign: "center", fontSize: "11.5px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "8px" }}>Pay on delivery. You'll receive a confirmation email.</p>
+                <p style={{ textAlign: "center", fontSize: "11.5px", color: "#9ca3af", marginTop: "8px" }}>Pay on delivery. You'll receive a confirmation email.</p>
               </div>
             )}
           </div>
@@ -1811,7 +1811,7 @@ export default function Home() {
           <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}><QFLogo height={38} dark /></div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 {siteConfig.social.instagram && (
                   <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
@@ -1832,7 +1832,7 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Quick Links</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
               {([
                 { label: "Home",       href: null,          scroll: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
                 { label: "Products",   href: "/products",   scroll: null },
@@ -1842,14 +1842,14 @@ export default function Home() {
               ] as const).map(link => (
                 link.href ? (
                   <a key={link.label} href={link.href}
-                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
                     onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
                     onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
                     {link.label}
                   </a>
                 ) : (
                   <a key={link.label} href="#" onClick={e => { e.preventDefault(); link.scroll?.(); }}
-                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
                     onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
                     onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
                     {link.label}
@@ -1858,8 +1858,8 @@ export default function Home() {
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
                 <div>📍 {siteConfig.address}</div>
@@ -1867,8 +1867,8 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'Inter','Poppins',sans-serif" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
                 <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
@@ -1878,10 +1878,10 @@ export default function Home() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
               © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
             </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}
             </p>
           </div>

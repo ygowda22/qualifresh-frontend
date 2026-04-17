@@ -44,7 +44,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -67,17 +67,17 @@ export default function ContactPage() {
         .c-contact-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid #f1f5f9;}
         .c-contact-item:last-child{border-bottom:none;}
         .c-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-        .c-label{font-size:11px;color:#9ca3af;font-weight:600;font-family:sans-serif;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;}
+        .c-label{font-size:11px;color:#9ca3af;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;}
         .c-value{font-size:14px;color:#111827;font-weight:600;}
         input:focus,textarea:focus{outline:none;border-color:#2d8a4e!important;}
-        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s;}
+        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s;}
         .btn-g:hover{background:#1f6b3a;}
         .btn-g:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;}
         @media(max-width:900px){.c-grid{grid-template-columns:1fr!important;}}
         .cf-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem;}
         @media(max-width:1024px){.cf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}}
         @media(max-width:480px){.cf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important;}}
-        .cf-footer-link{display:block;color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:9px;text-decoration:none;font-family:sans-serif;transition:color .2s;}
+        .cf-footer-link{display:block;color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:9px;text-decoration:none;transition:color .2s;}
         .cf-footer-link:hover{color:#f0c040!important;}
         nextjs-portal{display:none!important}
       `}</style>
@@ -86,7 +86,7 @@ export default function ContactPage() {
       <div className="c-ticker-wrap">
         <div className="c-ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
               {item}
               {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)" }}>·</span>}
             </span>
@@ -95,7 +95,7 @@ export default function ContactPage() {
         <div className="c-ticker-mobile">
           <div className="c-ticker-scroll">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
                 {item}<span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
               </span>
             ))}
@@ -109,11 +109,11 @@ export default function ContactPage() {
       {/* Hero */}
       <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020)", padding: "2.5rem 1.5rem 2rem" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-          <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: "12px" }}>Get in Touch</span>
+          <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "4px 16px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "12px" }}>Get in Touch</span>
           <h1 style={{ fontSize: "clamp(1.5rem,3vw,2.2rem)", fontWeight: 800, color: "#fff", margin: "0 0 8px" }}>
             Contact <span style={{ color: "#a3e635" }}>QualiFresh</span>
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", fontFamily: "sans-serif", maxWidth: "500px" }}>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "14px", maxWidth: "500px" }}>
             Questions about your order, availability, or partnership? We typically respond within a few hours.
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function ContactPage() {
           <div>
             <div className="c-card" style={{ marginBottom: "1.5rem" }}>
               <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f1a0f", marginBottom: "4px" }}>Reach Us Directly</h2>
-              <p style={{ fontSize: "12.5px", color: "#9ca3af", fontFamily: "sans-serif", marginBottom: "1rem" }}>We're available Mon–Sat, 9am–7pm IST.</p>
+              <p style={{ fontSize: "12.5px", color: "#9ca3af", marginBottom: "1rem" }}>We're available Mon–Sat, 9am–7pm IST.</p>
 
               <div className="c-contact-item">
                 <div className="c-icon-wrap" style={{ background: "#dcfce7" }}>
@@ -190,7 +190,7 @@ export default function ContactPage() {
                 { label: "Free Delivery Above", value: `₹${DEL.freeDeliveryAbove}` },
               ].map(r => (
                 <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", padding: "5px 0", borderBottom: "1px solid #f0fdf4" }}>
-                  <span style={{ color: "#6b7280", fontFamily: "sans-serif" }}>{r.label}</span>
+                  <span style={{ color: "#6b7280" }}>{r.label}</span>
                   <span style={{ fontWeight: 700, color: "#166534" }}>{r.value}</span>
                 </div>
               ))}
@@ -203,13 +203,13 @@ export default function ContactPage() {
               <div style={{ textAlign: "center", padding: "2rem 0" }}>
                 <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
                 <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Email Client Opened!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", fontFamily: "sans-serif", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
                 <button onClick={() => { setSent(false); setName(""); setEmail(""); setPhone(""); setMsg(""); }} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Send Another</button>
               </div>
             ) : (
               <>
                 <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f1a0f", marginBottom: "4px" }}>Send a Message</h2>
-                <p style={{ fontSize: "12.5px", color: "#9ca3af", fontFamily: "sans-serif", marginBottom: "1.3rem" }}>We'll reply to your email within a few hours.</p>
+                <p style={{ fontSize: "12.5px", color: "#9ca3af", marginBottom: "1.3rem" }}>We'll reply to your email within a few hours.</p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {[
                     { label: "Your Name", ph: "e.g. Priya Sharma", val: name, set: setName, type: "text", req: true },
@@ -217,22 +217,22 @@ export default function ContactPage() {
                     { label: "Phone (optional)", ph: "e.g. 9876543210", val: phone, set: setPhone, type: "tel" },
                   ].map(f => (
                     <div key={f.label}>
-                      <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", marginBottom: "4px" }}>
+                      <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>
                         {f.label}{f.req && <span style={{ color: "#ef4444" }}> *</span>}
                       </label>
                       <input type={f.type} placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)}
                         style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "inherit" }}
                       />
                       {f.type === "email" && email && !emailOk && (
-                        <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "3px", fontFamily: "sans-serif" }}>Enter a valid email address</p>
+                        <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "3px" }}>Enter a valid email address</p>
                       )}
                       {f.type === "tel" && phone && !phoneOk && (
-                        <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "3px", fontFamily: "sans-serif" }}>Enter a valid 10-digit Indian mobile number</p>
+                        <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "3px" }}>Enter a valid 10-digit Indian mobile number</p>
                       )}
                     </div>
                   ))}
                   <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", fontFamily: "sans-serif", marginBottom: "4px" }}>
+                    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>
                       Message <span style={{ color: "#ef4444" }}>*</span>
                     </label>
                     <textarea placeholder="How can we help you?" value={msg} onChange={e => setMsg(e.target.value)} rows={4}
@@ -245,7 +245,7 @@ export default function ContactPage() {
                   <div style={{ textAlign: "center" }}>
                     <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent("Hi QualiFresh! I have a question.")}`}
                       target="_blank" rel="noreferrer"
-                      style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px", fontFamily: "sans-serif" }}>
+                      style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                       <WhatsAppIcon size={16} /> Or chat on WhatsApp
                     </a>
                   </div>
@@ -270,7 +270,7 @@ export default function ContactPage() {
               <div style={{ marginBottom: "14px" }}>
                 <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain" }} />
               </div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 {siteConfig.social.instagram && (
                   <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
@@ -291,7 +291,7 @@ export default function ContactPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Quick Links</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
               {[
                 { label: "Home",       href: "/" },
                 { label: "Products",   href: "/products" },
@@ -303,8 +303,8 @@ export default function ContactPage() {
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
                 <div>📍 {siteConfig.address}</div>
@@ -312,8 +312,8 @@ export default function ContactPage() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
                 <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
@@ -323,10 +323,10 @@ export default function ContactPage() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
               © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
             </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}
             </p>
           </div>

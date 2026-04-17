@@ -248,7 +248,7 @@ function ProductsContent() {
   const paginated  = filtered.slice((safePage - 1) * perPage, safePage * perPage);
 
   return (
-    <div style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", background: "#f4f6f0", minHeight: "100vh" }}>
+    <div style={{ background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
@@ -267,7 +267,7 @@ function ProductsContent() {
 
         .p-cats{display:flex;gap:8px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none;}
         .p-cats::-webkit-scrollbar{display:none}
-        .p-cat{padding:7px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;}
+        .p-cat{padding:7px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;}
         .p-cat.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
         .p-cat:not(.active):hover{border-color:#2d8a4e;color:#2d8a4e;}
 
@@ -283,18 +283,18 @@ function ProductsContent() {
         .p-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s;background:linear-gradient(135deg,#f0fdf4,#dcfce7);}
         .p-card:hover .p-card-img{transform:scale(1.08);}
         .p-card-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%);pointer-events:none;}
-        .p-stock-badge{position:absolute;bottom:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;font-family:sans-serif;color:#fff;}
+        .p-stock-badge{position:absolute;bottom:8px;right:8px;font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;color:#fff;}
         .p-stock-in{background:rgba(22,163,74,.9);}
         .p-stock-out{background:rgba(220,38,38,.9);}
         .p-wish-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,0.92);border:none;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;box-shadow:0 1px 4px rgba(0,0,0,.15);transition:transform .15s;padding:0;}
         .p-wish-btn:hover{transform:scale(1.15);}
         .p-card-body{padding:0.85rem 0.95rem;display:flex;flex-direction:column;flex:1;}
-        .p-card-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;font-family:sans-serif;margin-bottom:3px;}
-        .p-card-name{font-size:13.5px;font-weight:700;color:#111827;margin:0 0 3px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-family:'Inter','Poppins',sans-serif;}
-        .p-card-qty{font-size:11.5px;color:#9ca3af;margin:0 0 9px;font-family:sans-serif;}
+        .p-card-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;margin-bottom:3px;}
+        .p-card-name{font-size:13.5px;font-weight:700;color:#111827;margin:0 0 3px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+        .p-card-qty{font-size:11.5px;color:#9ca3af;margin:0 0 9px;}
         .p-card-price{font-weight:800;color:#1a3c2e;font-size:18px;margin:0 0 9px;}
         .p-card-actions{height:42px;display:flex;align-items:stretch;margin-top:auto;}
-        .p-add-btn{width:100%;font-size:13px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+        .p-add-btn{width:100%;font-size:13px;border:none;border-radius:8px;background:#2d8a4e;color:#fff;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
         .p-add-btn:hover:not(:disabled){background:#1f6b3a;}
         .p-add-btn:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}
         .p-qty-ctrl{display:flex;align-items:center;justify-content:space-between;background:#f0fdf4;border-radius:8px;padding:0 8px;border:1.5px solid #86efac;width:100%;}
@@ -305,7 +305,7 @@ function ProductsContent() {
         .p-qty-plus:hover{background:#1f6b3a;}
         .p-qty-val{font-weight:800;font-size:15px;color:#166534;min-width:24px;text-align:center;}
 
-        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;transition:all .2s}
+        .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s}
         .btn-g:hover{background:#1f6b3a;}
         .pf-footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2rem;}
         @media(max-width:1024px){.pf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}}
@@ -317,7 +317,7 @@ function ProductsContent() {
       <div className="p-ticker-wrap">
         <div className="p-ticker-desktop">
           {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
               {item}
               {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)" }}>·</span>}
             </span>
@@ -326,7 +326,7 @@ function ProductsContent() {
         <div className="p-ticker-mobile">
           <div className="p-ticker-scroll">
             {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
                 {item}<span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
               </span>
             ))}
@@ -345,7 +345,7 @@ function ProductsContent() {
           <span style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.28)", borderRadius: "24px", padding: "6px 18px", fontSize: "11px", color: "#bef264", marginBottom: "1.4rem", letterSpacing: "0.1em", fontWeight: 600, textTransform: "uppercase" as const }}>
             🌿 Farm Fresh · {siteConfig.categories.length} Categories
           </span>
-          <h1 style={{ fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: "1rem", fontFamily: "'Poppins','Inter',sans-serif", letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 800, color: "#fff", lineHeight: 1.15, marginBottom: "1rem", letterSpacing: "-0.02em" }}>
             Shop <span style={{ background: "linear-gradient(90deg,#d4a017,#f0c040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Fresh Produce</span>
           </h1>
           <p style={{ fontSize: "clamp(13px,1.5vw,16px)", color: "rgba(255,255,255,0.65)", maxWidth: "520px", margin: "0 auto 1.8rem", lineHeight: 1.85, fontFamily: "inherit" }}>
@@ -406,18 +406,18 @@ function ProductsContent() {
         {loading ? (
           <div style={{ textAlign: "center", padding: "4rem 1rem", color: "#9ca3af" }}>
             <div style={{ fontSize: "40px", marginBottom: "12px" }}>🌱</div>
-            <p style={{ fontFamily: "sans-serif", fontSize: "14px" }}>Loading fresh produce…</p>
+            <p style={{ fontSize: "14px" }}>Loading fresh produce…</p>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "4rem 1rem", color: "#9ca3af" }}>
             <div style={{ fontSize: "40px", marginBottom: "12px" }}>🥦</div>
-            <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", fontFamily: "sans-serif", marginBottom: "8px" }}>No products found</p>
-            <p style={{ fontSize: "13px", fontFamily: "sans-serif", marginBottom: "1.2rem" }}>Try a different category or clear your search.</p>
+            <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", marginBottom: "8px" }}>No products found</p>
+            <p style={{ fontSize: "13px", marginBottom: "1.2rem" }}>Try a different category or clear your search.</p>
             <button onClick={() => { setCat("all"); setSearch(""); setSearchInput(""); }} className="btn-g" style={{ padding: "10px 22px", fontSize: "13.5px" }}>Clear Filters</button>
           </div>
         ) : (
           <>
-            <p style={{ fontSize: "12.5px", color: "#9ca3af", fontFamily: "sans-serif", marginBottom: "1rem" }}>
+            <p style={{ fontSize: "12.5px", color: "#9ca3af", marginBottom: "1rem" }}>
               Showing {(safePage - 1) * perPage + 1}–{Math.min(safePage * perPage, filtered.length)} of {filtered.length} product{filtered.length !== 1 ? "s" : ""}
               {cat !== "all" ? ` in ${allCats.find(c => c.key === cat)?.label}` : ""}
               {search ? ` matching "${search}"` : ""}
@@ -483,7 +483,7 @@ function ProductsContent() {
             {totalPages > 1 && (
               <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "2rem", flexWrap: "nowrap", overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" as const, paddingBottom: "4px" }}>
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={safePage === 1}
-                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: safePage === 1 ? "#f9fafb" : "#fff", color: safePage === 1 ? "#9ca3af" : "#374151", cursor: safePage === 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px", fontFamily: "sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: safePage === 1 ? "#f9fafb" : "#fff", color: safePage === 1 ? "#9ca3af" : "#374151", cursor: safePage === 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
                   ← Prev
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -492,13 +492,13 @@ function ProductsContent() {
                   .map((n, idx) =>
                     n === "…" ? <span key={`e${idx}`} style={{ color: "#9ca3af" }}>…</span> : (
                       <button key={n} onClick={() => setPage(n as number)}
-                        style={{ width: "36px", height: "36px", borderRadius: "8px", border: safePage === n ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: safePage === n ? "#2d8a4e" : "#fff", color: safePage === n ? "#fff" : "#374151", cursor: "pointer", fontWeight: safePage === n ? 700 : 400, fontSize: "13px", fontFamily: "sans-serif" }}>
+                        style={{ width: "36px", height: "36px", borderRadius: "8px", border: safePage === n ? "2px solid #2d8a4e" : "1.5px solid #d1d5db", background: safePage === n ? "#2d8a4e" : "#fff", color: safePage === n ? "#fff" : "#374151", cursor: "pointer", fontWeight: safePage === n ? 700 : 400, fontSize: "13px" }}>
                         {n}
                       </button>
                     )
                   )}
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}
-                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: safePage === totalPages ? "#f9fafb" : "#fff", color: safePage === totalPages ? "#9ca3af" : "#374151", cursor: safePage === totalPages ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px", fontFamily: "sans-serif" }}>
+                  style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #d1d5db", background: safePage === totalPages ? "#f9fafb" : "#fff", color: safePage === totalPages ? "#9ca3af" : "#374151", cursor: safePage === totalPages ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
                   Next →
                 </button>
               </div>
@@ -520,7 +520,7 @@ function ProductsContent() {
               <div style={{ marginBottom: "14px" }}>
                 <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
               </div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, fontFamily: "sans-serif", maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
                 {siteConfig.social.instagram && (
                   <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
@@ -541,7 +541,7 @@ function ProductsContent() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Quick Links</h4>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
               {[
                 { label: "Home",       href: "/"          },
                 { label: "Products",   href: "/products"  },
@@ -550,7 +550,7 @@ function ProductsContent() {
                 { label: "Contact Us", href: "/contact"   },
               ].map(link => (
                 <a key={link.label} href={link.href}
-                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", fontFamily: "sans-serif", transition: "color .2s" }}
+                  style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
                   onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
                   {link.label}
@@ -558,8 +558,8 @@ function ProductsContent() {
               ))}
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
                 <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
                 <div>📍 {siteConfig.address}</div>
@@ -567,8 +567,8 @@ function ProductsContent() {
               </div>
             </div>
             <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "sans-serif" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2, fontFamily: "sans-serif" }}>
+              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
+              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
                 <div>📦 Min order: ₹{DEL.minOrder}</div>
                 <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
                 <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
@@ -578,10 +578,10 @@ function ProductsContent() {
             </div>
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
               © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
             </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)", fontFamily: "sans-serif" }}>
+            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}
             </p>
           </div>

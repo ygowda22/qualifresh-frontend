@@ -232,16 +232,16 @@ export default function UserPage() {
 
   const fStyle: React.CSSProperties = {
     width: "100%", padding: "10px 12px", borderRadius: "8px",
-    border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "sans-serif",
+    border: "1.5px solid #e5e7eb", fontSize: "13.5px",
     boxSizing: "border-box", outline: "none", background: "#fff",
   };
   const lStyle: React.CSSProperties = {
     display: "block", fontSize: "11.5px", fontWeight: 700,
-    color: "#374151", fontFamily: "sans-serif", marginBottom: "4px",
+    color: "#374151", marginBottom: "4px",
   };
 
   return (
-    <div className="up-page-bg" style={{ fontFamily: "'Inter','Poppins',-apple-system,sans-serif", color: "#1a1a1a" }}>
+    <div className="up-page-bg" style={{ color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{overflow-x:hidden}
@@ -296,8 +296,8 @@ export default function UserPage() {
         /* Empty state */
         .up-empty{text-align:center;padding:3.5rem 1rem;color:#9ca3af;}
         .up-empty-icon{font-size:52px;margin-bottom:1rem;opacity:.8;}
-        .up-empty-title{font-weight:800;font-size:15px;color:#374151;font-family:sans-serif;margin-bottom:8px;}
-        .up-empty-text{font-size:13px;font-family:sans-serif;max-width:300px;margin:0 auto 1.5rem;line-height:1.6;color:#9ca3af;}
+        .up-empty-title{font-weight:800;font-size:15px;color:#374151;margin-bottom:8px;}
+        .up-empty-text{font-size:13px;max-width:300px;margin:0 auto 1.5rem;line-height:1.6;color:#9ca3af;}
         .up-empty-cta{display:inline-block;padding:11px 28px;background:#2d8a4e;color:#fff;border-radius:10px;font-weight:700;font-size:13.5px;text-decoration:none;transition:background .2s;}
         .up-empty-cta:hover{background:#1f6b3a;}
 
@@ -317,12 +317,12 @@ export default function UserPage() {
         select.up-inp:focus{border-color:#2d8a4e!important;}
 
         /* Badge pill */
-        .up-count-pill{margin-left:auto;font-size:11.5px;padding:3px 10px;border-radius:20px;font-weight:700;font-family:sans-serif;}
+        .up-count-pill{margin-left:auto;font-size:11.5px;padding:3px 10px;border-radius:20px;font-weight:700;}
 
         /* Mobile bottom nav (replaces sidebar nav on small screens) */
         .up-mobile-nav{display:none;overflow-x:auto;scrollbar-width:none;gap:8px;padding:0.75rem 1rem;background:#fff;border-bottom:1px solid #edf0ea;}
         .up-mobile-nav::-webkit-scrollbar{display:none}
-        .up-mobile-nav-btn{padding:8px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .18s;flex-shrink:0;color:#4b5563;}
+        .up-mobile-nav-btn{padding:8px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .18s;flex-shrink:0;color:#4b5563;}
         .up-mobile-nav-btn.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
 
         /* Mobile */
@@ -346,7 +346,7 @@ export default function UserPage() {
       {/* ── Ticker desktop ── */}
       <div className="up-ticker-desktop">
         {TICKER_ITEMS.map((item, i) => (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
             {i > 0 && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#6ee7b7", marginRight: "16px", flexShrink: 0 }} />}
             {item}
           </span>
@@ -357,7 +357,7 @@ export default function UserPage() {
       <div className="up-ticker-mobile">
         <div className="up-ticker-scroll">
           {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontFamily: "sans-serif", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
               {item}<span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#6ee7b7", marginLeft: "22px", flexShrink: 0 }} />
             </span>
           ))}
@@ -414,7 +414,7 @@ export default function UserPage() {
                 {ordersLoading ? (
                   <div className="up-empty">
                     <div style={{ fontSize: "32px", marginBottom: "8px" }}>⏳</div>
-                    <p style={{ fontFamily: "sans-serif", fontSize: "13px" }}>Loading orders…</p>
+                    <p style={{ fontSize: "13px" }}>Loading orders…</p>
                   </div>
                 ) : orders.length === 0 ? (
                   <div className="up-empty">
@@ -433,7 +433,7 @@ export default function UserPage() {
                             {STATUS_LABELS[order.status] || order.status}
                           </span>
                         </div>
-                        <p style={{ fontSize: "12px", color: "#6b7280", fontFamily: "sans-serif", lineHeight: 1.6, margin: "0 0 4px" }}>
+                        <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 4px" }}>
                           {order.items?.slice(0, 3).map((item, i) => (
                             <span key={i}>{item.name} ×{item.quantity}{i < Math.min(order.items.length, 3) - 1 ? ", " : ""}</span>
                           ))}
@@ -467,7 +467,7 @@ export default function UserPage() {
               </div>
               <div className="up-section-body">
                 {profMsg && (
-                  <div style={{ background: profMsg.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${profMsg.type === "success" ? "#bbf7d0" : "#fecaca"}`, borderRadius: "8px", padding: "9px 14px", marginBottom: "1rem", fontSize: "13px", color: profMsg.type === "success" ? "#166534" : "#dc2626", fontFamily: "sans-serif" }}>
+                  <div style={{ background: profMsg.type === "success" ? "#f0fdf4" : "#fef2f2", border: `1px solid ${profMsg.type === "success" ? "#bbf7d0" : "#fecaca"}`, borderRadius: "8px", padding: "9px 14px", marginBottom: "1rem", fontSize: "13px", color: profMsg.type === "success" ? "#166534" : "#dc2626" }}>
                     {profMsg.type === "success" ? "✅ " : "❌ "}{profMsg.text}
                   </div>
                 )}
@@ -482,7 +482,7 @@ export default function UserPage() {
                     <div>
                       <label style={lStyle}>Email</label>
                       <input value={user.email} disabled style={{ ...fStyle, background: "#f9fafb", color: "#9ca3af", cursor: "not-allowed" }} />
-                      <p style={{ fontSize: "11px", color: "#9ca3af", fontFamily: "sans-serif", marginTop: "3px" }}>Email cannot be changed. Contact support if needed.</p>
+                      <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "3px" }}>Email cannot be changed. Contact support if needed.</p>
                     </div>
                     <div>
                       <label style={lStyle}>Mobile Number</label>
@@ -606,8 +606,8 @@ export default function UserPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#2d8a4e", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>{a.label}</div>
-                      <div style={{ fontSize: "13.5px", color: "#111827", fontFamily: "sans-serif", lineHeight: 1.5 }}>{a.line1}</div>
-                      <div style={{ fontSize: "12.5px", color: "#6b7280", fontFamily: "sans-serif" }}>{a.city}{a.pincode ? ` — ${a.pincode}` : ""}</div>
+                      <div style={{ fontSize: "13.5px", color: "#111827", lineHeight: 1.5 }}>{a.line1}</div>
+                      <div style={{ fontSize: "12.5px", color: "#6b7280" }}>{a.city}{a.pincode ? ` — ${a.pincode}` : ""}</div>
                     </div>
                     <div className="up-addr-actions" style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
                       <button onClick={() => startEditAddress(a)}
@@ -660,7 +660,7 @@ export default function UserPage() {
                         </div>
                         <div style={{ padding: "10px 12px" }}>
                           <p style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                          {p.quantityLabel && <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px", fontFamily: "sans-serif" }}>{p.quantityLabel}</p>}
+                          {p.quantityLabel && <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px" }}>{p.quantityLabel}</p>}
                           <p style={{ fontSize: "14px", fontWeight: 800, color: "#2d8a4e", margin: "0 0 8px" }}>₹{p.price}</p>
                           <button onClick={() => addToCart(p._id)}
                             style={{ width: "100%", padding: "7px", borderRadius: "7px", border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>

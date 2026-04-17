@@ -1122,7 +1122,7 @@ export default function Home() {
                           </div>
                         ) : (
                           <button onClick={() => p.stock > 0 && add(p._id)} disabled={p.stock === 0}
-                            style={{ width: "100%", fontSize: "13px", background: p.stock > 0 ? "#2d8a4e" : "#f3f4f6", color: p.stock > 0 ? "#fff" : "#9ca3af", border: "none", borderRadius: "8px", cursor: p.stock > 0 ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            style={{ width: "100%", minHeight: "38px", padding: "6px 8px", fontSize: "13px", background: p.stock > 0 ? "#2d8a4e" : "#f3f4f6", color: p.stock > 0 ? "#fff" : "#9ca3af", border: "none", borderRadius: "8px", cursor: p.stock > 0 ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                             {p.stock > 0 ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
                           </button>
                         )}
@@ -1272,7 +1272,7 @@ export default function Home() {
                 </blockquote>
               </div>
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src="/products/farm-1776104049239.png?t=1776104050928" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=75&fit=crop" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             </div>
           </div>

@@ -266,7 +266,7 @@ export default function AboutPage() {
               </blockquote>
             </div>
             <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-              <img src="/products/farm-1776104049239.png?t=1776104050928" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=75&fit=crop" alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
           </div>
         </div>

@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import path from "path";
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
 const ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"];
 
-// Proxies image upload to the backend API.
-// Returns { url } where url is an absolute backend URL ready to store in DB.
+const SUPABASE_URL    = process.env.SUPABASE_URL    || "";
+const SUPABASE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const BUCKET          = "product-images";
+
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("Authorization") || "";
-    const formData   = await request.formData();
-    const file = formData.get("image") as File | null;
+    const formData = await request.formData();
+    const file     = formData.get("image") as File | null;
+    const slug     = (formData.get("slug") as string | null) || "";
 
     if (!file) return NextResponse.json({ message: "No file provided" }, { status: 400 });
 
@@ -21,24 +24,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "File too large — max 10 MB." }, { status: 400 });
     }
 
-    const backendBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return NextResponse.json({ message: "Storage not configured" }, { status: 500 });
+    }
 
-    // Forward to backend — pass original FormData (slug, image) unchanged
-    const r = await fetch(`${backendBase}/api/upload`, {
-      method:  "POST",
-      headers: { Authorization: authHeader },
-      body:    formData,
-    });
+    const baseName = slug
+      ? slug.replace(/[^a-z0-9-]/gi, "-").toLowerCase()
+      : path.basename(file.name, ext).replace(/\s+/g, "-").toLowerCase();
+    const fileName = `${baseName}-${Date.now()}${ext}`;
 
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) return NextResponse.json(d, { status: r.status });
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Make the URL absolute so it works cross-domain (browser → any host)
-    const url: string = d.url ?? "";
-    const absoluteUrl = url.startsWith("http") ? url : `${backendBase}${url}`;
-    return NextResponse.json({ url: absoluteUrl });
+    const uploadRes = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,
+      {
+        method:  "POST",
+        headers: {
+          Authorization:  `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": file.type,
+          "x-upsert":     "false",
+        },
+        body: buffer,
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.json().catch(() => ({}));
+      console.error("Supabase upload error:", err);
+      return NextResponse.json({ message: "Storage upload failed" }, { status: 500 });
+    }
+
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
+    return NextResponse.json({ url: publicUrl, filename: fileName });
   } catch (err) {
-    console.error("Upload proxy error:", err);
-    return NextResponse.json({ message: "Upload failed — backend may be unreachable" }, { status: 500 });
+    console.error("Upload error:", err);
+    return NextResponse.json({ message: "Upload failed" }, { status: 500 });
   }
 }

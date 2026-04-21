@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { siteConfig } from "../../src/config/site";
-import SiteNav from "../components/SiteNav";
 
 const { delivery: DEL } = siteConfig;
 
@@ -111,8 +110,6 @@ export default function CheckoutPage() {
         .btn-g:hover{background:#1f6b3a;}
         nextjs-portal{display:none!important}
       `}</style>
-
-      <SiteNav activePage="products" />
 
       {/* Page header */}
       <div style={{ background: "linear-gradient(135deg,#0a1f12,#0f3020)", padding: "2rem 1.5rem 1.8rem" }}>

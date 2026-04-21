@@ -51,14 +51,23 @@ export default function AboutPage() {
   const [storyImg, setStoryImg]     = useState<string>("");
 
   useEffect(() => {
-    try {
-      const FARM_BASE = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
-      const DEFAULT_STORY = `${FARM_BASE}/farm-1776104049239.png`;
-      const saved = localStorage.getItem("qf_farm_photos");
-      const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
-      const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
-      setStoryImg(first ? first.imageUrl : DEFAULT_STORY);
-    } catch {}
+    const loadFromLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem("qf_farm_photos");
+        const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
+        const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
+        setStoryImg(first ? first.imageUrl : "");
+      } catch {}
+    };
+    fetch("/backend/api/farms")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          const first = data.find((p: any) => p.imageUrl && p.imageUrl.startsWith("https://"));
+          setStoryImg(first ? first.imageUrl : "");
+        } else { loadFromLocalStorage(); }
+      })
+      .catch(loadFromLocalStorage);
   }, []);
 
   // Contact modal state

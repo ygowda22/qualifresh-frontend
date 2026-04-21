@@ -1,28 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { siteConfig } from "../../src/config/site";
-import SiteNav from "../components/SiteNav";
+import { useCart } from "../context/CartContext";
 
 interface FarmPhoto { id: string; title: string; description: string; imageUrl: string; }
 
-const SUPABASE_FARM = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
-const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
-  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",    imageUrl: `${SUPABASE_FARM}/farm-1776104049239.png` },
-  { id: "f2", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: `${SUPABASE_FARM}/farm-1776104159959.png` },
-  { id: "f3", title: "Growing Fields",  description: "Exotic varieties cultivated with care",          imageUrl: `${SUPABASE_FARM}/farm-1776104172608.png` },
-  { id: "f4", title: "Farm Fresh",      description: "Inspected and packed the same morning",          imageUrl: `${SUPABASE_FARM}/farm-1776104179499.png` },
-  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: `${SUPABASE_FARM}/farm-1776104186856.png` },
-  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: `${SUPABASE_FARM}/farm-1776104413238.png` },
-];
+const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [];
 
 const { delivery: DEL } = siteConfig;
-const TICKER_ITEMS = [
-  `📅 Delivery: ${DEL.days.join(" & ")}`,
-  `📦 Min order ₹${DEL.minOrder}`,
-  `🚚 Free delivery above ₹${DEL.freeDeliveryAbove}`,
-  `🎁 Free microgreens above ₹${DEL.freeMicrogreensAbove}`,
-  `📞 ${siteConfig.phoneDisplay}`,
-];
 
 function InstagramIcon() {
   return (
@@ -49,28 +34,57 @@ function WhatsAppIcon({ size = 17 }: { size?: number }) {
 export default function OurFarmsPage() {
   const [farmPhotos, setFarmPhotos] = useState<FarmPhoto[]>([]);
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
+  const [lbClosing,   setLbClosing]   = useState(false);
 
-  // Cart-aware WhatsApp state (reads localStorage product cache set by SiteNav)
-  const [waCart, setWaCart]   = useState<Record<string, number>>({});
+  function openLightbox(img: string) { setLbClosing(false); setLightboxImg(img); }
+  function closeLightbox() {
+    setLbClosing(true);
+    setTimeout(() => { setLightboxImg(null); setLbClosing(false); }, 200);
+  }
+
+  // Cart-aware WhatsApp state
+  const { cart: waCart } = useCart();
   const [waProds, setWaProds] = useState<{_id:string;name:string;price:number}[]>([]);
+
+  function loadFromLocalStorage() {
+    try {
+      const saved = localStorage.getItem("qf_farm_photos");
+      const parsed: FarmPhoto[] = saved ? JSON.parse(saved) : DEFAULT_FARM_PHOTOS;
+      setFarmPhotos(parsed);
+    } catch { setFarmPhotos(DEFAULT_FARM_PHOTOS); }
+  }
+
+  function loadFarmPhotos() {
+    fetch("/backend/api/farms")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          const mapped: FarmPhoto[] = data.map(p => ({ id: p._id, title: p.title || "", description: p.description || "", imageUrl: p.imageUrl }));
+          setFarmPhotos(mapped);
+          localStorage.setItem("qf_farm_photos", JSON.stringify(mapped));
+        } else {
+          loadFromLocalStorage();
+        }
+      })
+      .catch(loadFromLocalStorage);
+  }
 
   useEffect(() => {
     document.title = siteConfig.pageTitles.ourFarms;
-    try {
-      const saved = localStorage.getItem("qf_farm_photos");
-      setFarmPhotos(saved ? JSON.parse(saved) : DEFAULT_FARM_PHOTOS);
-    } catch { setFarmPhotos(DEFAULT_FARM_PHOTOS); }
+    loadFarmPhotos();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "qf_farm_photos" || e.key === "qf_settings_updated") loadFarmPhotos();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   useEffect(() => {
     try {
-      const c = localStorage.getItem("qf_cart");
-      if (c) setWaCart(JSON.parse(c));
       const p = localStorage.getItem("qf_products_cache");
       if (p) setWaProds(JSON.parse(p));
     } catch {}
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "qf_cart") { try { setWaCart(e.newValue ? JSON.parse(e.newValue) : {}); } catch {} }
       if (e.key === "qf_products_cache") { try { setWaProds(e.newValue ? JSON.parse(e.newValue) : []); } catch {} }
     };
     window.addEventListener("storage", onStorage);
@@ -96,17 +110,6 @@ export default function OurFarmsPage() {
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
-        /* Ticker */
-        .ticker-wrap{margin-bottom:0;}
-        .ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;width:100%;background:#0f8a65;}
-        .ticker-mobile{display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
-        @media(max-width:1024px){
-          .ticker-desktop{display:none;}
-          .ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px;}
-          .ticker-scroll{display:inline-flex;animation:ticker 30s linear infinite;white-space:nowrap;}
-          .ticker-scroll:hover{animation-play-state:paused;}
-        }
-        @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
         /* Navbar */
@@ -119,56 +122,56 @@ export default function OurFarmsPage() {
         .lift{transition:all .25s cubic-bezier(.4,0,.2,1);}
         .lift:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.14)!important;}
 
-        /* Mobile responsiveness */
-        .farm-grid-f{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
-        .farm-photo-f{border-radius:20px;overflow:hidden;position:relative;height:240px;box-shadow:0 8px 30px rgba(0,0,0,0.12);cursor:zoom-in;}
+        /* Farm photo grid — fully responsive, unlimited images */
+        .farm-grid-f{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+        .farm-photo-f{border-radius:20px;overflow:hidden;position:relative;aspect-ratio:4/3;box-shadow:0 8px 30px rgba(0,0,0,0.12);cursor:zoom-in;}
+        .farm-photo-f img{width:100%;height:100%;object-fit:cover;display:block;}
+
+        /* Tablet: 3 columns */
+        @media(max-width:1024px){
+          .farm-grid-f{grid-template-columns:repeat(3,1fr);gap:14px;}
+          .hero-strip-f{padding:3rem 1rem 2rem!important;}
+        }
+        /* Small tablet / large mobile: 2 columns */
         @media(max-width:768px){
-          .farm-grid-f{grid-template-columns:1fr 1fr!important;gap:10px!important;}
-          .farm-photo-f{height:180px!important;}
+          .farm-grid-f{grid-template-columns:repeat(2,1fr);gap:12px;}
           .trust-grid-f{display:grid!important;grid-template-columns:1fr 1fr!important;gap:0.75rem!important;}
           .trust-card-f{max-width:100%!important;flex:none!important;padding:12px 14px!important;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1.5rem!important;}
-          .hero-strip-f{padding:3rem 1rem 2rem!important;}
         }
+        /* Mobile: 2 columns (or 1 on very narrow) */
         @media(max-width:480px){
-          .farm-grid-f{grid-template-columns:1fr!important;}
-          .farm-photo-f{height:200px!important;}
+          .farm-grid-f{grid-template-columns:repeat(2,1fr);gap:10px;}
           .footer-grid-f{grid-template-columns:1fr 1fr!important;gap:1rem!important;}
           .nav-bar-f{padding:0 1rem!important;}
           .trust-grid-f{grid-template-columns:1fr 1fr!important;gap:0.6rem!important;}
           .trust-card-f{padding:10px 10px!important;gap:10px!important;}
           .trust-card-f .trust-icon-f{width:38px!important;height:38px!important;font-size:18px!important;}
         }
+        @media(max-width:340px){
+          .farm-grid-f{grid-template-columns:1fr;gap:10px;}
+        }
         /* Lightbox */
-        @keyframes lbFadeIn{from{opacity:0;transform:scale(0.94)}to{opacity:1;transform:scale(1)}}
-        .farm-lb-img{animation:lbFadeIn .22s cubic-bezier(.22,1,.36,1) both}
+        @keyframes lbBgIn{from{opacity:0}to{opacity:1}}
+        @keyframes lbBgOut{from{opacity:1}to{opacity:0}}
+        @keyframes lbImgIn{from{opacity:0;transform:scale(0.84)}to{opacity:1;transform:scale(1)}}
+        @keyframes lbImgOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(0.84)}}
+        .farm-lb-overlay{animation:lbBgIn .2s ease both}
+        .farm-lb-overlay.closing{animation:lbBgOut .2s ease both!important}
+        .farm-lb-img{
+          animation:lbImgIn .26s cubic-bezier(.22,1,.36,1) both;
+          border-radius:16px;
+          box-shadow:0 24px 70px rgba(0,0,0,0.65);
+          max-width:min(60vw,900px);
+          max-height:75vh;
+          object-fit:contain;
+        }
+        .farm-lb-overlay.closing .farm-lb-img{animation:lbImgOut .2s ease both!important}
+        @media(max-width:768px){
+          .farm-lb-img{max-width:92vw!important;max-height:80vh!important;}
+        }
         nextjs-portal{display:none!important}
       `}</style>
-
-      {/* ═══ TICKER BAR ═══ */}
-      <div className="ticker-wrap">
-        <div className="ticker-desktop">
-          {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
-              {item}
-              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "18px", color: "rgba(163,230,53,0.35)", fontSize: "14px", fontWeight: 300 }}>|</span>}
-            </span>
-          ))}
-        </div>
-        <div className="ticker-mobile">
-          <div className="ticker-scroll">
-            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-                {item}
-                <span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ NAVBAR ═══ */}
-      <SiteNav activePage="our-farms" />
 
       {/* ═══ HERO STRIP ═══ */}
       <div className="hero-strip-f" style={{ background: "linear-gradient(145deg,#071812 0%,#0a2218 30%,#0f3320 70%,#1c5a3a 100%)", padding: "4rem 2rem 3rem", position: "relative", overflow: "hidden" }}>
@@ -217,11 +220,11 @@ export default function OurFarmsPage() {
         </div>
 
         {/* Photo grid */}
-        {photos.length > 0 && (
+        {photos.filter(p => p.imageUrl && p.imageUrl.startsWith("http")).length > 0 ? (
           <div className="farm-grid-f">
-            {photos.map((photo, idx) => (
+            {photos.filter(p => p.imageUrl && p.imageUrl.startsWith("http")).map((photo, idx) => (
               <div key={photo.id} className="farm-photo-f lift"
-                onClick={() => setLightboxImg(photo.imageUrl)}>
+                onClick={() => openLightbox(photo.imageUrl)}>
                 <img src={photo.imageUrl} alt={photo.title || "Farm"}
                   style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .5s cubic-bezier(.4,0,.2,1)", display: "block" }}
                   onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.06)")}
@@ -233,25 +236,31 @@ export default function OurFarmsPage() {
                     {photo.description && <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "12px", lineHeight: 1.5 }}>{photo.description}</div>}
                   </div>
                 )}
-                {idx === 0 && (
-                  <div style={{ position: "absolute", top: "14px", right: "14px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", borderRadius: "20px", padding: "5px 12px", display: "flex", alignItems: "center", gap: "5px" }}>
-                    <span style={{ fontSize: "13px" }}>🌿</span>
-                    <span style={{ color: "#fff", fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em" }}>Farm Fresh</span>
-                  </div>
-                )}
+                {/* {idx === 0 && (
+                  // <div style={{ position: "absolute", top: "14px", right: "14px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)", borderRadius: "20px", padding: "5px 12px", display: "flex", alignItems: "center", gap: "5px" }}>
+                  //   <span style={{ fontSize: "13px" }}>🌿</span>
+                  //   <span style={{ color: "#fff", fontSize: "11px", fontWeight: 700, letterSpacing: "0.05em" }}>Farm Fresh</span>
+                  // </div>
+                )} */}
               </div>
             ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "4rem 1rem", color: "#6b7280" }}>
+            <div style={{ fontSize: "48px", marginBottom: "14px" }}>📸</div>
+            <p style={{ fontWeight: 700, color: "#374151", fontSize: "15px", marginBottom: "8px" }}>No farm photos yet</p>
+            <p style={{ fontSize: "13px" }}>Upload farm photos from the admin panel to showcase your farms here.</p>
           </div>
         )}
 
         {/* Lightbox */}
         {lightboxImg && (
-          <div onClick={() => setLightboxImg(null)}
-            style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.88)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", cursor: "zoom-out" }}>
+          <div onClick={closeLightbox}
+            className={`farm-lb-overlay${lbClosing ? " closing" : ""}`}
+            style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", cursor: "zoom-out" }}>
             <img src={lightboxImg} alt="Farm" className="farm-lb-img"
-              style={{ maxWidth: "90vw", maxHeight: "86vh", objectFit: "contain", borderRadius: "16px", boxShadow: "0 24px 70px rgba(0,0,0,0.6)" }}
               onClick={e => e.stopPropagation()} />
-            <button onClick={() => setLightboxImg(null)}
+            <button onClick={closeLightbox}
               style={{ position: "fixed", top: "18px", right: "22px", background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: "50%", width: "46px", height: "46px", color: "#fff", fontSize: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, fontFamily: "inherit" }}>
               ×
             </button>

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { siteConfig } from "../../src/config/site";
-import SiteNav from "../components/SiteNav";
+import { useCart } from "../context/CartContext";
 
 const { delivery: DEL } = siteConfig;
 
@@ -39,13 +39,7 @@ function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
   return <img src="/logo.png" alt="QualiFresh" style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }} />;
 }
 
-const TICKER_ITEMS = [
-  `📅 Delivery: ${DEL.days.join(" & ")}`,
-  `📦 Min order ₹${DEL.minOrder}`,
-  `🚚 Free delivery above ₹${DEL.freeDeliveryAbove}`,
-  `🎁 Free microgreens above ₹${DEL.freeMicrogreensAbove}`,
-  `📞 ${siteConfig.phoneDisplay}`,
-];
+
 
 export default function AboutPage() {
 
@@ -59,20 +53,29 @@ export default function AboutPage() {
 
   const [storyImg, setStoryImg]   = useState<string>("");
 
-  // Cart-aware WhatsApp state (reads localStorage product cache set by SiteNav)
-  const [waCart, setWaCart]       = useState<Record<string, number>>({});
+  // Cart-aware WhatsApp state
+  const { cart: waCart } = useCart();
   const [waProds, setWaProds]     = useState<{_id:string;name:string;price:number}[]>([]);
 
   useEffect(() => {
     document.title = siteConfig.pageTitles.aboutUs;
-    try {
-      const FARM_BASE = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
-      const DEFAULT_STORY = `${FARM_BASE}/farm-1776104049239.png`;
-      const saved = localStorage.getItem("qf_farm_photos");
-      const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
-      const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
-      setStoryImg(first ? first.imageUrl : DEFAULT_STORY);
-    } catch {}
+    const loadFromLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem("qf_farm_photos");
+        const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
+        const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
+        setStoryImg(first ? first.imageUrl : "");
+      } catch {}
+    };
+    fetch("/backend/api/farms")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          const first = data.find((p: any) => p.imageUrl && p.imageUrl.startsWith("https://"));
+          setStoryImg(first ? first.imageUrl : "");
+        } else { loadFromLocalStorage(); }
+      })
+      .catch(loadFromLocalStorage);
   }, []);
 
   // Scroll-in animation observer
@@ -88,13 +91,10 @@ export default function AboutPage() {
 
   useEffect(() => {
     try {
-      const c = localStorage.getItem("qf_cart");
-      if (c) setWaCart(JSON.parse(c));
       const p = localStorage.getItem("qf_products_cache");
       if (p) setWaProds(JSON.parse(p));
     } catch {}
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "qf_cart") { try { setWaCart(e.newValue ? JSON.parse(e.newValue) : {}); } catch {} }
       if (e.key === "qf_products_cache") { try { setWaProds(e.newValue ? JSON.parse(e.newValue) : []); } catch {} }
     };
     window.addEventListener("storage", onStorage);
@@ -122,18 +122,6 @@ export default function AboutPage() {
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
-
-        /* Ticker */
-        .a-ticker-wrap {}
-        .a-ticker-desktop { display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;width:100%;background:#0f8a65; }
-        .a-ticker-mobile { display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50; }
-        @media(max-width:1024px){
-          .a-ticker-desktop{display:none}
-          .a-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
-          .a-ticker-scroll{display:inline-flex;animation:aticker 30s linear infinite;white-space:nowrap}
-          .a-ticker-scroll:hover{animation-play-state:paused}
-        }
-        @keyframes aticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
         /* Buttons */
         .btn-g{background:#2d8a4e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700;transition:all .2s}
@@ -193,29 +181,6 @@ export default function AboutPage() {
         nextjs-portal{display:none!important}
       `}</style>
 
-      {/* ── Ticker desktop ── */}
-      <div className="a-ticker-wrap">
-        <div className="a-ticker-desktop">
-          {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-              {item}
-              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)" }}>·</span>}
-            </span>
-          ))}
-        </div>
-        <div className="a-ticker-mobile">
-          <div className="a-ticker-scroll">
-            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-                {item}<span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Navbar ── */}
-      <SiteNav activePage="about-us" />
 
       {/* ══════════════════════════════════════════════════════
           ABOUT US CONTENT
@@ -295,9 +260,9 @@ export default function AboutPage() {
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", img: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&q=80&fit=crop", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
-              { icon: "🌏", img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&q=80&fit=crop", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
-              { icon: "🤝", img: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&q=80&fit=crop", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
+              { icon: "🎯", img: "/products/mission.jpg", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🌏", img: "/products/vision.jpg", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
+              { icon: "🤝", img: "/products/promise.jpg", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
             ].map((card, i) => (
               <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
@@ -331,10 +296,10 @@ export default function AboutPage() {
           </div>
           <div className="about-steps-grid">
             {[
-              { step: "01", icon: "🌾", img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&q=80&fit=crop", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
-              { step: "02", icon: "🔬", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80&fit=crop", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
-              { step: "03", icon: "❄️", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
-              { step: "04", icon: "🚚", img: "https://images.unsplash.com/photo-1584277261846-c6a1672ed979?w=600&q=80&fit=crop", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
+              { step: "01", icon: "🌾", img: "/products/farmsource.jpg", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
+              { step: "02", icon: "🔬", img: "/products/qualitycheck.jpg", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
+              { step: "03", icon: "❄️", img: "/products/coldpack.jpg", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
+              { step: "04", icon: "🚚", img: "/products/delivery.png", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
             ].map((s, i) => (
               <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
@@ -365,10 +330,10 @@ export default function AboutPage() {
           <h2 style={{ fontSize: "clamp(1.4rem,2.8vw,2rem)", fontWeight: 800, color: "#0f1a0f", margin: "0 0 2.5rem" }}>Why Thousands Trust QualiFresh</h2>
           <div className="about-stats-grid">
             {[
-              { icon: "💳", img: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&q=80&fit=crop", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
-              { icon: "🔄", img: "https://images.unsplash.com/photo-1559181567-c3190ca9d1d7?w=600&q=80&fit=crop", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
-              { icon: "❄️", img: "https://images.unsplash.com/photo-1547592180-85f173990554?w=600&q=80&fit=crop", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
-              { icon: "🌱", img: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&q=80&fit=crop", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
+              { icon: "💳", img: "/products/noadvance.jpg", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
+              { icon: "🔄", img: "/products/free.png", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
+              { icon: "❄️", img: "/products/coldpack.jpg", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
+              { icon: "🌱", img: "/products/sustainable.jpg", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
             ].map((g, i) => (
               <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>

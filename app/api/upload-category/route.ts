@@ -1,63 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import path from "path";
 
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
-
-const SUPABASE_URL = process.env.SUPABASE_URL            || "";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const BUCKET       = "product-images";
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file     = formData.get("image") as File | null;
-    const slug     = (formData.get("slug") as string | null) || "";
+    const auth     = request.headers.get("authorization") || "";
 
-    if (!file) return NextResponse.json({ message: "No file provided" }, { status: 400 });
+    const r = await fetch(`${API}/api/categories/upload`, {
+      method:  "POST",
+      headers: { Authorization: auth },
+      body:    formData,
+    });
 
-    const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
-    if (!ALLOWED_MIME.includes(file.type) || !ALLOWED_EXT.includes(ext)) {
-      return NextResponse.json({ message: "Invalid file type. Use JPG, PNG, or WebP." }, { status: 400 });
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ message: "File too large — max 10 MB." }, { status: 400 });
-    }
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      return NextResponse.json({ message: "Storage not configured" }, { status: 500 });
-    }
-
-    const baseName = slug
-      ? slug.replace(/[^a-z0-9-]/gi, "-").toLowerCase()
-      : path.basename(file.name, ext).replace(/\s+/g, "-").toLowerCase();
-    const fileName = `cat-${baseName}-${Date.now()}${ext}`;
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    const uploadRes = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`,
-      {
-        method:  "POST",
-        headers: {
-          Authorization:  `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": file.type,
-          "x-upsert":     "false",
-        },
-        body: buffer,
-      }
-    );
-
-    if (!uploadRes.ok) {
-      const err = await uploadRes.json().catch(() => ({}));
-      console.error("Supabase category upload error:", err);
-      return NextResponse.json({ message: "Storage upload failed" }, { status: 500 });
-    }
-
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${fileName}`;
-    return NextResponse.json({ success: true, url: publicUrl, filename: fileName });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) return NextResponse.json(data, { status: r.status });
+    return NextResponse.json(data);
   } catch (err) {
-    console.error("Category upload error:", err);
+    console.error("Category upload proxy error:", err);
     return NextResponse.json({ message: "Upload failed" }, { status: 500 });
   }
 }

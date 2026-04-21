@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { siteConfig } from "../src/config/site";
 import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
+import { useCart } from "./context/CartContext";
 
 const { delivery: DEL } = siteConfig;
 
@@ -13,15 +14,6 @@ const CATS = siteConfig.categories;
 const CAT_LABEL: Record<string, string> = Object.fromEntries(CATS.map(c => [c.key, c.label]));
 const CAT_COLOR: Record<string, string> = Object.fromEntries(CATS.map(c => [c.key, c.color]));
 const CAT_IMG:   Record<string, string> = Object.fromEntries(CATS.map(c => [c.key, c.image]));
-
-// Ticker items — shown centered on desktop, scrolling on mobile
-const TICKER_ITEMS = [
-  `📅 Delivery: ${DEL.days.join(" & ")}`,
-  `📦 Min order ₹${DEL.minOrder}`,
-  `🚚 Free delivery above ₹${DEL.freeDeliveryAbove}`,
-  `🎁 Free microgreens above ₹${DEL.freeMicrogreensAbove}`,
-  `📞 ${siteConfig.phoneDisplay}`,
-];
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 function InstagramIcon() {
@@ -43,14 +35,6 @@ function CartSvg() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-    </svg>
-  );
-}
-function UserSvg() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
     </svg>
   );
 }
@@ -87,14 +71,11 @@ export default function Home() {
   const [products, setProducts]     = useState<any[]>([]);
   const [loading, setLoading]       = useState(true);
   const [cat, setCat]               = useState("all");
-  const [cart, setCart]             = useState<Record<string, number>>({});
+  const { cart, setCart, addToCart: ctxAdd, removeFromCart: ctxRemove } = useCart();
   const [showCart, setShowCart]     = useState(false);
   const [showLogin, setShowLogin]   = useState(false);
-  const [mobileMenu, setMobileMenu]     = useState(false);
   const [search, setSearch]             = useState("");
   const [searchOpen, setSearchOpen]     = useState(false);
-  const desktopSearchRef                = useRef<HTMLDivElement>(null);
-  const mobileSearchRef                 = useRef<HTMLDivElement>(null);
   const [page, setPage]                 = useState(1);
   const [hov, setHov]                   = useState<string | null>(null);
   const [catVisible, setCatVisible]     = useState(true);
@@ -144,13 +125,10 @@ export default function Home() {
   const heroRef                     = useRef<HTMLDivElement>(null);
   const whyRef                      = useRef<HTMLDivElement>(null);
   const filterRowRef                = useRef<HTMLDivElement>(null);
-  const navRef                      = useRef<HTMLElement>(null);
-  const [dropdownTop, setDropdownTop] = useState(0);
   const [perPage, setPerPage]       = useState(PER_PAGE);
   const [showLeftArrow, setShowLeftArrow]   = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [wishlist, setWishlist]             = useState<string[]>([]);
-  const [activeNav, setActiveNav]           = useState("Home");
   const router = useRouter();
 
   // ── Load user session + cart + settings ──────────────────────────────────
@@ -158,10 +136,6 @@ export default function Home() {
     try {
       const saved = localStorage.getItem("qf_user");
       if (saved) { const u = JSON.parse(saved); setUser(u); setCkName(u.name || ""); setCkEmail(u.email || ""); }
-    } catch {}
-    try {
-      const savedCart = localStorage.getItem("qf_cart");
-      if (savedCart) setCart(JSON.parse(savedCart));
     } catch {}
     // Load store settings
     const cartSetting = localStorage.getItem("qf_cart_enabled");
@@ -174,20 +148,51 @@ export default function Home() {
       const ovSetting = localStorage.getItem("qf_category_overrides");
       if (ovSetting) setCatOverrides(JSON.parse(ovSetting));
     } catch {}
-    try {
-      const FARM_BASE = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
-      const DEFAULT_STORY = `${FARM_BASE}/farm-1776104049239.png`;
-      const saved = localStorage.getItem("qf_farm_photos");
-      const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
-      const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
-      setStoryImg(first ? first.imageUrl : DEFAULT_STORY);
-    } catch {}
+    const loadStoryFromLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem("qf_farm_photos");
+        const photos = saved ? (JSON.parse(saved) as {imageUrl:string}[]) : [];
+        const first = photos.find(p => p.imageUrl && p.imageUrl.startsWith("https://"));
+        setStoryImg(first ? first.imageUrl : "");
+      } catch {}
+    };
+    fetch("/backend/api/farms")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          const first = data.find((p: any) => p.imageUrl && p.imageUrl.startsWith("https://"));
+          setStoryImg(first ? first.imageUrl : "");
+        } else { loadStoryFromLocalStorage(); }
+      })
+      .catch(loadStoryFromLocalStorage);
   }, []);
 
-  // ── Persist cart to localStorage on every change ─────────────────────────
+  // ── Load categories from MongoDB (overwrites localStorage cache) ─────────
   useEffect(() => {
-    localStorage.setItem("qf_cart", JSON.stringify(cart));
-  }, [cart]);
+    fetch("/backend/api/categories")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (!data || !Array.isArray(data) || data.length === 0) return;
+        const overrides: Record<string, { label?: string; image?: string; color?: string; icon?: string }> = {};
+        const customs: { key: string; label: string; image: string; color: string; icon: string }[] = [];
+        for (const c of data) {
+          if (c.isCustom) {
+            customs.push({ key: c.key, label: c.label, image: c.imageUrl || "", color: c.color, icon: c.icon });
+          } else {
+            overrides[c.key] = { label: c.label, image: c.imageUrl || "", color: c.color, icon: c.icon };
+          }
+        }
+        if (customs.length > 0 || Object.keys(overrides).length > 0) {
+          setCustomCats(customs);
+          setCatOverrides(overrides);
+          localStorage.setItem("qf_custom_categories", JSON.stringify(customs));
+          localStorage.setItem("qf_category_overrides", JSON.stringify(overrides));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Cart persistence is handled by CartContext (app/context/CartContext.tsx)
 
   // ── Sync wishlist from backend when user logs in / on mount ───────────────
   useEffect(() => {
@@ -224,30 +229,6 @@ export default function Home() {
 
   useEffect(() => { setPage(1); }, [perPage]);
 
-  // ── Track nav bottom for mobile menu dropdown positioning ────────────────
-  useEffect(() => {
-    const update = () => {
-      if (navRef.current) setDropdownTop(navRef.current.getBoundingClientRect().bottom);
-    };
-    update();
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, { passive: true });
-    return () => { window.removeEventListener("resize", update); window.removeEventListener("scroll", update); };
-  }, [mobileMenu]);
-
-  // ── Close search dropdown on outside click ────────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        desktopSearchRef.current && !desktopSearchRef.current.contains(e.target as Node) &&
-        mobileSearchRef.current && !mobileSearchRef.current.contains(e.target as Node)
-      ) {
-        setSearchOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
 
   // ── Auth helpers ──────────────────────────────────────────────────────────
   async function doLogin() {
@@ -314,10 +295,6 @@ export default function Home() {
   async function logout() {
     const token = user?.token;
     if (token) await saveAndClearCart(token, cart);
-    else {
-      localStorage.setItem("qf_cart", JSON.stringify({}));
-      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
-    }
     setCart({});
     setUser(null);
     setWishlist([]);
@@ -371,11 +348,6 @@ export default function Home() {
     finally { setCkLoading(false); }
   }
 
-  // ── Title ────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    document.title = `${siteConfig.name} — Fresh Exotic Vegetables, Pune`;
-  }, []);
-
   // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
     // Use /backend proxy so mobile browsers hit the Next.js server (not their own localhost)
@@ -406,6 +378,9 @@ export default function Home() {
         try { const c = localStorage.getItem("qf_custom_categories"); if (c) setCustomCats(JSON.parse(c)); } catch {}
         try { const ov = localStorage.getItem("qf_category_overrides"); if (ov) setCatOverrides(JSON.parse(ov)); } catch {}
       }
+      if (e.key === "qf_user") {
+        try { setUser(e.newValue ? JSON.parse(e.newValue) : null); } catch {}
+      }
     };
     // Same tab: re-fetch whenever user navigates back to this page/tab
     const onVisible = () => {
@@ -425,12 +400,9 @@ export default function Home() {
     };
   }, []);
 
-  // ── Reset page on filter change + update title ───────────────────────────
+  // ── Reset page on filter change ───────────────────────────────────────────
   useEffect(() => {
     setPage(1);
-    const catCfg = allCats.find(c => c.key === cat);
-    if (catCfg) document.title = `${catCfg.pageTitle || catCfg.label} | QualiFresh`;
-    else document.title = siteConfig.pageTitles.products;
   }, [cat, search, customCats]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Category: only visible once user scrolls hero out of view ───────────
@@ -510,8 +482,8 @@ export default function Home() {
       )}`
     : `https://wa.me/${siteConfig.whatsapp}`;
 
-  const add    = (id: string) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
-  const remove = (id: string) => setCart(c => { const n = { ...c }; n[id] > 1 ? n[id]-- : delete n[id]; return n; });
+  const add    = (id: string) => ctxAdd(id);
+  const remove = (id: string) => ctxRemove(id);
 
   // Detect filter row overflow — track left/right arrows independently
   useEffect(() => {
@@ -557,36 +529,9 @@ export default function Home() {
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
-        /* ── Ticker: DESKTOP = centered single line, MOBILE = scrolling ── */
-        .ticker-wrap { margin-bottom:0; }
-        /* Desktop: show items centered */
-        .ticker-desktop {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          flex-wrap: nowrap;
-          gap: 0;
-          padding: 6px 1rem;
-          overflow: hidden;
-          width: 100%;
-          background: #0f8a65;
-        }
-        /* Mobile: full scrolling ticker — hidden on desktop */
-        .ticker-mobile { display: none; width: 100%; background: #0f8a65; border-bottom: 1px solid #0a6e50; }
         @media(max-width: 1024px) {
-          .ticker-desktop { display: none; }
-          .ticker-mobile  { display: block; overflow: hidden; padding: 5px 0; height:34px; }
-          .ticker-scroll  { display: inline-flex; animation: ticker 30s linear infinite; white-space: nowrap; }
-          .ticker-scroll:hover { animation-play-state: paused; }
-          .desktop-nav{display:none!important}
-          .desktop-search{display:none!important}
-          .mobile-hamburger{display:flex!important}
-          .mob-search-bar{display:flex!important;background:#fff;}
-          .desktop-search input { width: 130px !important; }
           .prod-grid { grid-template-columns: repeat(2,1fr) !important; }
-          .mobile-menu-dropdown { z-index:210!important; }
         }
-        @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
         @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse   { 0%,100%{box-shadow:0 6px 24px rgba(45,138,78,.45)} 50%{box-shadow:0 6px 32px rgba(45,138,78,.7)} }
@@ -625,17 +570,9 @@ export default function Home() {
           .hero-h1{font-size:2.2rem!important;}
           .hero-sub{font-size:14px!important;}
           .cat-grid{grid-template-columns:repeat(4,1fr)!important}
-          .nav-bar{flex-wrap:wrap!important;align-items:flex-start!important;gap:0.75rem!important;height:auto!important;padding:1rem 1rem!important;}
-          .desktop-nav{flex-wrap:wrap!important;justify-content:center!important;gap:0.85rem!important;width:100%!important;}
-          .desktop-search{width:100%!important;display:flex!important;justify-content:center!important;order:2!important;}
-          .desktop-search input{width:100%!important;max-width:280px!important;}
           .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:1rem!important;}
         }
-        .mobile-hamburger{display:none}
         @media(max-width:1024px){
-          .desktop-nav{display:none!important}
-          .desktop-search{display:none!important}
-          .nav-bar{top:34px!important}
           .hero-inner{padding:3rem 1rem 2rem!important;min-height:unset!important}
           .hero-inner > div:first-child{max-width:100%!important;width:100%!important;}
           .hero-h1{font-size:1.65rem!important}
@@ -664,16 +601,12 @@ export default function Home() {
           .page-btns{gap:4px!important;flex-wrap:nowrap!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px;}
           .page-btns::-webkit-scrollbar{display:none}
           .page-btn{width:32px!important;height:32px!important;font-size:12px!important}
-          .nav-bar{padding:0.75rem 1rem!important;height:auto!important;min-height:72px!important}
-          .mobile-hamburger{display:flex!important}
           .hero-inner{flex-direction:column!important;align-items:flex-start!important;min-height:auto!important;padding:2.5rem 1rem 1.5rem!important;}
           .hero-h1{font-size:1.85rem!important;}
           .hero-cards{display:none!important}
           .hero-badge{font-size:10px!important;letter-spacing:0.04em!important;padding:5px 12px!important;}
           .fade-up{max-width:100%!important;width:100%!important;}
         }
-        .mob-search-bar{display:none}
-        .mobile-menu-dropdown { z-index:210; }
         @media(max-width:480px){
           .cat-grid>div{width:70px!important}
           .prod-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -683,8 +616,6 @@ export default function Home() {
           .footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important}
           .footer-wrap{padding:2rem 1rem 1.5rem!important}
           .hero-stats-val{font-size:1.2rem!important}
-          .mob-search-bar{display:flex!important;background:#fff;border-bottom:1px solid #e5e7eb;}
-          .mobile-menu-dropdown { z-index:210!important; }
         }
         /* Farm photo grid — stack on mobile */
         @media(max-width:768px){
@@ -699,172 +630,6 @@ export default function Home() {
         nextjs-portal{display:none!important}
       `}</style>
 
-      {/* ═══ TICKER BAR ═══ */}
-      <div className="ticker-wrap">
-        {/* Desktop: centered single line */}
-        <div className="ticker-desktop">
-          {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 18px", fontSize: "11.5px", fontWeight: 500, color: "#b3e9cc", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
-              {item}
-              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "18px", color: "rgba(163,230,53,0.35)", fontSize: "14px", fontWeight: 300 }}>|</span>}
-            </span>
-          ))}
-        </div>
-        {/* Mobile: scrolling ticker */}
-        <div className="ticker-mobile">
-          <div className="ticker-scroll">
-            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-                {item}
-                <span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ NAVBAR ═══ */}
-      <nav ref={navRef} className="nav-bar" style={{ padding: "0 2rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <button className="logo-btn" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Go to home" aria-label="QualiFresh Home">
-          <QFLogo height={60} />
-        </button>
-
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display: "flex", gap: "2.2rem", flex: "1 1 auto", justifyContent: "center", alignItems: "center" }}>
-          {([
-            { label: "Home",      href: null,          scroll: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-            { label: "Products",  href: "/products",   scroll: null },
-            { label: "About Us",  href: "/about-us",   scroll: null },
-            { label: "Our Farms", href: "/our-farms",  scroll: null },
-            { label: "Contact",   href: "/contact",     scroll: null },
-          ] as const).map((item) => (
-            item.href ? (
-              <a key={item.label} href={item.href} className={`nav-a${item.label === activeNav ? " active" : ""}`}>
-                {item.label}
-              </a>
-            ) : (
-              <a key={item.label} href="#" onClick={e => { e.preventDefault(); item.scroll?.(); }}
-                className={`nav-a${item.label === activeNav ? " active" : ""}`}>
-                {item.label}
-              </a>
-            )
-          ))}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          {/* Desktop search */}
-          <div ref={desktopSearchRef} className="desktop-search" style={{ position: "relative" }}>
-            <input value={search} onChange={e => { setSearch(e.target.value); setSearchOpen(true); }} placeholder="Search products…"
-              onFocus={e => { setSearchOpen(true); e.target.style.width = "220px"; e.target.style.background = "#fff"; e.target.style.borderColor = "#2d8a4e"; e.target.style.boxShadow = "0 0 0 3px rgba(45,138,78,0.1)"; }}
-              onBlur={e => { e.target.style.width = "180px"; e.target.style.background = "#f7faf8"; e.target.style.borderColor = "#e5e7eb"; e.target.style.boxShadow = "none"; }}
-              style={{ padding: "9px " + (search ? "30px" : "14px") + " 9px 34px", borderRadius: "24px", border: "1.5px solid #e5e7eb", fontSize: "13px", width: "180px", fontFamily: "inherit", background: "#f7faf8", transition: "all .25s cubic-bezier(.4,0,.2,1)" }} />
-            <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", pointerEvents: "none", color: "#9ca3af" }}>🔍</span>
-            {search && <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ position: "absolute", right: "9px", top: "50%", transform: "translateY(-50%)", background: "#d1d5db", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "11px", color: "#374151", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, lineHeight: 1, fontWeight: 600 }}>✕</button>}
-            {searchOpen && searchSuggestions.length > 0 && (
-              <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 300, overflow: "hidden" }}>
-                {searchSuggestions.map(p => (
-                  <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 10px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                    <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                    <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0 }}>₹{p.price}</span>
-                    <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
-                      style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Sign In / User button */}
-          {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", textDecoration: "none" }} className="desktop-nav">Hi, {user.name.split(" ")[0]}</a>
-              <button onClick={logout} style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
-            </div>
-          ) : (
-            <button onClick={() => { setShowLogin(true); setAuthTab("login"); setAuthError(""); }}
-              style={{ display: "flex", alignItems: "center", gap: "5px", padding: "8px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "inherit", transition: "all .2s" }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#2d8a4e"; (e.currentTarget as HTMLButtonElement).style.color = "#2d8a4e"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.color = "#374151"; }}>
-              <UserSvg />
-              <span className="desktop-nav" style={{ display: "inline" }}>Sign In</span>
-            </button>
-          )}
-
-          {/* Cart — hidden when admin disables cart */}
-          {cartEnabled && (
-            <button onClick={() => setShowCart(true)} className="btn-g"
-              style={{ padding: "9px 16px", fontSize: "13.5px", display: "flex", alignItems: "center", gap: "6px" }}>
-              <CartSvg />
-              {cartCount > 0 && (
-                <span style={{ background: "#fff", color: "#2d8a4e", borderRadius: "50%", width: "19px", height: "19px", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: 800 }}>{cartCount}</span>
-              )}
-              <span className="desktop-nav" style={{ display: "inline" }}>Cart</span>
-            </button>
-          )}
-
-          {/* Mobile hamburger */}
-          <button onClick={() => setMobileMenu(m => !m)} className="mobile-hamburger"
-            style={{ background: mobileMenu ? "#f0fdf4" : "none", border: `1.5px solid ${mobileMenu ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "9px", padding: "7px 10px", cursor: "pointer", fontSize: "17px", lineHeight: 1, color: mobileMenu ? "#2d8a4e" : "#374151", transition: "all .2s" }}>
-            {mobileMenu ? "✕" : "☰"}
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile search bar */}
-      <div className="mob-search-bar" style={{ display: mobileMenu ? "none" : undefined, background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "8px 1rem" }}>
-        <div ref={mobileSearchRef} style={{ position: "relative", flex: 1 }}>
-          <input value={search} onChange={e => { setSearch(e.target.value); setSearchOpen(true); }} placeholder="Search vegetables, herbs…"
-            onFocus={() => setSearchOpen(true)}
-            style={{ width: "100%", padding: "9px " + (search ? "32px" : "12px") + " 9px 32px", borderRadius: "10px", border: "1.5px solid #e5e7eb", fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
-          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", fontSize: "14px", pointerEvents: "none" }}>🔍</span>
-          {search && <button onClick={() => { setSearch(""); setSearchOpen(false); }} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "#d1d5db", border: "none", borderRadius: "50%", width: "20px", height: "20px", cursor: "pointer", fontSize: "12px", color: "#374151", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, fontWeight: 600 }}>✕</button>}
-          {searchOpen && searchSuggestions.length > 0 && (
-            <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, right: 0, background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 300, overflow: "hidden" }}>
-              {searchSuggestions.map(p => (
-                <div key={p._id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderBottom: "1px solid #f3f4f6", gap: "8px" }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#f9fafb")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "#fff")}>
-                  <span style={{ fontSize: "13px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
-                  <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0 }}>₹{p.price}</span>
-                  <button onMouseDown={e => { e.preventDefault(); add(p._id); setSearch(""); setSearchOpen(false); }}
-                    style={{ padding: "4px 12px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "12px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>+ Add</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile menu dropdown — fixed so it stays visible while scrolling */}
-      {mobileMenu && (
-        <div className="mobile-menu-dropdown" style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
-          {([
-            { label: "🏠 Home",      href: null,          scroll: () => { setMobileMenu(false); window.scrollTo({ top: 0, behavior: "smooth" }); } },
-            { label: "🛒 Products",  href: "/products",   scroll: null },
-            { label: "ℹ️ About Us",  href: "/about-us",   scroll: null },
-            { label: "🌾 Our Farms", href: "/our-farms",  scroll: null },
-            { label: "📞 Contact",   href: "/contact",    scroll: null },
-          ] as const).map(item => (
-            item.href ? (
-              <a key={item.label} href={item.href} onClick={() => setMobileMenu(false)}
-                style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: "#f7faf8", border: "1px solid #e9ede4", transition: "all .15s", display: "block" }}>
-                {item.label}
-              </a>
-            ) : (
-            <a key={item.label} href="#"
-              onClick={e => { e.preventDefault(); item.scroll?.(); }}
-              style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: "#f7faf8", border: "1px solid #e9ede4", transition: "all .15s" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#f0fdf4"; e.currentTarget.style.borderColor = "#bbf7d0"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#f7faf8"; e.currentTarget.style.borderColor = "#e9ede4"; }}>
-              {item.label}
-            </a>
-            )
-          ))}
-        </div>
-      )}
-
       {/* ═══ HERO ═══ */}
       <div ref={heroRef} style={{ background: "linear-gradient(145deg,#071812 0%,#0a2218 25%,#0f3320 55%,#164530 80%,#1c5a3a 100%)", position: "relative", overflow: "hidden" }}>
         {/* Background orbs */}
@@ -873,15 +638,15 @@ export default function Home() {
         <div style={{ position: "absolute", top: "30%", left: "38%", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.06) 0%,transparent 70%)", pointerEvents: "none" }} />
 
         <div className="hero-inner" style={{ maxWidth: "1300px", margin: "0 auto", padding: "3.5rem 2rem 3rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "2.5rem", minHeight: "500px" }}>
-          <div style={{ flex: "0 0 auto", maxWidth: "48%" }} className="fade-up">
+          <div style={{ flex: "1 1 auto", minWidth: "min-content" }} className="fade-up">
             {/* Badge */}
             <div className="hero-badge" style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(163,230,53,0.12)", border: "1px solid rgba(163,230,53,0.28)", borderRadius: "24px", padding: "6px 16px", fontSize: "11px", color: "#bef264", marginBottom: "1.5rem", fontFamily: "inherit", letterSpacing: "0.06em", fontWeight: 600, textTransform: "uppercase", whiteSpace: "nowrap", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis" }}>
               {siteConfig.hero.badge}
             </div>
-            <h1 className="hero-h1" style={{ fontSize: "clamp(2rem,3.8vw,3.2rem)", fontWeight: 800, color: "#fff", lineHeight: 1.13, marginBottom: "1.2rem", letterSpacing: "-0.02em" }}>
-              {siteConfig.hero.line1}<br />
-              <span style={{ background: "linear-gradient(90deg,#d4a017,#f0c040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "italic" }}>{siteConfig.hero.lineAccent}</span><br />
-              {siteConfig.hero.line2}
+            <h1 className="hero-h1" style={{ fontSize: "clamp(2rem,3.8vw,3.2rem)", fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: "1.2rem", letterSpacing: "-0.02em", textAlign: "left", width: "100%" }}>
+              <span style={{ display: "block" }}>{siteConfig.hero.line1}</span>
+              <span style={{ display: "block", background: "linear-gradient(90deg,#d4a017,#f0c040)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontStyle: "italic" }}>{siteConfig.hero.lineAccent}</span>
+              <span style={{ display: "block" }}>{siteConfig.hero.line2}</span>
             </h1>
             <p className="hero-sub" style={{ fontSize: "clamp(13.5px,1.4vw,15.5px)", color: "rgba(255,255,255,0.68)", lineHeight: 1.85, marginBottom: "2rem", maxWidth: "440px", fontFamily: "inherit", fontWeight: 400 }}>
               {siteConfig.hero.subtext}

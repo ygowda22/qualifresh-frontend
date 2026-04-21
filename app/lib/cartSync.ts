@@ -7,6 +7,7 @@
 export type Cart = Record<string, number>;
 
 const BACKEND = "/backend/api/users/cart";
+export const CART_KEY = "guestCart";
 
 /**
  * Save the given cart to the user's backend account.
@@ -57,8 +58,8 @@ export async function fetchAndMergeCart(
   await saveCartToBackend(token, merged);
 
   // Sync to localStorage so all other components react via storage event
-  localStorage.setItem("qf_cart", JSON.stringify(merged));
-  window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify(merged) }));
+  localStorage.setItem(CART_KEY, JSON.stringify(merged));
+  window.dispatchEvent(new StorageEvent("storage", { key: CART_KEY, newValue: JSON.stringify(merged) }));
 
   return merged;
 }
@@ -69,7 +70,7 @@ export async function fetchAndMergeCart(
  */
 export async function saveAndClearCart(token: string, cart: Cart): Promise<Cart> {
   await saveCartToBackend(token, cart);
-  localStorage.setItem("qf_cart", JSON.stringify({}));
-  window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
+  localStorage.setItem(CART_KEY, JSON.stringify({}));
+  window.dispatchEvent(new StorageEvent("storage", { key: CART_KEY, newValue: JSON.stringify({}) }));
   return {};
 }

@@ -1,24 +1,15 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
-import SiteNav from "../components/SiteNav";
+import { useCart } from "../context/CartContext";
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
-  imageUrl?: string; category: string; quantityLabel?: string; available?: boolean;
+  imageUrl: string; category: string; quantityLabel?: string; available?: boolean;
 }
 
 const { delivery: DEL } = siteConfig;
-
-const TICKER_ITEMS = [
-  `📅 Delivery: ${DEL.days.join(" & ")}`,
-  `📦 Min order ₹${DEL.minOrder}`,
-  `🚚 Free delivery above ₹${DEL.freeDeliveryAbove}`,
-  `🎁 Free microgreens above ₹${DEL.freeMicrogreensAbove}`,
-  `📞 ${siteConfig.phoneDisplay}`,
-];
-
 
 function InstagramIcon() {
   return <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>;
@@ -30,10 +21,6 @@ function WhatsAppIconFt({ size = 18 }: { size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>;
 }
 
-function syncCart(updated: Record<string, number>) {
-  localStorage.setItem("qf_cart", JSON.stringify(updated));
-  window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify(updated) }));
-}
 
 function CartSvg() {
   return (
@@ -55,7 +42,7 @@ function ProductsContent() {
   const searchParams = useSearchParams();
   const [products, setProducts]   = useState<Product[]>([]);
   const [loading, setLoading]     = useState(true);
-  const [cart, setCart]           = useState<Record<string, number>>({});
+  const { cart, addToCart, removeFromCart } = useCart();
   const [cartEnabled, setCartEnabled] = useState(true);
   const [cat, setCat]             = useState(searchParams.get("cat") || "all");
   const [search, setSearch]       = useState(searchParams.get("q") || "");
@@ -66,6 +53,9 @@ function ProductsContent() {
   const [wishlist, setWishlist]   = useState<string[]>([]);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [customCats, setCustomCats] = useState<{key:string;label:string;icon:string;color:string}[]>([]);
+  const catRef                      = useRef<HTMLDivElement>(null);
+  const [canScrollLeft,  setCanScrollLeft]  = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // Helper: fetch wishlist from backend and update state + cache
   function fetchWishlistFromBackend(token: string) {
@@ -86,16 +76,19 @@ function ProductsContent() {
   useEffect(() => {
     document.title = "Shop — Fresh Exotic Vegetables | QualiFresh";
     try {
-      const c = localStorage.getItem("qf_cart");
-      if (c) setCart(JSON.parse(c));
       setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false");
       // Load admin custom categories + overrides from localStorage (same source as home page)
       try {
         const cc = localStorage.getItem("qf_custom_categories");
         const co = localStorage.getItem("qf_category_overrides");
         const parsed: {key:string;label:string;icon:string;color:string}[] = cc ? JSON.parse(cc) : [];
-        const overrides: Record<string,string> = co ? JSON.parse(co) : {};
-        const base = siteConfig.categories.map(c => ({ ...c, label: overrides[c.key] ?? c.label }));
+        const overrides: Record<string, any> = co ? JSON.parse(co) : {};
+        const base = siteConfig.categories.map(c => {
+          const ov = overrides[c.key];
+          if (!ov) return c;
+          if (typeof ov === "object") return { ...c, label: ov.label ?? c.label, icon: ov.icon ?? c.icon, color: ov.color ?? c.color };
+          return { ...c, label: ov };
+        });
         const extras = parsed.filter(c => !base.find(b => b.key === c.key));
         setCustomCats([...base, ...extras]);
       } catch { setCustomCats([]); }
@@ -111,7 +104,6 @@ function ProductsContent() {
       }
     } catch {}
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "qf_cart") { try { setCart(e.newValue ? JSON.parse(e.newValue) : {}); } catch {} }
       if (e.key === "qf_cart_enabled") { setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false"); }
       if (e.key === "qf_wishlist") { try { const wl = localStorage.getItem("qf_wishlist"); setWishlist(wl ? JSON.parse(wl) : []); } catch {} }
       if (e.key === "qf_user") {
@@ -131,8 +123,13 @@ function ProductsContent() {
           const cc = localStorage.getItem("qf_custom_categories");
           const co = localStorage.getItem("qf_category_overrides");
           const parsed: {key:string;label:string;icon:string;color:string}[] = cc ? JSON.parse(cc) : [];
-          const overrides: Record<string,string> = co ? JSON.parse(co) : {};
-          const base = siteConfig.categories.map(c => ({ ...c, label: overrides[c.key] ?? c.label }));
+          const overrides: Record<string, any> = co ? JSON.parse(co) : {};
+          const base = siteConfig.categories.map(c => {
+            const ov = overrides[c.key];
+            if (!ov) return c;
+            if (typeof ov === "object") return { ...c, label: ov.label ?? c.label, icon: ov.icon ?? c.icon, color: ov.color ?? c.color };
+            return { ...c, label: ov };
+          });
           const extras = parsed.filter(c => !base.find(b => b.key === c.key));
           setCustomCats([...base, ...extras]);
         } catch {}
@@ -156,12 +153,40 @@ function ProductsContent() {
     };
   }, []);
 
+  // Load categories from MongoDB (overwrites localStorage cache)
+  useEffect(() => {
+    fetch("/backend/api/categories")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (!data || !Array.isArray(data) || data.length === 0) return;
+        const overrides: Record<string, any> = {};
+        const customs: {key:string;label:string;icon:string;color:string}[] = [];
+        for (const c of data) {
+          if (c.isCustom) {
+            customs.push({ key: c.key, label: c.label, icon: c.icon, color: c.color });
+          } else {
+            overrides[c.key] = { label: c.label, icon: c.icon, color: c.color };
+          }
+        }
+        const base = siteConfig.categories.map(c => {
+          const ov = overrides[c.key];
+          if (!ov) return c;
+          return { ...c, label: ov.label ?? c.label, icon: ov.icon ?? c.icon, color: ov.color ?? c.color };
+        });
+        const extras = customs.filter(c => !base.find((b: any) => b.key === c.key));
+        setCustomCats([...base, ...extras]);
+        localStorage.setItem("qf_custom_categories", JSON.stringify(customs));
+        localStorage.setItem("qf_category_overrides", JSON.stringify(overrides));
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     function fetchProducts() {
       fetch("/backend/api/products")
         .then(r => r.json())
         .then((d: Product[]) => {
-          setProducts(d.map(p => p.imageUrl ? { ...p, imageUrl: `${p.imageUrl.split("?")[0]}?t=${Date.now()}` } : p));
+          setProducts(d);
           setLoading(false);
         })
         .catch(() => setLoading(false));
@@ -185,16 +210,22 @@ function ProductsContent() {
   // Reset to page 1 whenever filter/search/perPage changes
   useEffect(() => { setPage(1); }, [cat, search, perPage]);
 
-  function add(id: string) {
-    const updated = { ...cart, [id]: (cart[id] || 0) + 1 };
-    setCart(updated); syncCart(updated);
-  }
-  function remove(id: string) {
-    const updated = { ...cart };
-    if (updated[id] > 1) updated[id]--;
-    else delete updated[id];
-    setCart(updated); syncCart(updated);
-  }
+  // Category arrow visibility — recalculate whenever the category list changes or on resize/scroll
+  useEffect(() => {
+    const el = catRef.current;
+    if (!el) return;
+    function upd() {
+      setCanScrollLeft(el!.scrollLeft > 0);
+      setCanScrollRight(el!.scrollLeft + el!.clientWidth < el!.scrollWidth - 1);
+    }
+    const t = setTimeout(upd, 60); // let DOM paint first
+    el.addEventListener("scroll", upd, { passive: true });
+    window.addEventListener("resize", upd);
+    return () => { clearTimeout(t); el.removeEventListener("scroll", upd); window.removeEventListener("resize", upd); };
+  }, [customCats.length]);
+
+  function add(id: string) { addToCart(id); }
+  function remove(id: string) { removeFromCart(id); }
 
   function toggleWishlist(productId: string) {
     if (!userToken) {
@@ -254,22 +285,18 @@ function ProductsContent() {
         html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
-        .p-ticker-wrap{}
-        .p-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:7px 1rem;overflow:hidden;width:100%;background:#0f8a65;}
-        .p-ticker-mobile{display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
-        @media(max-width:1024px){
-          .p-ticker-desktop{display:none}
-          .p-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
-          .p-ticker-scroll{display:inline-flex;animation:pticker 30s linear infinite;white-space:nowrap}
-          .p-ticker-scroll:hover{animation-play-state:paused}
-        }
-        @keyframes pticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-
         .p-cats{display:flex;gap:8px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none;}
         .p-cats::-webkit-scrollbar{display:none}
         .p-cat{padding:7px 16px;min-height:34px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;display:inline-flex;align-items:center;}
         .p-cat.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
         .p-cat:not(.active):hover{border-color:#2d8a4e;color:#2d8a4e;}
+        .p-cats-wrap{position:relative;flex:1 1 auto;display:flex;align-items:center;min-width:0;overflow:hidden;}
+        .cat-fade-l{position:absolute;left:0;top:0;bottom:0;width:38px;background:linear-gradient(to right,#fff 50%,transparent);z-index:2;pointer-events:none;}
+        .cat-fade-r{position:absolute;right:0;top:0;bottom:0;width:38px;background:linear-gradient(to left,#fff 50%,transparent);z-index:2;pointer-events:none;}
+        .cat-arr{position:absolute;z-index:3;top:50%;transform:translateY(-50%);width:27px;height:27px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;color:#374151;font-size:17px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:all .18s;padding:0;line-height:1;flex-shrink:0;}
+        .cat-arr:hover{border-color:#2d8a4e;color:#2d8a4e;background:#f0fdf4;}
+        .cat-arr-l{left:3px;}
+        .cat-arr-r{right:3px;}
 
         .p-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.1rem;}
         @media(max-width:1023px){.p-grid{grid-template-columns:repeat(3,1fr);gap:12px;}}
@@ -312,30 +339,6 @@ function ProductsContent() {
         @media(max-width:480px){.pf-footer-grid{grid-template-columns:1fr 1fr!important;gap:1rem!important;}}
         nextjs-portal{display:none!important}
       `}</style>
-
-      {/* Ticker */}
-      <div className="p-ticker-wrap">
-        <div className="p-ticker-desktop">
-          {TICKER_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-              {item}
-              {i < TICKER_ITEMS.length - 1 && <span style={{ marginLeft: "16px", color: "rgba(163,230,53,0.4)" }}>·</span>}
-            </span>
-          ))}
-        </div>
-        <div className="p-ticker-mobile">
-          <div className="p-ticker-scroll">
-            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-              <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-                {item}<span style={{ marginLeft: "22px", color: "rgba(163,230,53,0.4)" }}>·</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Navbar */}
-      <SiteNav activePage="products" />
 
       {/* Page header */}
       <div style={{ background: "linear-gradient(145deg,#071812 0%,#0a2218 30%,#0f3320 70%,#1c5a3a 100%)", padding: "4rem 2rem 3rem", position: "relative", overflow: "hidden" }}>
@@ -390,13 +393,29 @@ function ProductsContent() {
               </button>
             )}
           </div>
-          {/* Category pills */}
-          <div className="p-cats" style={{ flex: "1 1 auto" }}>
-            {allCats.map(c => (
-              <button key={c.key} className={`p-cat${cat === c.key ? " active" : ""}`} onClick={() => setCat(c.key)}>
-                {c.icon} {c.label}
-              </button>
-            ))}
+          {/* Category pills with arrow navigation */}
+          <div className="p-cats-wrap">
+            {canScrollLeft && (
+              <>
+                <div className="cat-fade-l" />
+                <button className="cat-arr cat-arr-l" aria-label="Scroll left"
+                  onClick={() => catRef.current?.scrollBy({ left: -180, behavior: "smooth" })}>‹</button>
+              </>
+            )}
+            <div ref={catRef} className="p-cats">
+              {allCats.map(c => (
+                <button key={c.key} className={`p-cat${cat === c.key ? " active" : ""}`} onClick={() => setCat(c.key)}>
+                  {c.icon} {c.label}
+                </button>
+              ))}
+            </div>
+            {canScrollRight && (
+              <>
+                <div className="cat-fade-r" />
+                <button className="cat-arr cat-arr-r" aria-label="Scroll right"
+                  onClick={() => catRef.current?.scrollBy({ left: 180, behavior: "smooth" })}>›</button>
+              </>
+            )}
           </div>
         </div>
       </div>

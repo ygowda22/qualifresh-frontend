@@ -11,15 +11,7 @@ interface FarmPhoto { id: string; title: string; description: string; imageUrl: 
 interface CustomCategory { id: string; key: string; label: string; image: string; color: string; icon: string; }
 const CAT_COLOR_OPTIONS = ["#1d4ed8","#16a34a","#15803d","#b91c1c","#0d9488","#ca8a04","#7c3aed","#b45309","#db2777","#0369a1"];
 
-const SUPABASE_FARM = "https://jilqbyulleszkoiowhyf.supabase.co/storage/v1/object/public/farm-images";
-const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [
-  { id: "f1", title: "Our Main Farm",   description: "Sun-drenched fields in Pune's fertile belt",    imageUrl: `${SUPABASE_FARM}/farm-1776104049239.png` },
-  { id: "f2", title: "Harvest Morning", description: "Fresh picks loaded before sunrise",              imageUrl: `${SUPABASE_FARM}/farm-1776104159959.png` },
-  { id: "f3", title: "Growing Fields",  description: "Exotic varieties cultivated with care",          imageUrl: `${SUPABASE_FARM}/farm-1776104172608.png` },
-  { id: "f4", title: "Farm Fresh",      description: "Inspected and packed the same morning",          imageUrl: `${SUPABASE_FARM}/farm-1776104179499.png` },
-  { id: "f5", title: "Cold Storage",    description: "Temperature-controlled from farm to door",       imageUrl: `${SUPABASE_FARM}/farm-1776104186856.png` },
-  { id: "f6", title: "Delivery Ready",  description: "Packed with care, delivered with love",          imageUrl: `${SUPABASE_FARM}/farm-1776104413238.png` },
-];
+const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -169,9 +161,10 @@ export default function AdminPage() {
   const [uploading, setUploading]         = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Order filter
+  // Order filter + pagination
   const [orderFilter, setOrderFilter] = useState("all");
   const [orderSearch, setOrderSearch] = useState("");
+  const [orderPage, setOrderPage]     = useState(0);
 
   useEffect(() => {
     document.title = "Admin Panel — QualiFresh";
@@ -182,10 +175,42 @@ export default function AdminPage() {
     if (cartSetting !== null) setCartEnabled(cartSetting === "true");
     const farmSetting = localStorage.getItem("qf_farm_photos");
     if (farmSetting) { try { setFarmPhotos(JSON.parse(farmSetting)); } catch {} }
+    // Also load from API (overrides localStorage when backend is available)
+    fetch(`${API}/api/farms`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (!data || !Array.isArray(data)) return;
+        const mapped: FarmPhoto[] = data.map(p => ({ id: p._id, title: p.title || "", description: p.description || "", imageUrl: p.imageUrl }));
+        if (mapped.length > 0) {
+          setFarmPhotos(mapped);
+          localStorage.setItem("qf_farm_photos", JSON.stringify(mapped));
+        }
+      })
+      .catch(() => {});
     const catSetting = localStorage.getItem("qf_custom_categories");
     if (catSetting) { try { setCustomCategories(JSON.parse(catSetting)); } catch {} }
     const overrideSetting = localStorage.getItem("qf_category_overrides");
     if (overrideSetting) { try { setCategoryOverrides(JSON.parse(overrideSetting)); } catch {} }
+    // Load categories from MongoDB (overwrites localStorage when backend is available)
+    fetch(`${API}/api/categories`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (!data || !Array.isArray(data) || data.length === 0) return;
+        const overrides: Record<string, { label: string; image: string; color: string; icon: string }> = {};
+        const customs: CustomCategory[] = [];
+        for (const c of data) {
+          if (c.isCustom) {
+            customs.push({ id: c._id, key: c.key, label: c.label, image: c.imageUrl || "", color: c.color, icon: c.icon });
+          } else {
+            overrides[c.key] = { label: c.label, image: c.imageUrl || "", color: c.color, icon: c.icon };
+          }
+        }
+        setCustomCategories(customs);
+        setCategoryOverrides(overrides);
+        localStorage.setItem("qf_custom_categories", JSON.stringify(customs));
+        localStorage.setItem("qf_category_overrides", JSON.stringify(overrides));
+      })
+      .catch(() => {});
   }, []);
 
   function showToast(msg: string, ok = true) {
@@ -245,8 +270,7 @@ export default function AdminPage() {
         return;
       }
       const data = await r.json();
-      const ts = Date.now();
-      setProducts(data.map((p: any) => p.imageUrl ? { ...p, imageUrl: `${p.imageUrl.split("?")[0]}?t=${ts}` } : p));
+      setProducts(data);
     } catch (e: any) {
       setProdError("Network error — is the backend running?");
     } finally {
@@ -452,24 +476,40 @@ export default function AdminPage() {
     setShowFarmModal(true);
   }
 
-  function saveFarmPhoto() {
+  async function saveFarmPhoto() {
     if (!farmForm.imageUrl) { setFarmUploadError("Please upload or paste an image URL."); return; }
     const cleanUrl = farmForm.imageUrl.split("?")[0];
-    const cleanForm = { ...farmForm, imageUrl: cleanUrl };
-    let updated: FarmPhoto[];
-    if (editingFarm) {
-      updated = farmPhotos.map(p => p.id === editingFarm.id ? { ...p, ...cleanForm } : p);
-    } else {
-      updated = [...farmPhotos, { id: `f${Date.now()}`, ...cleanForm }];
+    const body = { title: farmForm.title, description: farmForm.description, imageUrl: cleanUrl };
+    try {
+      let updated: FarmPhoto[];
+      if (editingFarm) {
+        await fetch(`${API}/api/farms/${editingFarm.id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
+        updated = farmPhotos.map(p => p.id === editingFarm.id ? { ...p, ...body } : p);
+      } else {
+        const r = await fetch(`${API}/api/farms`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+        if (!r.ok) throw new Error("Save failed");
+        const created = await r.json();
+        updated = [...farmPhotos, { id: created._id, ...body }];
+      }
+      setFarmPhotos(updated);
+      localStorage.setItem("qf_farm_photos", JSON.stringify(updated));
+      localStorage.setItem("qf_settings_updated", Date.now().toString());
+      setShowFarmModal(false);
+      showToast(editingFarm ? "✓ Farm photo updated!" : "✓ Farm photo added!");
+    } catch {
+      showToast("✗ Failed to save farm photo — is the backend running?", false);
     }
-    setFarmPhotos(updated);
-    setShowFarmModal(false);
-    showToast(editingFarm ? "✓ Farm photo updated!" : "✓ Farm photo added!");
   }
 
-  function deleteFarmPhoto(id: string) {
+  async function deleteFarmPhoto(id: string) {
     if (!confirm("Remove this farm photo?")) return;
-    setFarmPhotos(f => f.filter(p => p.id !== id));
+    try {
+      await fetch(`${API}/api/farms/${id}`, { method: "DELETE", headers: authHeaders() });
+    } catch {}
+    const updated = farmPhotos.filter(p => p.id !== id);
+    setFarmPhotos(updated);
+    localStorage.setItem("qf_farm_photos", JSON.stringify(updated));
+    localStorage.setItem("qf_settings_updated", Date.now().toString());
   }
 
   async function uploadFarmImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -480,19 +520,31 @@ export default function AdminPage() {
     if (!ALLOWED_MIME.includes(file.type) || !ALLOWED_EXT.includes(ext)) { setFarmUploadError("Invalid file type. Use JPG, PNG, or WebP."); e.target.value = ""; return; }
     if (file.size > 10 * 1024 * 1024) { setFarmUploadError("File too large — max 10 MB."); e.target.value = ""; return; }
     setFarmUploading(true);
+    const wasNew = !editingFarm;
     try {
       const fd = new FormData();
       fd.append("image", file);
-      fd.append("slug", `farm-${Date.now()}`);
-      fd.append("bucket", "farm-images");
-      const r = await fetch(`/api/upload`, {
+      fd.append("title", farmForm.title);
+      fd.append("description", farmForm.description);
+      if (editingFarm?.id) fd.append("id", editingFarm.id);
+      const r = await fetch(`/api/upload-farm`, {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
       if (!r.ok) throw new Error("Upload failed");
-      const d = await r.json();
-      setFarmForm(f => ({ ...f, imageUrl: d.url }));
+      const doc = await r.json();
+      const saved: FarmPhoto = { id: doc._id, title: doc.title, description: doc.description, imageUrl: doc.imageUrl };
+      setFarmForm(f => ({ ...f, imageUrl: doc.imageUrl }));
+      if (wasNew) setEditingFarm(saved);
+      setFarmPhotos(prev =>
+        wasNew
+          ? [...prev, saved]
+          : prev.map(p => p.id === saved.id ? saved : p)
+      );
+      localStorage.setItem("qf_farm_photos", JSON.stringify(
+        wasNew ? [...farmPhotos, saved] : farmPhotos.map(p => p.id === saved.id ? saved : p)
+      ));
     } catch (err: any) { setFarmUploadError(err.message || "Upload failed"); }
     finally { setFarmUploading(false); e.target.value = ""; }
   }
@@ -520,21 +572,24 @@ export default function AdminPage() {
     setShowCatModal(true);
   }
 
-  function saveCatEntry() {
+  async function saveCatEntry() {
     if (!catForm.label.trim()) { setCatUploadError("Category name is required."); return; }
+    const cleanImageUrl = catForm.image.split("?")[0];
 
     if (editingStaticKey) {
-      // Save override for a static category
       const updated = { ...categoryOverrides, [editingStaticKey]: { label: catForm.label, image: catForm.image, color: catForm.color, icon: catForm.icon } };
       setCategoryOverrides(updated);
       localStorage.setItem("qf_category_overrides", JSON.stringify(updated));
       localStorage.setItem("qf_settings_updated", Date.now().toString());
       setShowCatModal(false);
       showToast("✓ Default category updated!");
+      try {
+        await fetch(`${API}/api/categories`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ key: editingStaticKey, label: catForm.label, imageUrl: cleanImageUrl, color: catForm.color, icon: catForm.icon, isCustom: false }) });
+      } catch {}
       return;
     }
 
-    const key = catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const key = editingCat ? editingCat.key : catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g, "-");
     let updated: CustomCategory[];
     if (editingCat) {
       updated = customCategories.map(c => c.id === editingCat.id ? { ...c, ...catForm, key } : c);
@@ -546,15 +601,24 @@ export default function AdminPage() {
     localStorage.setItem("qf_settings_updated", Date.now().toString());
     setShowCatModal(false);
     showToast(editingCat ? "✓ Category updated!" : "✓ Category added!");
+    try {
+      await fetch(`${API}/api/categories`, { method: "POST", headers: authHeaders(), body: JSON.stringify({ key, label: catForm.label, imageUrl: cleanImageUrl, color: catForm.color, icon: catForm.icon, isCustom: true }) });
+    } catch {}
   }
 
-  function deleteCat(id: string) {
+  async function deleteCat(id: string) {
     if (!confirm("Remove this category?")) return;
+    const catToDelete = customCategories.find(c => c.id === id);
     const updated = customCategories.filter(c => c.id !== id);
     setCustomCategories(updated);
     localStorage.setItem("qf_custom_categories", JSON.stringify(updated));
     localStorage.setItem("qf_settings_updated", Date.now().toString());
     showToast("✓ Category removed.");
+    if (catToDelete) {
+      try {
+        await fetch(`${API}/api/categories/key/${catToDelete.key}`, { method: "DELETE", headers: authHeaders() });
+      } catch {}
+    }
   }
 
   async function uploadCatImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -567,18 +631,27 @@ export default function AdminPage() {
     if (file.size > 10 * 1024 * 1024) { setCatUploadError("File too large — max 10 MB."); e.target.value = ""; return; }
     setCatUploading(true);
     try {
-      const slug = `cat-${catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g,"-") || Date.now()}`;
+      const key = editingStaticKey
+        || editingCat?.key
+        || catForm.label.trim().toLowerCase().replace(/[^a-z0-9]/g, "-")
+        || `cat-${Date.now()}`;
+      const label  = catForm.label.trim() || "Untitled";
+      const isCustom = !editingStaticKey;
       const fd = new FormData();
       fd.append("image", file);
-      fd.append("slug", slug);
+      fd.append("key", key);
+      fd.append("label", label);
+      fd.append("color", catForm.color);
+      fd.append("icon", catForm.icon);
+      fd.append("isCustom", String(isCustom));
       const r = await fetch("/api/upload-category", {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
       if (!r.ok) throw new Error("Upload failed");
-      const d = await r.json();
-      setCatForm(f => ({ ...f, image: `${d.url}?t=${Date.now()}` }));
+      const doc = await r.json();
+      setCatForm(f => ({ ...f, image: doc.imageUrl }));
     } catch (err: any) { setCatUploadError(err.message || "Upload failed"); }
     finally { setCatUploading(false); e.target.value = ""; }
   }
@@ -598,6 +671,9 @@ export default function AdminPage() {
       o.user?.name?.toLowerCase().includes(orderSearch.toLowerCase());
     return matchStatus && matchSearch;
   });
+  const ORDER_PER_PAGE   = 10;
+  const totalOrderPages  = Math.ceil(filteredOrders.length / ORDER_PER_PAGE);
+  const pagedOrders      = filteredOrders.slice(orderPage * ORDER_PER_PAGE, (orderPage + 1) * ORDER_PER_PAGE);
 
   const PROD_PER_PAGE = 10;
   const filteredProducts = products.filter(p => !prodSearch || p.name?.toLowerCase().includes(prodSearch.toLowerCase()) || p.slug?.toLowerCase().includes(prodSearch.toLowerCase()) || p.category?.toLowerCase().includes(prodSearch.toLowerCase()));
@@ -802,11 +878,11 @@ export default function AdminPage() {
               <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Orders</h1>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <div style={{ position: "relative" }}>
-                  <input value={orderSearch} onChange={e => setOrderSearch(e.target.value)} placeholder="Search order / customer…"
+                  <input value={orderSearch} onChange={e => { setOrderSearch(e.target.value); setOrderPage(0); }} placeholder="Search order / customer…"
                     style={{ padding: "8px " + (orderSearch ? "30px" : "12px") + " 8px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13px", background: "#fff", color: "#111827" }} />
                   {orderSearch && <button onClick={() => setOrderSearch("")} style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-50%)", background: "#e5e7eb", border: "none", borderRadius: "50%", width: "18px", height: "18px", cursor: "pointer", fontSize: "9px", color: "#6b7280", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>}
                 </div>
-                <select value={orderFilter} onChange={e => setOrderFilter(e.target.value)}
+                <select value={orderFilter} onChange={e => { setOrderFilter(e.target.value); setOrderPage(0); }}
                   style={{ padding: "8px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13px" }}>
                   <option value="all">All Status</option>
                   {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -824,10 +900,10 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.length === 0 && (
+                  {pagedOrders.length === 0 && (
                     <tr><td colSpan={9} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No orders found</td></tr>
                   )}
-                  {filteredOrders.map(o => (
+                  {pagedOrders.map(o => (
                     <tr key={o._id} style={{ borderTop: "1px solid #f1f5f9" }}>
                       <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d8a4e" }}>{o.orderNumber}</td>
                       <td style={{ padding: "12px 14px" }}>
@@ -871,6 +947,29 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            {totalOrderPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "1rem", flexWrap: "wrap", gap: "8px" }}>
+                <span style={{ fontSize: "12.5px", color: "#6b7280" }}>
+                  Showing {orderPage * ORDER_PER_PAGE + 1}–{Math.min((orderPage + 1) * ORDER_PER_PAGE, filteredOrders.length)} of {filteredOrders.length} orders
+                </span>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button onClick={() => setOrderPage(p => Math.max(0, p - 1))} disabled={orderPage === 0}
+                    style={{ padding: "7px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: orderPage === 0 ? "#f9fafb" : "#fff", color: orderPage === 0 ? "#9ca3af" : "#374151", cursor: orderPage === 0 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
+                    ← Prev
+                  </button>
+                  {Array.from({ length: totalOrderPages }, (_, i) => i).map(i => (
+                    <button key={i} onClick={() => setOrderPage(i)}
+                      style={{ width: "34px", height: "34px", borderRadius: "8px", border: orderPage === i ? "2px solid #2d8a4e" : "1.5px solid #e5e7eb", background: orderPage === i ? "#2d8a4e" : "#fff", color: orderPage === i ? "#fff" : "#374151", cursor: "pointer", fontWeight: orderPage === i ? 700 : 400, fontSize: "13px" }}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button onClick={() => setOrderPage(p => Math.min(totalOrderPages - 1, p + 1))} disabled={orderPage === totalOrderPages - 1}
+                    style={{ padding: "7px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: orderPage === totalOrderPages - 1 ? "#f9fafb" : "#fff", color: orderPage === totalOrderPages - 1 ? "#9ca3af" : "#374151", cursor: orderPage === totalOrderPages - 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

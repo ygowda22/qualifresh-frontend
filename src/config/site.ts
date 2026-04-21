@@ -42,11 +42,11 @@ export const siteConfig = {
 
   // ── Hero Section ───────────────────────────────────────────
   hero: {
-    badge:       "🌱 FARM TO DOORSTEP — MUMBAI & PUNE",
+    badge:       "🌱 FARM TO DOORSTEP - MUMBAI & PUNE",
     line1:       "Fresh Korean, Exotic &",
     lineAccent:  "Thai Vegetables",
     line2:       "at Your Door",
-    subtext:     "Hand-picked specialty vegetables delivered twice a week to Mumbai & Pune. Order on WhatsApp — pay only after delivery. Not satisfied? Free replacement, no questions.",
+    subtext:     "Hand-picked specialty vegetables delivered twice a week to Mumbai & Pune. Order on WhatsApp - pay only after delivery. Not satisfied? Free replacement, no questions.",
     // Right-side hero image (replace with your own CDN URL or /images/hero.jpg)
     image:       "https://images.pexels.com/photos/11631746/pexels-photo-11631746.jpeg?auto=compress&cs=tinysrgb&w=900",
   },

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalNav from "./components/GlobalNav";
+import GlobalTicker from "./components/GlobalTicker";
+import { CartProvider } from "./context/CartContext";
 
 export const metadata: Metadata = {
   title: {
@@ -44,7 +47,7 @@ export default function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: `html,body{background-color:#f4f6f0!important;margin:0;padding:0}` }} />
         <meta name="theme-color" content="#f4f6f0" />
       </head>
-      <body className="min-h-full flex flex-col" style={{ background: "#f4f6f0" }}>{children}</body>
+      <body className="min-h-full flex flex-col" style={{ background: "#f4f6f0" }}><CartProvider><GlobalTicker /><GlobalNav />{children}</CartProvider></body>
     </html>
   );
 }

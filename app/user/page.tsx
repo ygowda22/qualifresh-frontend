@@ -1,9 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
-import SiteNav from "../components/SiteNav";
 import { saveAndClearCart } from "../lib/cartSync";
+import { useCart } from "../context/CartContext";
 
 interface UserData { name: string; email: string; token: string; phone?: string; }
 interface OrderItem { name: string; quantity: number; price: number; }
@@ -14,16 +14,6 @@ interface Order {
 }
 interface Address { id: string; label: string; line1: string; city: string; pincode?: string; }
 interface WishProd { _id: string; name: string; price: number; imageUrl?: string; category: string; quantityLabel?: string; }
-
-const { delivery: DEL } = siteConfig;
-
-const TICKER_ITEMS = [
-  `📅 Delivery: ${DEL.days.join(" & ")}`,
-  `📦 Min order ₹${DEL.minOrder}`,
-  `🚚 Free delivery above ₹${DEL.freeDeliveryAbove}`,
-  `🎁 Free microgreens above ₹${DEL.freeMicrogreensAbove}`,
-  `📞 ${siteConfig.phoneDisplay}`,
-];
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b", confirmed: "#3b82f6", out_for_delivery: "#8b5cf6",
@@ -40,12 +30,16 @@ function fmtDate(d: string) {
 
 export default function UserPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // Core user + orders
   const [user, setUser]                 = useState<UserData | null>(null);
   const [orders, setOrders]             = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<"orders" | "profile" | "addresses" | "wishlist">("orders");
+  const [activeSection, setActiveSection] = useState<"orders" | "profile" | "addresses" | "wishlist">(() => {
+    const seg = pathname?.split("/").pop() ?? "";
+    return (["orders", "addresses", "wishlist", "profile"].includes(seg) ? seg : "profile") as "orders" | "profile" | "addresses" | "wishlist";
+  });
 
   // Profile edit
   const [profEdit, setProfEdit]     = useState(false);
@@ -63,10 +57,16 @@ export default function UserPage() {
   const [addrCity, setAddrCity]       = useState("");
   const [addrPincode, setAddrPincode] = useState("");
 
-  // Wishlist + cart
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [ordersPage, setOrdersPage]   = useState(1);
+  const [addrsPage, setAddrsPage]     = useState(1);
+  const [wishPage, setWishPage]       = useState(1);
+
+  // Wishlist + cart (cart from global context — no local cart state)
+  const { cart, setCart, addToCart: ctxAddToCart } = useCart();
   const [wishlist, setWishlist]     = useState<string[]>([]);
   const [wishProds, setWishProds]   = useState<WishProd[]>([]);
-  const [cart, setCart]             = useState<Record<string, number>>({});
 
   useEffect(() => {
     document.title = "My Account – QualiFresh";
@@ -81,8 +81,6 @@ export default function UserPage() {
     try {
       const a = localStorage.getItem("qf_addresses");
       if (a) setAddresses(JSON.parse(a));
-      const c = localStorage.getItem("qf_cart");
-      if (c) setCart(JSON.parse(c));
     } catch {}
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -117,10 +115,6 @@ export default function UserPage() {
   async function logout() {
     const token = user?.token;
     if (token) await saveAndClearCart(token, cart);
-    else {
-      localStorage.setItem("qf_cart", JSON.stringify({}));
-      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
-    }
     setCart({});
     setWishlist([]);
     setWishProds([]);
@@ -151,10 +145,12 @@ export default function UserPage() {
       if (r.ok) {
         const d = await r.json();
         if (d.user?.name) updated.name = d.user.name;
+        if (d.user?.phone !== undefined) updated.phone = d.user.phone;
       }
     } catch { /* save locally on network error */ }
     setUser(updated);
     localStorage.setItem("qf_user", JSON.stringify(updated));
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: JSON.stringify(updated) }));
     setProfEdit(false);
     setProfMsg({ type: "success", text: "Profile updated successfully!" });
     setProfSaving(false);
@@ -211,15 +207,29 @@ export default function UserPage() {
     }
   }
 
-  function addToCart(id: string) {
-    const updated = { ...cart, [id]: (cart[id] || 0) + 1 };
-    setCart(updated);
-    localStorage.setItem("qf_cart", JSON.stringify(updated));
-    window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify(updated) }));
-  }
+  function addToCart(id: string) { ctxAddToCart(id); }
 
   // wishProds is now populated directly from backend; filter just protects against stale state
   const wishlistProducts = wishProds.filter(p => wishlist.includes(p._id));
+
+  function Pagination({ total, page, setPage }: { total: number; page: number; setPage: (p: number) => void }) {
+    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+    if (totalPages <= 1) return null;
+    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    return (
+      <div className="up-pagination">
+        <button className="up-page-btn" disabled={page === 1} onClick={() => setPage(page - 1)}>‹</button>
+        {pages.map(p => (
+          <button key={p} className={`up-page-btn${p === page ? " active" : ""}`} onClick={() => setPage(p)}>{p}</button>
+        ))}
+        <button className="up-page-btn" disabled={page === totalPages} onClick={() => setPage(page + 1)}>›</button>
+      </div>
+    );
+  }
+
+  const pagedOrders   = orders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE);
+  const pagedAddrs    = addresses.slice((addrsPage - 1) * ITEMS_PER_PAGE, addrsPage * ITEMS_PER_PAGE);
+  const pagedWish     = wishlistProducts.slice((wishPage - 1) * ITEMS_PER_PAGE, wishPage * ITEMS_PER_PAGE);
 
   if (!user) return null;
 
@@ -246,19 +256,16 @@ export default function UserPage() {
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{overflow-x:hidden}
 
-        /* Ticker */
-        .up-ticker-desktop{display:flex;justify-content:center;align-items:center;flex-wrap:nowrap;gap:0;padding:6px 1rem;overflow:hidden;width:100%;background:#0f8a65;}
-        .up-ticker-mobile{display:none;width:100%;background:#0f8a65;border-bottom:1px solid #0a6e50;}
-        @media(max-width:1024px){
-          .up-ticker-desktop{display:none}
-          .up-ticker-mobile{display:block;overflow:hidden;padding:5px 0;height:34px}
-          .up-ticker-scroll{display:inline-flex;animation:upticker 30s linear infinite;white-space:nowrap}
-          .up-ticker-scroll:hover{animation-play-state:paused}
-        }
-        @keyframes upticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
         /* Page wrapper */
-        .up-page-bg{background:linear-gradient(180deg,#eef4ea 0%,#f4f6f0 120px);min-height:100vh;}
+        .up-page-bg{background:linear-gradient(180deg,#eef4ea 0%,#f4f6f0 120px);padding-bottom:2rem;}
+
+        /* Pagination */
+        .up-pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding-top:1.2rem;flex-wrap:wrap;}
+        .up-page-btn{min-width:34px;height:34px;padding:0 10px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fff;color:#374151;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .18s;display:flex;align-items:center;justify-content:center;}
+        .up-page-btn:hover:not(:disabled){border-color:#2d8a4e;color:#2d8a4e;background:#f0fdf4;}
+        .up-page-btn.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
+        .up-page-btn:disabled{opacity:0.4;cursor:not-allowed;}
 
         /* Layout */
         .up-layout{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;display:grid;grid-template-columns:256px 1fr;gap:1.5rem;align-items:start;}
@@ -319,61 +326,32 @@ export default function UserPage() {
         /* Badge pill */
         .up-count-pill{margin-left:auto;font-size:11.5px;padding:3px 10px;border-radius:20px;font-weight:700;}
 
-        /* Mobile bottom nav (replaces sidebar nav on small screens) */
-        .up-mobile-nav{display:none;overflow-x:auto;scrollbar-width:none;gap:8px;padding:0.75rem 1rem;background:#fff;border-bottom:1px solid #edf0ea;}
-        .up-mobile-nav::-webkit-scrollbar{display:none}
-        .up-mobile-nav-btn{padding:8px 16px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .18s;flex-shrink:0;color:#4b5563;}
-        .up-mobile-nav-btn.active{background:#2d8a4e;color:#fff;border-color:#2d8a4e;}
+        /* Hide on mobile — Sign Out lives in the SiteNav mobile slide-in menu */
+        .up-hide-mobile{}
 
         /* Mobile */
         @media(max-width:768px){
           .up-layout{grid-template-columns:1fr;gap:1rem;padding:1rem;}
           .up-sidebar{position:static;display:none;}
-          .up-mobile-nav{display:flex;}
+          .up-hide-mobile{display:none!important;}
+          .up-card{width:100%;min-width:0;overflow:hidden;}
           .up-section-body{padding:1rem;}
-          .up-section-title{padding:1rem 1.1rem;}
+          .up-section-title{padding:1rem 1.1rem;font-size:0.93rem;}
           .up-wish-grid{grid-template-columns:repeat(2,1fr);}
           .up-addr-actions{flex-direction:row!important;}
+          .up-profile-label{width:auto;min-width:90px;flex-shrink:0;}
+          .up-profile-value{font-size:13px;word-break:break-word;min-width:0;}
+          .up-order-amount{min-width:70px;}
         }
         @media(max-width:480px){
-          .up-layout{padding:0.75rem;}
+          .up-layout{padding:0.5rem;}
           .up-wish-grid{grid-template-columns:repeat(2,1fr);gap:0.6rem;}
           .up-addr-grid{grid-template-columns:1fr!important;}
+          .up-section-body{padding:0.85rem;}
+          .up-profile-label{font-size:10.5px;min-width:80px;}
         }
         nextjs-portal{display:none!important}
       `}</style>
-
-      {/* ── Ticker desktop ── */}
-      <div className="up-ticker-desktop">
-        {TICKER_ITEMS.map((item, i) => (
-          <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 16px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-            {i > 0 && <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#6ee7b7", marginRight: "16px", flexShrink: 0 }} />}
-            {item}
-          </span>
-        ))}
-      </div>
-
-      {/* ── Ticker mobile ── */}
-      <div className="up-ticker-mobile">
-        <div className="up-ticker-scroll">
-          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center", padding: "0 22px", fontSize: "12px", fontWeight: 500, color: "#d1fae5", whiteSpace: "nowrap" }}>
-              {item}<span style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#6ee7b7", marginLeft: "22px", flexShrink: 0 }} />
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <SiteNav />
-
-      {/* Mobile nav tabs */}
-      <div className="up-mobile-nav">
-        {NAV_ITEMS.map(item => (
-          <button key={item.id} className={`up-mobile-nav-btn${activeSection === item.id ? " active" : ""}`} onClick={() => setActiveSection(item.id)}>
-            {item.icon} {item.label}
-          </button>
-        ))}
-      </div>
 
       <div className="up-layout">
 
@@ -386,7 +364,7 @@ export default function UserPage() {
           </div>
           <nav className="up-nav-list">
             {NAV_ITEMS.map(item => (
-              <div key={item.id} className={`up-nav-item${activeSection === item.id ? " active" : ""}`} onClick={() => setActiveSection(item.id)}>
+              <div key={item.id} className={`up-nav-item${activeSection === item.id ? " active" : ""}`} onClick={() => { setActiveSection(item.id); setOrdersPage(1); setAddrsPage(1); setWishPage(1); }}>
                 <span className="up-nav-icon">{item.icon}</span>
                 {item.label}
               </div>
@@ -421,34 +399,39 @@ export default function UserPage() {
                     <div className="up-empty-icon">📦</div>
                     <p className="up-empty-title">No orders yet</p>
                     <p className="up-empty-text">Start shopping to place your first order!</p>
-                    <a href="/products" className="up-empty-cta">Shop Now →</a>
+                    <button onClick={() => router.push("/products")} className="up-empty-cta">Shop Now →</button>
                   </div>
-                ) : orders.map(order => (
-                  <div key={order._id} className="up-order-card">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
-                          <span style={{ fontWeight: 800, fontSize: "14px", color: "#2d8a4e" }}>{order.orderNumber}</span>
-                          <span style={{ background: (STATUS_COLORS[order.status] || "#9ca3af") + "22", color: STATUS_COLORS[order.status] || "#9ca3af", fontSize: "11px", padding: "3px 10px", borderRadius: "6px", fontWeight: 700 }}>
-                            {STATUS_LABELS[order.status] || order.status}
-                          </span>
+                ) : (
+                  <>
+                    {pagedOrders.map(order => (
+                      <div key={order._id} className="up-order-card">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "6px" }}>
+                              <span style={{ fontWeight: 800, fontSize: "14px", color: "#2d8a4e" }}>{order.orderNumber}</span>
+                              <span style={{ background: (STATUS_COLORS[order.status] || "#9ca3af") + "22", color: STATUS_COLORS[order.status] || "#9ca3af", fontSize: "11px", padding: "3px 10px", borderRadius: "6px", fontWeight: 700 }}>
+                                {STATUS_LABELS[order.status] || order.status}
+                              </span>
+                            </div>
+                            <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 4px" }}>
+                              {order.items?.slice(0, 3).map((item, i) => (
+                                <span key={i}>{item.name} ×{item.quantity}{i < Math.min(order.items.length, 3) - 1 ? ", " : ""}</span>
+                              ))}
+                              {order.items?.length > 3 && <span> +{order.items.length - 3} more</span>}
+                            </p>
+                            {order.deliveryAddress && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>📍 {order.deliveryAddress}</p>}
+                          </div>
+                          <div className="up-order-amount" style={{ textAlign: "right", flexShrink: 0 }}>
+                            <div style={{ fontWeight: 800, fontSize: "16px", color: "#111827" }}>₹{order.total}</div>
+                            <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "3px" }}>{fmtDate(order.createdAt)}</div>
+                            {order.deliverySlot && <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px" }}>🕐 {order.deliverySlot}</div>}
+                          </div>
                         </div>
-                        <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 4px" }}>
-                          {order.items?.slice(0, 3).map((item, i) => (
-                            <span key={i}>{item.name} ×{item.quantity}{i < Math.min(order.items.length, 3) - 1 ? ", " : ""}</span>
-                          ))}
-                          {order.items?.length > 3 && <span> +{order.items.length - 3} more</span>}
-                        </p>
-                        {order.deliveryAddress && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>📍 {order.deliveryAddress}</p>}
                       </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontWeight: 800, fontSize: "16px", color: "#111827" }}>₹{order.total}</div>
-                        <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "3px" }}>{fmtDate(order.createdAt)}</div>
-                        {order.deliverySlot && <div style={{ fontSize: "11px", color: "#6b7280", marginTop: "3px" }}>🕐 {order.deliverySlot}</div>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    ))}
+                    <Pagination total={orders.length} page={ordersPage} setPage={setOrdersPage} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -523,7 +506,7 @@ export default function UserPage() {
                         style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "#25d366", color: "#fff", padding: "11px 20px", borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
                         💬 WhatsApp Support
                       </a>
-                      <button onClick={logout}
+                      <button onClick={logout} className="up-hide-mobile"
                         style={{ padding: "11px 20px", borderRadius: "9px", border: "1.5px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontWeight: 700, fontSize: "13px", fontFamily: "inherit" }}>
                         Logout
                       </button>
@@ -599,28 +582,33 @@ export default function UserPage() {
                     <p className="up-empty-title">No saved addresses</p>
                     <p className="up-empty-text">Click &quot;+ Add New&quot; above to save your delivery address.</p>
                   </div>
-                ) : addresses.map(a => (
-                  <div key={a.id} className="up-addr-card">
-                    <div className="up-addr-icon">
-                      {a.label === "Home" ? "🏠" : a.label === "Work" ? "🏢" : "📍"}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#2d8a4e", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>{a.label}</div>
-                      <div style={{ fontSize: "13.5px", color: "#111827", lineHeight: 1.5 }}>{a.line1}</div>
-                      <div style={{ fontSize: "12.5px", color: "#6b7280" }}>{a.city}{a.pincode ? ` — ${a.pincode}` : ""}</div>
-                    </div>
-                    <div className="up-addr-actions" style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
-                      <button onClick={() => startEditAddress(a)}
-                        style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "11.5px", fontWeight: 600, fontFamily: "inherit" }}>
-                        Edit
-                      </button>
-                      <button onClick={() => deleteAddress(a.id)}
-                        style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontSize: "11.5px", fontWeight: 600, fontFamily: "inherit" }}>
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                ) : (
+                  <>
+                    {pagedAddrs.map(a => (
+                      <div key={a.id} className="up-addr-card">
+                        <div className="up-addr-icon">
+                          {a.label === "Home" ? "🏠" : a.label === "Work" ? "🏢" : "📍"}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "11.5px", fontWeight: 700, color: "#2d8a4e", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "4px" }}>{a.label}</div>
+                          <div style={{ fontSize: "13.5px", color: "#111827", lineHeight: 1.5 }}>{a.line1}</div>
+                          <div style={{ fontSize: "12.5px", color: "#6b7280" }}>{a.city}{a.pincode ? ` — ${a.pincode}` : ""}</div>
+                        </div>
+                        <div className="up-addr-actions" style={{ display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0 }}>
+                          <button onClick={() => startEditAddress(a)}
+                            style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer", fontSize: "11.5px", fontWeight: 600, fontFamily: "inherit" }}>
+                            Edit
+                          </button>
+                          <button onClick={() => deleteAddress(a.id)}
+                            style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontSize: "11.5px", fontWeight: 600, fontFamily: "inherit" }}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <Pagination total={addresses.length} page={addrsPage} setPage={setAddrsPage} />
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -642,41 +630,44 @@ export default function UserPage() {
                     <div className="up-empty-icon">❤️</div>
                     <p className="up-empty-title">Your wishlist is empty</p>
                     <p className="up-empty-text">Tap the ❤️ on any product to save it here for quick reordering.</p>
-                    <a href="/products" className="up-empty-cta">Explore Products</a>
+                    <button onClick={() => router.push("/products")} className="up-empty-cta">Explore Products</button>
                   </div>
                 ) : (
-                  <div className="up-wish-grid">
-                    {wishlistProducts.map(p => (
-                      <div key={p._id} className="up-wish-card">
-                        <div style={{ height: "120px", overflow: "hidden", background: "#f0fdf4", position: "relative" }}>
-                          {p.imageUrl && p.imageUrl.startsWith("http")
-                            ? <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                            : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>🥬</div>
-                          }
-                          <button onClick={() => removeFromWishlist(p._id)} title="Remove from wishlist"
-                            style={{ position: "absolute", top: "7px", right: "7px", width: "28px", height: "28px", borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
-                            ❤️
-                          </button>
+                  <>
+                    <div className="up-wish-grid">
+                      {pagedWish.map(p => (
+                        <div key={p._id} className="up-wish-card">
+                          <div style={{ height: "120px", overflow: "hidden", background: "#f0fdf4", position: "relative" }}>
+                            {p.imageUrl && p.imageUrl.startsWith("http")
+                              ? <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>🥬</div>
+                            }
+                            <button onClick={() => removeFromWishlist(p._id)} title="Remove from wishlist"
+                              style={{ position: "absolute", top: "7px", right: "7px", width: "28px", height: "28px", borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
+                              ❤️
+                            </button>
+                          </div>
+                          <div style={{ padding: "10px 12px" }}>
+                            <p style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
+                            {p.quantityLabel && <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px" }}>{p.quantityLabel}</p>}
+                            <p style={{ fontSize: "14px", fontWeight: 800, color: "#2d8a4e", margin: "0 0 8px" }}>₹{p.price}</p>
+                            <button onClick={() => addToCart(p._id)}
+                              style={{ width: "100%", padding: "7px", borderRadius: "7px", border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
+                              + Add to Cart
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ padding: "10px 12px" }}>
-                          <p style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                          {p.quantityLabel && <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px" }}>{p.quantityLabel}</p>}
-                          <p style={{ fontSize: "14px", fontWeight: 800, color: "#2d8a4e", margin: "0 0 8px" }}>₹{p.price}</p>
-                          <button onClick={() => addToCart(p._id)}
-                            style={{ width: "100%", padding: "7px", borderRadius: "7px", border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
-                            + Add to Cart
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    <Pagination total={wishlistProducts.length} page={wishPage} setPage={setWishPage} />
+                  </>
                 )}
               </div>
             </div>
           )}
 
           <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
-            <a href="/products" style={{ color: "#2d8a4e", fontWeight: 600, fontSize: "13px", textDecoration: "none" }}>← Back to Shop</a>
+            <button onClick={() => router.push("/products")} style={{ background: "none", border: "none", color: "#2d8a4e", fontWeight: 600, fontSize: "13px", cursor: "pointer", padding: 0 }}>← Back to Shop</button>
           </div>
         </main>
       </div>

@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { siteConfig } from "../../src/config/site";
-import { fetchAndMergeCart, saveAndClearCart } from "../lib/cartSync";
+import { fetchAndMergeCart, saveAndClearCart, saveCartToBackend } from "../lib/cartSync";
+import { useCart } from "../context/CartContext";
 
 interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"; }
 interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; }
@@ -21,14 +23,15 @@ function WhatsAppIcon({ size = 16 }: { size?: number }) {
 
 export default function SiteNav({ activePage }: Props) {
   const router    = useRouter();
+  const pathname  = usePathname();
   const navRef    = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Products (for search + cart display)
   const [products, setProducts] = useState<Product[]>([]);
 
-  // Cart state — synced with qf_cart localStorage
-  const [cart, setCart] = useState<Record<string, number>>({});
+  // Cart state — global context (hydrates from localStorage immediately; no refresh reset)
+  const { cart, setCart, addToCart, removeFromCart } = useCart();
   const [showCart, setShowCart] = useState(false);
   const [cartEnabled, setCartEnabled] = useState(true);
 
@@ -47,11 +50,18 @@ export default function SiteNav({ activePage }: Props) {
   const [ckError, setCkError]         = useState("");
 
   // User
-  const [user, setUser] = useState<{ name: string; email: string; token: string } | null>(null);
+  const [user, setUser] = useState<{ id?: string; name: string; email: string; token: string; phone?: string } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { const u = localStorage.getItem("qf_user"); return u ? JSON.parse(u) : null; } catch { return null; }
+  });
 
-  // Nav
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [dropdownTop, setDropdownTop] = useState<number | undefined>();
+  // Mobile slide-in menu (handles both guest and logged-in)
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
+
+  // Desktop user dropdown — state-controlled so it stays open through the click
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   // Search
   const [search, setSearch] = useState("");
@@ -67,7 +77,9 @@ export default function SiteNav({ activePage }: Props) {
   const [regName, setRegName]       = useState("");
   const [regPhone, setRegPhone]     = useState("");
   const [regPass2, setRegPass2]     = useState("");
-  const [authError, setAuthError]   = useState("");
+  const [authError, setAuthError]         = useState("");
+  const [emailFieldError, setEmailFieldError]     = useState("");
+  const [passwordFieldError, setPasswordFieldError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
@@ -93,8 +105,6 @@ export default function SiteNav({ activePage }: Props) {
       try {
         const u = localStorage.getItem("qf_user");
         setUser(u ? JSON.parse(u) : null);
-        const c = localStorage.getItem("qf_cart");
-        setCart(c ? JSON.parse(c) : {});
         setCartEnabled(localStorage.getItem("qf_cart_enabled") !== "false");
       } catch { /* ignore */ }
     };
@@ -102,17 +112,6 @@ export default function SiteNav({ activePage }: Props) {
     window.addEventListener("storage", load);
     return () => window.removeEventListener("storage", load);
   }, []);
-
-  // ── Mobile menu top position ────────────────────────────────────────────────
-  useEffect(() => {
-    const update = () => {
-      if (navRef.current) setDropdownTop(navRef.current.getBoundingClientRect().bottom);
-    };
-    update();
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, { passive: true });
-    return () => { window.removeEventListener("resize", update); window.removeEventListener("scroll", update); };
-  }, [mobileMenu]);
 
   // ── Open login modal when other components request it ──────────────────────
   useEffect(() => {
@@ -132,20 +131,39 @@ export default function SiteNav({ activePage }: Props) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Cart helpers ─────────────────────────────────────────────────────────────
-  function updateCart(updated: Record<string, number>) {
-    setCart(updated);
-    localStorage.setItem("qf_cart", JSON.stringify(updated));
-  }
-  function addToCart(id: string) {
-    updateCart({ ...cart, [id]: (cart[id] || 0) + 1 });
-  }
-  function removeFromCart(id: string) {
-    const updated = { ...cart };
-    if ((updated[id] || 0) > 1) updated[id]--;
-    else delete updated[id];
-    updateCart(updated);
-  }
+  // ── Close dropdown on route change ────────────────────────────────────────
+  useEffect(() => { setDropOpen(false); }, [pathname]);
+
+  // ── Close desktop dropdown on outside click ────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setDropOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Backend cart sync (logged-in users only) ─────────────────────────────────
+  // On mount: restore cart from backend so a refresh never loses server-side state
+  useEffect(() => {
+    if (!user?.token) return;
+    fetch("/backend/api/users/cart", { headers: { Authorization: `Bearer ${user.token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.cart && typeof d.cart === "object" && Object.keys(d.cart).length > 0) setCart(d.cart as Record<string, number>); })
+      .catch(() => {});
+  }, [user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On every cart change: persist to backend so it survives cross-device/cross-browser refresh
+  const prevCartRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    if (!user?.token) return;
+    if (JSON.stringify(cart) === JSON.stringify(prevCartRef.current)) return;
+    prevCartRef.current = cart;
+    saveCartToBackend(user.token, cart).catch(() => {});
+  }, [cart, user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
+  // addToCart / removeFromCart / setCart come from CartContext
 
   const cartItems    = products.filter(p => (cart[p._id] || 0) > 0);
   const cartCount    = Object.values(cart).reduce((a, b) => a + b, 0);
@@ -174,21 +192,29 @@ export default function SiteNav({ activePage }: Props) {
       )}`
     : `https://wa.me/${siteConfig.whatsapp}`;
 
+  function getIdFromToken(token: string): string | undefined {
+    try {
+      const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(atob(b64))?.id;
+    } catch { return undefined; }
+  }
+
   async function placeOrder() {
     if (ckLoading || !ckCanSubmit) return;
     setCkError(""); setCkLoading(true);
     try {
+      const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       const r = await fetch("/backend/api/orders", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: ckName, guestEmail: ckEmail, guestPhone: ckPhone }),
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: ckName, guestEmail: ckEmail, guestPhone: ckPhone, userId }),
       });
       const d = await r.json();
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
       fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
       setCkOrderNum(d.orderNumber);
       setCartStep(4);
-      updateCart({});
+      setCart({});
     } catch { setCkError("Network error. Please try again."); }
     finally { setCkLoading(false); }
   }
@@ -200,15 +226,31 @@ export default function SiteNav({ activePage }: Props) {
 
   // ── Auth helpers ─────────────────────────────────────────────────────────────
   async function doLogin() {
-    setAuthError(""); setAuthLoading(true);
+    setAuthError(""); setEmailFieldError(""); setPasswordFieldError("");
+    if (!authEmail.trim() || !authPass) {
+      setAuthError("Please enter your credentials");
+      return;
+    }
+    setAuthLoading(true);
     try {
       const r = await fetch("/backend/api/users/login", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: authEmail, password: authPass }),
       });
       const d = await r.json();
-      if (!r.ok) { setAuthError(d.message || "Login failed"); return; }
-      const u = { name: d.user.name, email: d.user.email, token: d.token };
+      if (!r.ok) {
+        const msg = (d.message || "").toLowerCase();
+        if (msg.includes("not found") || msg.includes("no account") || msg.includes("exist") || msg.includes("email")) {
+          setEmailFieldError("Email not found");
+        } else if (msg.includes("password") || msg.includes("incorrect") || msg.includes("wrong") || msg.includes("invalid")) {
+          setPasswordFieldError("Incorrect password");
+        } else {
+          setEmailFieldError("Email not found");
+          setPasswordFieldError("Incorrect password");
+        }
+        return;
+      }
+      const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       // Merge guest cart with user's saved backend cart
       const guestCart = cart; // current state before merging
@@ -235,7 +277,7 @@ export default function SiteNav({ activePage }: Props) {
       });
       const d = await r.json();
       if (!r.ok) { setAuthError(d.message || "Registration failed"); return; }
-      const u = { name: d.user.name, email: d.user.email, token: d.token };
+      const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       // New accounts start with whatever guest cart items they had
       const guestCart = cart;
@@ -250,19 +292,15 @@ export default function SiteNav({ activePage }: Props) {
   async function logout() {
     const token = user?.token;
     if (token) await saveAndClearCart(token, cart);
-    else {
-      localStorage.setItem("qf_cart", JSON.stringify({}));
-      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify({}) }));
-    }
     setCart({});
     setUser(null);
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
-    window.location.href = "/";
+    router.push("/");
   }
-  function closeLogin() { setShowLogin(false); setAuthError(""); setAuthEmail(""); setAuthPass(""); setForgotSent(false); }
+  function closeLogin() { setShowLogin(false); setAuthError(""); setEmailFieldError(""); setPasswordFieldError(""); setAuthEmail(""); setAuthPass(""); setForgotSent(false); }
   function resetAuth(tab: "login" | "register" | "forgot") {
-    setAuthTab(tab); setAuthError(""); setShowPass(false); setShowPass2(false);
+    setAuthTab(tab); setAuthError(""); setEmailFieldError(""); setPasswordFieldError(""); setShowPass(false); setShowPass2(false);
     setAuthEmail(""); setAuthPass(""); setRegName(""); setRegPhone(""); setRegPass2(""); setForgotSent(false);
   }
 
@@ -302,7 +340,7 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
-        .sn-nav{background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);}
+        .sn-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);overflow:visible;}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;letter-spacing:0.01em;}
         .sn-link:hover,.sn-link.active{color:#2d8a4e;border-bottom-color:#2d8a4e;}
@@ -315,6 +353,22 @@ export default function SiteNav({ activePage }: Props) {
         .sn-suggestion-item:hover{background:#f9fafb;}
         .sn-suggestion-item:last-child{border-bottom:none;}
         .sn-mob-search{display:none;background:#fff;border-bottom:1px solid #e5e7eb;padding:8px 1rem;box-sizing:border-box;}
+
+        /* Account dropdown — desktop & tablet (≥769px) */
+        .sn-user-dropdown-wrap{position:relative;display:flex;align-items:center;}
+        .sn-user-trigger{display:flex;align-items:center;gap:5px;padding:8px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fff;color:#374151;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .2s;white-space:nowrap;}
+        .sn-user-trigger:hover{border-color:#2d8a4e;color:#2d8a4e;}
+        .sn-user-name{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .sn-drop-caret{font-size:9px;opacity:0.55;margin-left:1px;}
+        /* Dropdown: visibility controlled by React state (dropOpen) — not CSS :hover */
+        .sn-user-dropdown{position:absolute;top:100%;right:0;padding-top:6px;z-index:450;}
+        .sn-user-dropdown-inner{background:#fff;border:1.5px solid #e9ede4;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.13);min-width:210px;padding:5px;overflow:hidden;}
+        .sn-drop-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:13.5px;font-weight:500;color:#374151;text-decoration:none;cursor:pointer;transition:background .15s;border:none;background:none;width:100%;text-align:left;font-family:inherit;}
+        .sn-drop-item:hover{background:#f0fdf4;color:#166534;}
+        .sn-drop-divider{height:1px;background:#f1f5f9;margin:4px 0;}
+        .sn-drop-signout{color:#dc2626!important;}
+        .sn-drop-signout:hover{background:#fef2f2!important;color:#b91c1c!important;}
+
         @media(max-width:1024px){
           .sn-desk-nav{display:none!important;}
           .sn-search-wrap{display:none!important;}
@@ -322,27 +376,28 @@ export default function SiteNav({ activePage }: Props) {
           .sn-mob-search{display:flex!important;}
           .sn-signin-text{display:none!important;}
           .sn-cart-text{display:none!important;}
-          .sn-user-name{max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px!important;}
-          .sn-logout-btn{display:none!important;}
           .sn-signin-btn{padding:8px 9px!important;}
           .sn-cart-btn{padding:8px 10px!important;}
+        }
+        @media(max-width:768px){
+          .sn-user-dropdown-wrap{display:none!important;}
         }
         nextjs-portal{display:none!important}
       `}</style>
 
       {/* ── Navbar ── */}
       <nav ref={navRef} className="sn-nav">
-        <a href="/" style={{ lineHeight: 0, flexShrink: 0 }}>
+        <Link href="/" style={{ lineHeight: 0, flexShrink: 0 }} onClick={() => { if (pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" }); }}>
           <img src="/logo.png" alt="QualiFresh" style={{ height: "60px", width: "auto", display: "block", objectFit: "contain" }} />
-        </a>
+        </Link>
 
         {/* Desktop nav links */}
         <div className="sn-desk-nav">
           {navLinks.map(item => (
-            <a key={item.label} href={item.href}
+            <Link key={item.label} href={item.href}
               className={`sn-link${`/${activePage}` === item.href ? " active" : ""}`}>
               {item.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -381,12 +436,28 @@ export default function SiteNav({ activePage }: Props) {
 
           {/* Sign In / User */}
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <a href="/user" style={{ fontSize: "13px", fontWeight: 600, color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "4px" }}>
-                <UserSvg /><span className="sn-user-name">Hi, {user.name.split(" ")[0]}</span>
-              </a>
-              <button onClick={logout} className="sn-logout-btn" style={{ padding: "6px 10px", borderRadius: "7px", border: "1.5px solid #e5e7eb", background: "#fff", color: "#6b7280", cursor: "pointer", fontSize: "12px", fontFamily: "inherit" }}>Logout</button>
-            </div>
+            <>
+              {/* Desktop & Tablet (≥769px): state-controlled click dropdown */}
+              <div className="sn-user-dropdown-wrap" ref={dropRef}>
+                <button className="sn-user-trigger" onClick={() => setDropOpen(v => !v)}>
+                  <UserSvg />
+                  <span className="sn-user-name">Hi, {user.name.split(" ")[0]}</span>
+                  <span className="sn-drop-caret" style={{ transform: dropOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
+                </button>
+                <div className="sn-user-dropdown" style={{ display: dropOpen ? "block" : "none" }}>
+                  <div className="sn-user-dropdown-inner">
+                    <Link href="/user/profile"   className="sn-drop-item" onClick={() => setDropOpen(false)}><span>👤</span> My Profile</Link>
+                    <Link href="/user/orders"    className="sn-drop-item" onClick={() => setDropOpen(false)}><span>📦</span> My Orders</Link>
+                    <Link href="/user/addresses" className="sn-drop-item" onClick={() => setDropOpen(false)}><span>📍</span> Addresses</Link>
+                    <Link href="/user/wishlist"  className="sn-drop-item" onClick={() => setDropOpen(false)}><span>❤️</span> Wishlist</Link>
+                    <div className="sn-drop-divider" />
+                    <button className="sn-drop-item sn-drop-signout" onClick={() => { setDropOpen(false); logout(); }}>
+                      <span>🚪</span> Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <button onClick={() => { setShowLogin(true); resetAuth("login"); }}
               className="sn-signin-btn"
@@ -410,24 +481,11 @@ export default function SiteNav({ activePage }: Props) {
           )}
 
           {/* Hamburger */}
-          <button onClick={() => setMobileMenu(m => !m)} className="sn-hamburger"
-            style={{ background: mobileMenu ? "#f0fdf4" : "none", border: `1.5px solid ${mobileMenu ? "#2d8a4e" : "#e5e7eb"}`, color: mobileMenu ? "#2d8a4e" : "#374151" }}>
-            {mobileMenu ? "✕" : "☰"}
+          <button onClick={() => setShowAccountMenu(true)} className="sn-hamburger">
+            ☰
           </button>
         </div>
       </nav>
-
-      {/* ── Mobile menu (nav links only — Sign In, Cart, and search are on the navbar / below it) ── */}
-      {mobileMenu && (
-        <div style={{ background: "#fff", borderTop: "2px solid #2d8a4e", borderBottom: "1px solid #e5e7eb", padding: "0.9rem 1rem", display: "flex", flexDirection: "column", gap: "0.35rem", zIndex: 210, position: "fixed", left: 0, right: 0, boxShadow: "0 8px 24px rgba(0,0,0,0.1)", top: dropdownTop || undefined }}>
-          {navLinks.map(item => (
-            <a key={item.label} href={item.href} onClick={() => setMobileMenu(false)}
-              style={{ color: "#1a3c2e", textDecoration: "none", fontSize: "14.5px", fontWeight: 600, padding: "11px 16px", borderRadius: "10px", background: `/${activePage}` === item.href ? "#f0fdf4" : "#f7faf8", border: `1px solid ${ `/${activePage}` === item.href ? "#bbf7d0" : "#e9ede4"}`, transition: "all .15s", display: "block" }}>
-              {item.label}
-            </a>
-          ))}
-        </div>
-      )}
 
       {/* ── Cart Drawer (3-step: cart → checkout form → confirmed) ── */}
       {showCart && (
@@ -685,8 +743,8 @@ export default function SiteNav({ activePage }: Props) {
         </button>
       )}
 
-      {/* ── Mobile search bar: fixed below navbar, visible when dropdown is closed ── */}
-      {!mobileMenu && (
+      {/* ── Mobile search bar: fixed below navbar, hidden when slide-in is open ── */}
+      {!showAccountMenu && (
         <div className="sn-mob-search">
           <div style={{ position: "relative", flex: 1 }}>
             <input
@@ -720,6 +778,109 @@ export default function SiteNav({ activePage }: Props) {
         </div>
       )}
 
+
+      {/* ── Mobile/tablet slide-in menu (hamburger) — full screen ── */}
+      {showAccountMenu && (
+        <div style={{ position: "fixed", inset: 0, background: "#fff", zIndex: 500, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          {user ? (
+            <>
+              {/* Logged-in header */}
+              <div style={{ padding: "1.5rem 1.2rem 1.3rem", background: "linear-gradient(135deg,#1a3c2e 0%,#2d8a4e 100%)", position: "relative", flexShrink: 0 }}>
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); }} style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "2px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 800, color: "#fff", marginBottom: "10px" }}>
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ fontWeight: 800, fontSize: "16px", color: "#fff", marginBottom: "3px" }}>Hi, {user.name.split(" ")[0]}!</div>
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", wordBreak: "break-all" }}>{user.email}</div>
+              </div>
+              {/* Nav items */}
+              <nav style={{ flex: 1 }}>
+                {/* Home */}
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); router.push("/"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>🏠</span> Home
+                </button>
+                {/* Products */}
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); router.push("/products"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>🛒</span> Products
+                </button>
+                {/* My Profile — accordion trigger */}
+                <button onClick={() => setProfileExpanded(v => !v)}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#2d8a4e", fontSize: "14.5px", fontWeight: 700, background: profileExpanded ? "#f0fdf4" : "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>👤</span> My Profile
+                  <span style={{ marginLeft: "auto", color: "#2d8a4e", fontSize: "13px", transition: "transform .2s", display: "inline-block", transform: profileExpanded ? "rotate(90deg)" : "none" }}>›</span>
+                </button>
+                {/* My Profile sub-items */}
+                {profileExpanded && (
+                  <>
+                    {([
+                      { icon: "👤", label: "Profile",    href: "/user/profile"   },
+                      { icon: "📦", label: "My Orders",  href: "/user/orders"    },
+                      { icon: "📍", label: "Addresses",  href: "/user/addresses" },
+                      { icon: "❤️", label: "Wishlist",   href: "/user/wishlist"  },
+                    ]).map(item => (
+                      <Link key={item.label} href={item.href}
+                        onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); }}
+                        style={{ display: "flex", alignItems: "center", gap: "14px", padding: "13px 1.4rem 13px 3.2rem", color: "#374151", fontSize: "14px", fontWeight: 500, background: "#fafaf9", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit", textDecoration: "none" }}>
+                        <span style={{ fontSize: "16px", width: "22px", textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </>
+                )}
+                {/* About Us */}
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); router.push("/about-us"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>🌿</span> About Us
+                </button>
+                {/* Our Farms */}
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); router.push("/our-farms"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>🚜</span> Our Farms
+                </button>
+                {/* Contact */}
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); router.push("/contact"); }}
+                  style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>📞</span> Contact
+                </button>
+              </nav>
+              {/* Sign Out */}
+              <div style={{ padding: "1.2rem 1.4rem", borderTop: "1px solid #f1f5f9", flexShrink: 0 }}>
+                <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); logout(); }}
+                  style={{ width: "100%", padding: "13px", borderRadius: "10px", border: "1.5px solid #fecaca", background: "#fef2f2", color: "#dc2626", cursor: "pointer", fontWeight: 700, fontSize: "14px", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                  🚪 Sign Out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Guest header */}
+              <div style={{ padding: "1.2rem 1.4rem 1rem", background: "linear-gradient(135deg,#1a3c2e 0%,#2d8a4e 100%)", flexShrink: 0, display: "flex", alignItems: "center", gap: "12px" }}>
+                <img src="/logo.png" alt="QualiFresh" style={{ height: "40px", objectFit: "contain" }} />
+                <span style={{ fontWeight: 800, fontSize: "16px", color: "#fff" }}>QualiFresh</span>
+                <button onClick={() => setShowAccountMenu(false)} style={{ marginLeft: "auto", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+              </div>
+              {/* Guest nav links — no login button here, Sign In stays in navbar */}
+              <nav style={{ flex: 1 }}>
+                {([
+                  { icon: "🏠", label: "Home",      href: "/"          },
+                  { icon: "🛒", label: "Products",  href: "/products"  },
+                  { icon: "🌿", label: "About Us",  href: "/about-us"  },
+                  { icon: "🚜", label: "Our Farms", href: "/our-farms" },
+                  { icon: "📞", label: "Contact",   href: "/contact"   },
+                ]).map(item => (
+                  <button key={item.label} onClick={() => { setShowAccountMenu(false); router.push(item.href); }}
+                    style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: `/${activePage}` === item.href ? "#f0fdf4" : "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                    <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+                    {item.label}
+                    </button>
+                ))}
+              </nav>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Login modal ── */}
       {showLogin && (
@@ -779,19 +940,24 @@ export default function SiteNav({ activePage }: Props) {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Email address <span style={{ color: "#ef4444" }}>*</span></label>
-                  <input type="email" placeholder="your@email.com" value={authEmail} onChange={e => setAuthEmail(e.target.value)} style={{ ...inputStyle, borderColor: authEmail && !emailValid ? "#f87171" : undefined }}
-                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = authEmail && !emailValid ? "#f87171" : "#e5e7eb")} />
+                  <input type="email" placeholder="your@email.com" value={authEmail}
+                    onChange={e => { setAuthEmail(e.target.value); setEmailFieldError(""); if (e.target.value.trim() && authPass) setAuthError(""); }}
+                    style={{ ...inputStyle, borderColor: (authEmail && !emailValid) || emailFieldError ? "#f87171" : undefined }}
+                    onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = (authEmail && !emailValid) || emailFieldError ? "#f87171" : "#e5e7eb")} />
                   {authEmail && !emailValid && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>Enter a valid email address</p>}
+                  {emailFieldError && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>{emailFieldError}</p>}
                 </div>
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "5px" }}>Password <span style={{ color: "#ef4444" }}>*</span></label>
                   <div style={{ position: "relative" }}>
-                    <input type={showPass ? "text" : "password"} placeholder="Your password" value={authPass} onChange={e => setAuthPass(e.target.value)}
+                    <input type={showPass ? "text" : "password"} placeholder="Your password" value={authPass}
+                      onChange={e => { setAuthPass(e.target.value); setPasswordFieldError(""); if (authEmail.trim() && e.target.value) setAuthError(""); }}
                       onKeyDown={e => e.key === "Enter" && doLogin()}
-                      style={{ ...inputStyle, paddingRight: "40px", borderColor: undefined }}
-                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+                      style={{ ...inputStyle, paddingRight: "40px", borderColor: passwordFieldError ? "#f87171" : undefined }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = passwordFieldError ? "#f87171" : "#e5e7eb")} />
                     <button type="button" onClick={() => setShowPass(v => !v)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: "16px", color: "#9ca3af", padding: 0 }}>{showPass ? "🙈" : "👁"}</button>
                   </div>
+                  {passwordFieldError && <p style={{ fontSize: "11.5px", color: "#ef4444", margin: "4px 0 0" }}>{passwordFieldError}</p>}
                 </div>
                 <div style={{ textAlign: "right", marginTop: "-4px" }}>
                   <span style={{ fontSize: "12.5px", color: "#2d8a4e", cursor: "pointer", fontWeight: 600 }} onClick={() => resetAuth("forgot")}>Forgot Password?</span>

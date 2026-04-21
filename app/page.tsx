@@ -453,7 +453,7 @@ export default function Home() {
       const el = ref.current;
       if (!el) return null;
       const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveNav(label); },
+        ([entry]) => { void entry; void label; },
         { threshold: 0.3 }
       );
       obs.observe(el);

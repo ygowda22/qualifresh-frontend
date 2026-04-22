@@ -260,9 +260,9 @@ export default function AboutPage() {
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", img: "/products/mission.jpg", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
-              { icon: "🌏", img: "/products/vision.jpg", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
-              { icon: "🤝", img: "/products/promise.jpg", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
+              { icon: "🎯", img: "/products/ourmission.jpg", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🌏", img: "/products/ourvision.jpg", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
+              { icon: "🤝", img: "/products/ourpromise.jpg", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
             ].map((card, i) => (
               <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>

@@ -59,6 +59,7 @@ export default function UserPage() {
 
   // Pagination
   const ITEMS_PER_PAGE = 10;
+  const ORDER_ITEMS_PER_PAGE = 5;
   const [ordersPage, setOrdersPage]   = useState(1);
   const [addrsPage, setAddrsPage]     = useState(1);
   const [wishPage, setWishPage]       = useState(1);
@@ -89,6 +90,7 @@ export default function UserPage() {
     try {
       const r = await fetch("/backend/api/orders/my", {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        credentials: "include",
       });
       if (r.ok) { const d = await r.json(); setOrders(d.orders || d || []); }
     } catch { /* ignore */ }
@@ -212,8 +214,8 @@ export default function UserPage() {
   // wishProds is now populated directly from backend; filter just protects against stale state
   const wishlistProducts = wishProds.filter(p => wishlist.includes(p._id));
 
-  function Pagination({ total, page, setPage }: { total: number; page: number; setPage: (p: number) => void }) {
-    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  function Pagination({ total, page, setPage, perPage = ITEMS_PER_PAGE }: { total: number; page: number; setPage: (p: number) => void; perPage?: number }) {
+    const totalPages = Math.ceil(total / perPage);
     if (totalPages <= 1) return null;
     const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     return (
@@ -227,7 +229,7 @@ export default function UserPage() {
     );
   }
 
-  const pagedOrders   = orders.slice((ordersPage - 1) * ITEMS_PER_PAGE, ordersPage * ITEMS_PER_PAGE);
+  const pagedOrders   = orders.slice((ordersPage - 1) * ORDER_ITEMS_PER_PAGE, ordersPage * ORDER_ITEMS_PER_PAGE);
   const pagedAddrs    = addresses.slice((addrsPage - 1) * ITEMS_PER_PAGE, addrsPage * ITEMS_PER_PAGE);
   const pagedWish     = wishlistProducts.slice((wishPage - 1) * ITEMS_PER_PAGE, wishPage * ITEMS_PER_PAGE);
 
@@ -414,10 +416,11 @@ export default function UserPage() {
                               </span>
                             </div>
                             <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 4px" }}>
-                              {order.items?.slice(0, 3).map((item, i) => (
-                                <span key={i}>{item.name} ×{item.quantity}{i < Math.min(order.items.length, 3) - 1 ? ", " : ""}</span>
-                              ))}
-                              {order.items?.length > 3 && <span> +{order.items.length - 3} more</span>}
+                              {(order.items ?? []).slice(0, 3).map((item, i) => {
+                                const count = Math.min((order.items ?? []).length, 3);
+                                return <span key={i}>{item.name} ×{item.quantity}{i < count - 1 ? ", " : ""}</span>;
+                              })}
+                              {(order.items ?? []).length > 3 && <span> +{(order.items ?? []).length - 3} more</span>}
                             </p>
                             {order.deliveryAddress && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>📍 {order.deliveryAddress}</p>}
                           </div>
@@ -429,7 +432,7 @@ export default function UserPage() {
                         </div>
                       </div>
                     ))}
-                    <Pagination total={orders.length} page={ordersPage} setPage={setOrdersPage} />
+                    <Pagination total={orders.length} page={ordersPage} setPage={setOrdersPage} perPage={ORDER_ITEMS_PER_PAGE} />
                   </>
                 )}
               </div>

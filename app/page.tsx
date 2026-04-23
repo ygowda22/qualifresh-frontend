@@ -72,7 +72,6 @@ export default function Home() {
   const [loading, setLoading]       = useState(true);
   const [cat, setCat]               = useState("all");
   const { cart, setCart, addToCart: ctxAdd, removeFromCart: ctxRemove } = useCart();
-  const [showCart, setShowCart]     = useState(false);
   const [showLogin, setShowLogin]   = useState(false);
   const [search, setSearch]             = useState("");
   const [searchOpen, setSearchOpen]     = useState(false);
@@ -107,18 +106,6 @@ export default function Home() {
   const [forgotSent, setForgotSent]     = useState(false);
   const [user, setUser]                 = useState<{name:string;email:string;token:string}|null>(null);
 
-  // ── Checkout modal ─────────────────────────────────────────────────────────
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState<1|2>(1);
-  const [ckName, setCkName]             = useState("");
-  const [ckEmail, setCkEmail]           = useState("");
-  const [ckPhone, setCkPhone]           = useState("");
-  const [ckAddress, setCkAddress]       = useState("");
-  const [ckCity, setCkCity]             = useState("Pune");
-  const [ckSlot, setCkSlot]             = useState("Wednesday");
-  const [ckNotes, setCkNotes]           = useState("");
-  const [ckLoading, setCkLoading]       = useState(false);
-  const [ckOrderNum, setCkOrderNum]     = useState("");
   const productsRef                 = useRef<HTMLDivElement>(null);
   const catRef                      = useRef<HTMLDivElement>(null);
   const footerRef                   = useRef<HTMLElement>(null);
@@ -135,7 +122,7 @@ export default function Home() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("qf_user");
-      if (saved) { const u = JSON.parse(saved); setUser(u); setCkName(u.name || ""); setCkEmail(u.email || ""); }
+      if (saved) { const u = JSON.parse(saved); setUser(u); }
     } catch {}
     // Load store settings
     const cartSetting = localStorage.getItem("qf_cart_enabled");
@@ -239,7 +226,6 @@ export default function Home() {
       if (!r.ok) { setAuthError(d.message || "Login failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
-      setCkName(u.name); setCkEmail(u.email);
       // Merge current guest cart with user's saved backend cart
       const merged = await fetchAndMergeCart(d.token, cart);
       setCart(merged);
@@ -263,7 +249,6 @@ export default function Home() {
       if (!r.ok) { setAuthError(d.message || "Registration failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
-      setCkName(u.name); setCkEmail(u.email);
       // New account — save whatever guest cart items were present
       const merged = await fetchAndMergeCart(d.token, cart);
       setCart(merged);
@@ -328,26 +313,6 @@ export default function Home() {
   }
 
   // ── Checkout helper ───────────────────────────────────────────────────────
-  async function placeOrder() {
-    if (!ckName || !ckPhone || !ckAddress) { alert("Please fill name, phone, and address"); return; }
-    setCkLoading(true);
-    try {
-      const items = products.filter(p => cart[p._id]).map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
-      const r = await fetch("/backend/api/orders", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: cartTotal + deliveryCost, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: ckName, guestEmail: ckEmail, guestPhone: ckPhone, userId: user ? undefined : undefined }),
-      });
-      const d = await r.json();
-      if (!r.ok) { alert(d.message || "Order failed. Please try again."); return; }
-      // Non-blocking SMS + email notification
-      fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
-      setCkOrderNum(d.orderNumber);
-      setCheckoutStep(2);
-      setCart({});
-    } catch { alert("Network error. Please try again."); }
-    finally { setCkLoading(false); }
-  }
-
   // ── Fetch products ────────────────────────────────────────────────────────
   useEffect(() => {
     // Use /backend proxy so mobile browsers hit the Next.js server (not their own localhost)
@@ -655,9 +620,9 @@ export default function Home() {
               <a href="/products" className="btn-g hero-btn" style={{ padding: "14px 30px", fontSize: "14.5px", display: "inline-flex", alignItems: "center", gap: "8px", borderRadius: "10px", boxShadow: "0 4px 20px rgba(45,138,78,0.45)", fontFamily: "inherit", fontWeight: 700, textDecoration: "none", color: "#fff" }}>
                 <CartSvg /> Shop Now
               </a>
-              <a href={homeWaUrl} target="_blank" rel="noreferrer" className="hero-btn-secondary">
+              {/* <a href={homeWaUrl} target="_blank" rel="noreferrer" className="hero-btn-secondary">
                 💬 WhatsApp Order
-              </a>
+              </a> */}
             </div>
             {/* Stats bar */}
             <div className="hero-stats" style={{ display: "flex", gap: "2rem", marginTop: "2.2rem", paddingTop: "2rem", borderTop: "1px solid rgba(255,255,255,0.09)" }}>
@@ -1211,86 +1176,12 @@ export default function Home() {
         </>
       )}
 
-      {/* ═══ CART DRAWER ═══ */}
-      {showCart && (
-        <>
-          <div onClick={() => setShowCart(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 490, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: "clamp(300px,92vw,390px)", background: "#fff", boxShadow: "-6px 0 40px rgba(0,0,0,.18)", zIndex: 500, display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "1rem 1.3rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0fdf4" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <QFLogo height={30} />
-                <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px" }}>Cart ({cartCount})</span>
-              </div>
-              <button onClick={() => setShowCart(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-            </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "1rem 1.3rem" }}>
-              {cartItems.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "3.5rem 1rem", color: "#9ca3af" }}>
-                  <div style={{ fontSize: "52px", marginBottom: "1rem" }}>🛒</div>
-                  <p style={{ fontWeight: 700, fontSize: "15px", color: "#374151", margin: "0 0 4px" }}>Your cart is empty</p>
-                  <p style={{ fontSize: "13px", marginBottom: "1.5rem" }}>Add fresh exotic veggies to get started!</p>
-                  <a href="/products"
-                    onClick={() => setShowCart(false)}
-                    className="btn-g"
-                    style={{ padding: "11px 28px", fontSize: "14px", borderRadius: "10px", textDecoration: "none", color: "#fff", display: "inline-block" }}>
-                    Shop Now →
-                  </a>
-                </div>
-              ) : cartItems.map(p => (
-                <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
-                    {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                      <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>
-                    )}
-                    <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
-                      <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>
-                      <p style={{ margin: "2px 0 0", fontWeight: 800, color: "#2d8a4e", fontSize: "13.5px" }}>₹{p.price * cart[p._id]}</p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                    <button onClick={() => remove(p._id)} style={{ background: "#f3f4f6", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>−</button>
-                    <span style={{ fontWeight: 800, minWidth: "18px", textAlign: "center", fontSize: "13px" }}>{cart[p._id]}</span>
-                    <button onClick={() => add(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {cartItems.length > 0 && (
-              <div style={{ padding: "1rem 1.3rem", borderTop: "2px solid #f0fdf4" }}>
-                {[["Subtotal", `₹${cartTotal}`], ["Delivery", deliveryCost === 0 ? "FREE 🎉" : `₹${deliveryCost}`]].map(([l, v]) => (
-                  <div key={l} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#6b7280", marginBottom: "5px" }}>
-                    <span>{l}</span>
-                    <span style={{ color: l === "Delivery" && deliveryCost === 0 ? "#16a34a" : undefined, fontWeight: l === "Delivery" && deliveryCost === 0 ? 700 : 400 }}>{v}</span>
-                  </div>
-                ))}
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "16px", marginBottom: "12px", borderTop: "1px solid #e5e7eb", paddingTop: "9px" }}>
-                  <span>Total</span><span style={{ color: "#1a3c2e" }}>₹{cartTotal + deliveryCost}</span>
-                </div>
-                {cartTotal > 0 && cartTotal < DEL.freeDeliveryAbove && (
-                  <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#166534", marginBottom: "10px" }}>
-                    🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
-                  </div>
-                )}
-                <button disabled={cartTotal < DEL.minOrder}
-                  onClick={() => { if (cartTotal >= DEL.minOrder) { setShowCart(false); setCheckoutStep(1); setCkOrderNum(""); setShowCheckout(true); } }}
-                  style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit" }}>
-                  {cartTotal >= DEL.minOrder ? "Proceed to Checkout →" : `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`}
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* ═══ SUPPORT EMAIL BUTTON (bottom-right, above cart if cart visible) ═══ */}
+      {/* ═══ SUPPORT EMAIL BUTTON (bottom-right, above cart FAB if cart has items) ═══ */}
       <button onClick={() => setShowContactModal(true)}
         title={`Email Support: ${siteConfig.email}`}
         style={{
           position: "fixed",
-          bottom: cartCount > 0 && !showCart ? "5.5rem" : "1.5rem",
+          bottom: cartCount > 0 ? "5.5rem" : "1.5rem",
           right: "1.5rem",
           width: "48px", height: "48px",
           background: "#fff",
@@ -1394,112 +1285,6 @@ export default function Home() {
             )}
           </div>
         </>
-      )}
-
-      {/* ═══ CHECKOUT MODAL ═══ */}
-      {showCheckout && (
-        <>
-          <div onClick={() => { if (!ckLoading) setShowCheckout(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", width: "clamp(320px,92vw,500px)", maxHeight: "92vh", overflowY: "auto", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.25)" }}>
-            {/* Header */}
-            <div style={{ padding: "1.3rem 1.5rem", borderBottom: "1px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, background: "#fff", zIndex: 2 }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f" }}>{checkoutStep === 2 ? "Order Confirmed! 🎉" : "Checkout"}</h2>
-                {checkoutStep === 1 && <p style={{ margin: 0, fontSize: "12px", color: "#9ca3af" }}>Step 1 of 1 — Delivery Details</p>}
-              </div>
-              {!ckLoading && <button onClick={() => setShowCheckout(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>}
-            </div>
-
-            {checkoutStep === 2 ? (
-              /* ── Order Confirmed ── */
-              <div style={{ padding: "2rem", textAlign: "center" }}>
-                <div style={{ width: "72px", height: "72px", background: "linear-gradient(135deg,#2d8a4e,#16a34a)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", margin: "0 auto 16px" }}>🌿</div>
-                <h3 style={{ margin: "0 0 6px", fontSize: "1.3rem", fontWeight: 800, color: "#166534" }}>Order Placed!</h3>
-                <div style={{ display: "inline-block", background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: "10px", padding: "10px 24px", margin: "10px 0 16px", fontWeight: 800, fontSize: "18px", color: "#1a3c2e" }}>{ckOrderNum}</div>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "6px" }}>Thank you, <strong>{ckName}</strong>! Your order is confirmed.</p>
-                {ckEmail && <p style={{ fontSize: "13px", color: "#6b7280" }}>A confirmation email has been sent to <strong>{ckEmail}</strong>.</p>}
-                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 16px", margin: "16px 0", textAlign: "left", fontSize: "13px", color: "#374151" }}>
-                  <div>📅 Delivery Slot: <strong>{ckSlot}</strong></div>
-                  <div style={{ marginTop: "4px" }}>📍 {ckAddress}, {ckCity}</div>
-                </div>
-                <button onClick={() => { setShowCheckout(false); setCkName(""); setCkEmail(""); setCkPhone(""); setCkAddress(""); setCkNotes(""); }} className="btn-g" style={{ padding: "12px 32px", fontSize: "14.5px" }}>Continue Shopping</button>
-                <div style={{ marginTop: "10px" }}>
-                  <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(`Hi QualiFresh! Order ${ckOrderNum} confirmed.\nName: ${ckName} | Phone: ${ckPhone}\nDelivery: ${ckSlot}${ckAddress ? `\nAddress: ${ckAddress}${ckCity ? ", " + ckCity : ""}` : ""}`)}`}
-                    target="_blank" rel="noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 24px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
-                    <WhatsAppIcon size={16} /> Share on WhatsApp
-                  </a>
-                </div>
-              </div>
-            ) : (
-              /* ── Step 1: Delivery Details ── */
-              <div style={{ padding: "1.5rem" }}>
-                {/* Order summary */}
-                <div style={{ background: "#f9fafb", borderRadius: "10px", padding: "12px 14px", marginBottom: "1.3rem" }}>
-                  <p style={{ margin: "0 0 8px", fontSize: "12px", fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.5px" }}>Order Summary ({products.filter(p=>cart[p._id]).length} items)</p>
-                  {products.filter(p => cart[p._id]).map(p => (
-                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", color: "#374151", marginBottom: "4px" }}>
-                      <span>{p.name} × {cart[p._id]}</span><span style={{ fontWeight: 700 }}>₹{p.price * cart[p._id]}</span>
-                    </div>
-                  ))}
-                  <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "8px", marginTop: "8px", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "14px" }}>
-                    <span>Total</span><span style={{ color: "#1a3c2e" }}>₹{cartTotal + deliveryCost}</span>
-                  </div>
-                </div>
-
-                {/* Delivery form */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {[
-                    { label: "Full Name", ph: "Your name", val: ckName, set: setCkName, type: "text", req: true },
-                    { label: "Email (for confirmation)", ph: "your@email.com", val: ckEmail, set: setCkEmail, type: "email" },
-                    { label: "Mobile Number", ph: "e.g. 9876543210", val: ckPhone, set: setCkPhone, type: "tel", req: true },
-                    { label: "Delivery Address", ph: "Flat, Street, Area", val: ckAddress, set: setCkAddress, type: "text", req: true },
-                    { label: "City", ph: "Pune / Mumbai", val: ckCity, set: setCkCity, type: "text" },
-                  ].map(f => (
-                    <div key={f.label}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>{f.label}{f.req && <span style={{ color: "#ef4444" }}> *</span>}</label>
-                      <input type={f.type} placeholder={f.ph} value={f.val} onChange={e => f.set(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px" }}
-                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                    </div>
-                  ))}
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Slot <span style={{ color: "#ef4444" }}>*</span></label>
-                    <select value={ckSlot} onChange={e => setCkSlot(e.target.value)}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", background: "#fff" }}>
-                      <option>Wednesday</option>
-                      <option>Saturday</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Special Instructions (optional)</label>
-                    <textarea placeholder="e.g. Leave at door, call on arrival…" value={ckNotes} onChange={e => setCkNotes(e.target.value)} rows={2}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", resize: "none" }}
-                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  </div>
-                </div>
-
-                <button onClick={placeOrder} disabled={ckLoading || !ckName || !ckPhone || !ckAddress}
-                  style={{ width: "100%", marginTop: "16px", padding: "14px", fontSize: "15px", background: (!ckName||!ckPhone||!ckAddress) ? "#e5e7eb" : "#2d8a4e", color: (!ckName||!ckPhone||!ckAddress) ? "#9ca3af" : "#fff", border: "none", borderRadius: "10px", cursor: (!ckName||!ckPhone||!ckAddress||ckLoading) ? "not-allowed" : "pointer", fontWeight: 800, fontFamily: "inherit" }}>
-                  {ckLoading ? "Placing Order…" : `Place Order · ₹${cartTotal + deliveryCost}`}
-                </button>
-                <p style={{ textAlign: "center", fontSize: "11.5px", color: "#9ca3af", marginTop: "8px" }}>Pay on delivery. You'll receive a confirmation email.</p>
-                <a href={homeWaUrl} target="_blank" rel="noreferrer"
-                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", marginTop: "10px", padding: "13px", fontSize: "14.5px", background: "#25d366", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 800, fontFamily: "inherit", textDecoration: "none", boxSizing: "border-box" }}>
-                  <WhatsAppIcon size={17} /> WhatsApp Order
-                </a>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* ═══ FLOATING CART BUTTON ═══ */}
-      {cartEnabled && cartCount > 0 && !showCart && (
-        <button onClick={() => setShowCart(true)} className="btn-g"
-          style={{ position: "fixed", bottom: "1.5rem", right: "1.5rem", padding: "12px 20px", borderRadius: "50px", boxShadow: "0 6px 24px rgba(45,138,78,.45)", zIndex: 150, fontSize: "13.5px", display: "flex", alignItems: "center", gap: "7px", animation: "pulse 2.5s ease-in-out infinite" }}>
-          <CartSvg /> {cartCount} · <strong>₹{cartTotal}</strong>
-        </button>
       )}
 
       {/* ═══ FOOTER ═══ */}

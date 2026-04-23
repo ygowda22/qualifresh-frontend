@@ -95,11 +95,12 @@ textarea {
   right: 1.5rem;
   width: 48px;
   height: 48px;
-  background: #fff;
-  border: 2px solid #2d8a4e;
-  box-shadow: 0 4px 18px rgba(45,138,78,0.22);
+  background: #2d8a4e;
+  border: none;
+  box-shadow: 0 4px 18px rgba(45,138,78,0.35);
   z-index: 149;
 }
+.qf-fab-mail:hover { background: #1f6b3a !important; }
 .qf-fab-cart {
   bottom: 1.5rem;
   right: 1.5rem;

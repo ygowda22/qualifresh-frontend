@@ -751,14 +751,13 @@ export default function SiteNav({ activePage }: Props) {
       )}
 
       {/* ── Floating mail button (visible on all SiteNav pages) ── */}
-      <button onClick={() => setShowContactModal(true)} title="Contact Support"
+      <button onClick={() => setShowContactModal(true)} title={`Email Support: ${siteConfig.email}`}
         className={`qf-fab qf-fab-mail${cartEnabled && cartCount > 0 && !showCart ? " cart-active" : ""}`}
-        style={{ border: "none", cursor: "pointer" }}>
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2d8a4e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        style={{ cursor: "pointer" }}>
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
           <polyline points="22,6 12,13 2,6"/>
         </svg>
-        <span style={{ position: "absolute", top: "-3px", right: "-3px", width: "13px", height: "13px", background: "#2d8a4e", borderRadius: "50%", border: "2.5px solid #fff" }} />
       </button>
 
       {/* ── Contact Support Modal (SMTP) ── */}

@@ -1484,6 +1484,10 @@ export default function Home() {
                   {ckLoading ? "Placing Order…" : `Place Order · ₹${cartTotal + deliveryCost}`}
                 </button>
                 <p style={{ textAlign: "center", fontSize: "11.5px", color: "#9ca3af", marginTop: "8px" }}>Pay on delivery. You'll receive a confirmation email.</p>
+                <a href={homeWaUrl} target="_blank" rel="noreferrer"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", width: "100%", marginTop: "10px", padding: "13px", fontSize: "14.5px", background: "#25d366", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 800, fontFamily: "inherit", textDecoration: "none", boxSizing: "border-box" }}>
+                  <WhatsAppIcon size={17} /> WhatsApp Order
+                </a>
               </div>
             )}
           </div>

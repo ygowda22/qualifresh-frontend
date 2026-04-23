@@ -56,6 +56,21 @@ export default function SiteNav({ activePage }: Props) {
   const [ckOrderNum, setCkOrderNum]   = useState("");
   const [ckError, setCkError]         = useState("");
 
+  // Contact support modal (global — replaces mailto FAB on all pages)
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactName, setContactName]   = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMobile, setContactMobile] = useState("");
+  const [contactMsg, setContactMsg]     = useState("");
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSent, setContactSent]   = useState(false);
+  const [contactError, setContactError] = useState("");
+
+  function closeContactModal() {
+    setShowContactModal(false); setContactName(""); setContactEmail("");
+    setContactMobile(""); setContactMsg(""); setContactSent(false); setContactError("");
+  }
+
   // User
   const [user, setUser] = useState<{ id?: string; name: string; email: string; token: string; phone?: string } | null>(() => {
     if (typeof window === "undefined") return null;
@@ -736,14 +751,92 @@ export default function SiteNav({ activePage }: Props) {
       )}
 
       {/* ── Floating mail button (visible on all SiteNav pages) ── */}
-      <a href={`mailto:${siteConfig.email}`} title={`Email: ${siteConfig.email}`}
-        className={`qf-fab qf-fab-mail${cartEnabled && cartCount > 0 && !showCart ? " cart-active" : ""}`}>
+      <button onClick={() => setShowContactModal(true)} title="Contact Support"
+        className={`qf-fab qf-fab-mail${cartEnabled && cartCount > 0 && !showCart ? " cart-active" : ""}`}
+        style={{ border: "none", cursor: "pointer" }}>
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2d8a4e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
           <polyline points="22,6 12,13 2,6"/>
         </svg>
         <span style={{ position: "absolute", top: "-3px", right: "-3px", width: "13px", height: "13px", background: "#2d8a4e", borderRadius: "50%", border: "2.5px solid #fff" }} />
-      </a>
+      </button>
+
+      {/* ── Contact Support Modal (SMTP) ── */}
+      {showContactModal && (
+        <>
+          <div onClick={closeContactModal} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", maxHeight: "92vh", overflowY: "auto", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
+            {contactSent ? (
+              <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
+                <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Message Sent!</h2>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>We received your message and will reply within a few hours.</p>
+                <button onClick={closeContactModal} className="sn-btn-g" style={{ padding: "11px 28px", fontSize: "14px", borderRadius: "8px" }}>Close</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
+                  <button onClick={closeContactModal} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+                  <img src="/logo.png" alt="QualiFresh" style={{ height: "56px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 4px" }}>Contact Support</h2>
+                  <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none" }}>📞 {siteConfig.phoneDisplay}</a>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {([
+                    { label: "Your Name",     placeholder: "e.g. Priya Sharma", value: contactName,   set: setContactName,   type: "text" },
+                    { label: "Your Email",    placeholder: "your@email.com",     value: contactEmail,  set: setContactEmail,  type: "email", required: true },
+                    { label: "Mobile Number", placeholder: "e.g. 9876543210",    value: contactMobile, set: setContactMobile, type: "tel" },
+                  ] as { label: string; placeholder: string; value: string; set: (v: string) => void; type: string; required?: boolean }[]).map(f => (
+                    <div key={f.label}>
+                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>
+                        {f.label}{f.required && <span style={{ color: "#ef4444" }}> *</span>}
+                      </label>
+                      <input type={f.type} placeholder={f.placeholder} value={f.value} onChange={e => f.set(e.target.value)}
+                        style={inputStyle}
+                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Message <span style={{ color: "#ef4444" }}>*</span></label>
+                    <textarea placeholder="How can we help you?" value={contactMsg} onChange={e => setContactMsg(e.target.value)} rows={4}
+                      style={{ ...inputStyle, resize: "vertical" }}
+                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+                  </div>
+                  {(() => {
+                    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail);
+                    const phoneOk = !contactMobile || /^[6-9]\d{9}$/.test(contactMobile.replace(/\s+/g, "").replace(/^(\+91|91)/, ""));
+                    const canSend = contactEmail.trim() && emailOk && contactMsg.trim() && phoneOk;
+                    return (
+                      <>
+                        {contactEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "2px 0 0" }}>Please enter a valid email</p>}
+                        {contactMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "2px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
+                        {contactError && <p style={{ color: "#ef4444", fontSize: "12px", margin: "2px 0 0" }}>{contactError}</p>}
+                        <button disabled={!canSend || contactSending}
+                          onClick={async () => {
+                            if (!canSend || contactSending) return;
+                            setContactSending(true); setContactError("");
+                            try {
+                              const r = await fetch("/backend/api/contact", {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ name: contactName.trim() || "Not provided", email: contactEmail.trim(), phone: contactMobile.trim(), message: contactMsg.trim() }),
+                              });
+                              if (!r.ok) { const d = await r.json(); setContactError(d.message || "Failed to send. Please try again."); return; }
+                              setContactSent(true);
+                            } catch { setContactError("Network error. Please try again."); }
+                            finally { setContactSending(false); }
+                          }}
+                          style={{ width: "100%", marginTop: "10px", padding: "12px", fontSize: "14px", background: (!canSend || contactSending) ? "#e5e7eb" : "#2d8a4e", color: (!canSend || contactSending) ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: (!canSend || contactSending) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit" }}>
+                          {contactSending ? "Sending…" : "Send Message"}
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
 
       {/* ── Floating cart button (visible on all SiteNav pages) ── */}
       {cartEnabled && cartCount > 0 && !showCart && (

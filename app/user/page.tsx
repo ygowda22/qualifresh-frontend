@@ -415,13 +415,14 @@ export default function UserPage() {
                                 {STATUS_LABELS[order.status] || order.status}
                               </span>
                             </div>
-                            <p style={{ fontSize: "12px", color: "#6b7280", lineHeight: 1.6, margin: "0 0 4px" }}>
-                              {(order.items ?? []).slice(0, 3).map((item, i) => {
-                                const count = Math.min((order.items ?? []).length, 3);
-                                return <span key={i}>{item.name} ×{item.quantity}{i < count - 1 ? ", " : ""}</span>;
-                              })}
-                              {(order.items ?? []).length > 3 && <span> +{(order.items ?? []).length - 3} more</span>}
-                            </p>
+                            <div style={{ margin: "0 0 4px" }}>
+                              {(order.items ?? []).map((item, i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", color: "#4b5563", lineHeight: 1.7 }}>
+                                  <span>{item.name} <span style={{ color: "#9ca3af" }}>×{item.quantity}</span></span>
+                                  <span style={{ fontWeight: 600, color: "#166534", whiteSpace: "nowrap", marginLeft: "8px" }}>₹{(item.price * item.quantity).toFixed(0)}</span>
+                                </div>
+                              ))}
+                            </div>
                             {order.deliveryAddress && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>📍 {order.deliveryAddress}</p>}
                           </div>
                           <div className="up-order-amount" style={{ textAlign: "right", flexShrink: 0 }}>

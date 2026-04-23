@@ -38,14 +38,6 @@ function CartSvg() {
     </svg>
   );
 }
-function MailSvg({ size = 20, color = "#2d8a4e" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-      <polyline points="22,6 12,13 2,6"/>
-    </svg>
-  );
-}
 function WhatsAppIcon({ size = 17 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
@@ -82,16 +74,6 @@ export default function Home() {
   const [customCats, setCustomCats]     = useState<{ key:string; label:string; image:string; color:string; icon:string }[]>([]);
   const [catOverrides, setCatOverrides] = useState<Record<string, { label?: string; image?: string; color?: string; icon?: string }>>({});
   const [storyImg, setStoryImg]         = useState<string>("");
-
-  // ── Contact modal ──────────────────────────────────────────────────────────
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [contactName, setContactName]   = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactMobile, setContactMobile] = useState("");
-  const [contactMsg, setContactMsg]     = useState("");
-  const [contactSending, setContactSending] = useState(false);
-  const [contactSent, setContactSent]   = useState(false);
-  const [contactError, setContactError] = useState("");
 
   // ── Auth modal ─────────────────────────────────────────────────────────────
   const [authTab, setAuthTab]           = useState<"login"|"register"|"forgot">("login");
@@ -1173,119 +1155,6 @@ export default function Home() {
                 <WhatsAppIcon size={16} /> Order via WhatsApp instead
               </a>
             </div>
-          </div>
-        </>
-      )}
-
-      {/* ═══ SUPPORT EMAIL BUTTON (bottom-right, above cart FAB if cart has items) ═══ */}
-      <button onClick={() => setShowContactModal(true)}
-        title={`Email Support: ${siteConfig.email}`}
-        style={{
-          position: "fixed",
-          bottom: cartCount > 0 ? "5.5rem" : "1.5rem",
-          right: "1.5rem",
-          width: "48px", height: "48px",
-          background: "#fff",
-          border: "2px solid #2d8a4e",
-          borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          boxShadow: "0 4px 18px rgba(45,138,78,0.22)",
-          cursor: "pointer", zIndex: 149,
-          transition: "bottom 0.3s ease, background 0.2s",
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#fff"; }}>
-        <MailSvg size={21} color="#2d8a4e" />
-        <span style={{ position: "absolute", top: "-3px", right: "-3px", width: "13px", height: "13px", background: "#2d8a4e", borderRadius: "50%", border: "2.5px solid #fff" }} />
-      </button>
-
-      {/* ═══ CONTACT MODAL (mailto — opens user's email client) ═══ */}
-      {showContactModal && (
-        <>
-          <div onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); setContactSent(false); setContactError(""); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
-          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
-            {contactSent ? (
-              <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
-                <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Message Sent!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>We received your message and will reply within a few hours.</p>
-                <button onClick={() => { setShowContactModal(false); setContactSent(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); }} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Close</button>
-              </div>
-            ) : (
-              <>
-                {/* Header with logo */}
-                <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
-                  <button onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); setContactError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-                  <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                    <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span style={{ fontSize: "13px" }}>✉️</span>{siteConfig.email}
-                    </a>
-                    <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>
-                      <span style={{ fontSize: "13px" }}>📞</span>{siteConfig.phoneDisplay}
-                    </a>
-                  </div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {([
-                    { label: "Your Name",     placeholder: "e.g. Priya Sharma",   value: contactName,   set: setContactName,   type: "text" },
-                    { label: "Your Email",    placeholder: "your@email.com",      value: contactEmail,  set: setContactEmail,  type: "email", required: true },
-                    { label: "Mobile Number", placeholder: "e.g. 9876543210",     value: contactMobile, set: setContactMobile, type: "tel" },
-                  ] as { label: string; placeholder: string; value: string; set: (v: string) => void; type: string; required?: boolean }[]).map(f => (
-                    <div key={f.label}>
-                      <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>
-                        {f.label}{f.required && <span style={{ color: "#ef4444" }}> *</span>}
-                      </label>
-                      <input type={f.type} placeholder={f.placeholder} value={f.value} onChange={e => f.set(e.target.value)}
-                        style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", background: "#fff", color: "#111827" }}
-                        onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                    </div>
-                  ))}
-                  <div>
-                    <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Message <span style={{ color: "#ef4444" }}>*</span></label>
-                    <textarea placeholder="How can we help you?" value={contactMsg} onChange={e => setContactMsg(e.target.value)} rows={4}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", resize: "vertical", background: "#fff", color: "#111827" }}
-                      onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
-                  </div>
-                </div>
-                {/* Validation error */}
-                {(() => {
-                  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail);
-                  const phoneOk = !contactMobile || /^[6-9]\d{9}$/.test(contactMobile.replace(/\s+/g, "").replace(/^(\+91|91)/, ""));
-                  const canSend = contactEmail.trim() && emailOk && contactMsg.trim() && phoneOk;
-                  return (
-                    <>
-                      {contactEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid email address</p>}
-                      {contactMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
-                      {contactError && <p style={{ fontSize: "12px", color: "#ef4444", margin: "4px 0 0" }}>{contactError}</p>}
-                      <button disabled={!canSend || contactSending}
-                        onClick={async () => {
-                          if (!canSend || contactSending) return;
-                          setContactSending(true); setContactError("");
-                          try {
-                            const r = await fetch("/backend/api/contact", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ name: contactName.trim() || "Not provided", email: contactEmail.trim(), phone: contactMobile.trim(), message: contactMsg.trim() }),
-                            });
-                            if (!r.ok) { const d = await r.json(); setContactError(d.message || "Failed to send. Please try again."); return; }
-                            setContactSent(true);
-                          } catch { setContactError("Network error. Please try again."); }
-                          finally { setContactSending(false); }
-                        }}
-                        style={{ width: "100%", marginTop: "14px", padding: "12px", fontSize: "14px", background: (!canSend || contactSending) ? "#e5e7eb" : "#2d8a4e", color: (!canSend || contactSending) ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: (!canSend || contactSending) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
-                        <MailSvg size={16} color={(!canSend || contactSending) ? "#9ca3af" : "#fff"} /> {contactSending ? "Sending…" : "Send Message"}
-                      </button>
-                      <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", marginTop: "8px" }}>
-                        Or reach us directly at{" "}
-                        <a href={`tel:${siteConfig.phone}`} style={{ color: "#2d8a4e" }}>{siteConfig.phoneDisplay}</a>
-                      </p>
-                    </>
-                  );
-                })()}
-              </>
-            )}
           </div>
         </>
       )}

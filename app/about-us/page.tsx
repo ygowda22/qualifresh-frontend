@@ -120,7 +120,6 @@ export default function AboutPage() {
     <div style={{ background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
         /* Buttons */
@@ -356,10 +355,10 @@ export default function AboutPage() {
           </div>
           <div style={{ marginTop: "2.5rem", display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
             <a href="/products" className="btn-g" style={{ padding: "13px 28px", fontSize: "14px", borderRadius: "10px", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "7px" }}>🛒 Shop Now</a>
-            <a href={waUrl} target="_blank" rel="noreferrer"
+            {/* <a href={waUrl} target="_blank" rel="noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "13px 28px", fontSize: "14px", fontWeight: 700, borderRadius: "10px", background: "#25d366", color: "#fff", textDecoration: "none", fontFamily: "inherit" }}>
               <WhatsAppIcon size={16} /> Order on WhatsApp
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

@@ -12,6 +12,10 @@
   --color-foreground: var(--foreground);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   background: #f4f6f0 !important;

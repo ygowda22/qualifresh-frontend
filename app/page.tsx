@@ -474,7 +474,6 @@ export default function Home() {
       {/* ═══ GLOBAL STYLES ═══ */}
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
         @media(max-width: 1024px) {

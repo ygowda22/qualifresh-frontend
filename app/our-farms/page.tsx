@@ -107,7 +107,6 @@ export default function OurFarmsPage() {
     <div style={{ background: "#f4f6f0", minHeight: "100vh", color: "#1a1a1a" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -302,10 +301,10 @@ export default function OurFarmsPage() {
               style={{ background: "linear-gradient(135deg,#2d8a4e,#1f6b3a)", color: "#fff", borderRadius: "10px", padding: "13px 28px", fontSize: "14px", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "7px", boxShadow: "0 4px 18px rgba(45,138,78,0.45)", fontFamily: "inherit" }}>
               🛒 Shop Now
             </a>
-            <a href={waUrl} target="_blank" rel="noreferrer"
+            {/* <a href={waUrl} target="_blank" rel="noreferrer"
               style={{ background: "rgba(255,255,255,0.08)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: "10px", padding: "13px 28px", fontSize: "14px", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "7px", backdropFilter: "blur(8px)" }}>
               💬 WhatsApp Order
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

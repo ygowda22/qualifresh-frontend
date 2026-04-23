@@ -48,7 +48,6 @@ export default function ContactPage() {
     <div style={{ background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
         .c-wrap{max-width:1100px;margin:0 auto;padding:3rem 1.5rem;}

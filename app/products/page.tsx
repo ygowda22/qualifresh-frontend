@@ -282,7 +282,6 @@ function ProductsContent() {
     <div style={{ background: "#f4f6f0", minHeight: "100vh" }}>
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%}
 
         .p-cats{display:flex;gap:8px;overflow-x:auto;padding:0 0 4px;scrollbar-width:none;}
@@ -355,10 +354,10 @@ function ProductsContent() {
             {products.length > 0 ? `${products.length} exotic varieties` : "Exotic varieties"} — hand-picked and delivered twice a week to Pune & Mumbai.
           </p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href={waOrderUrl} target="_blank" rel="noreferrer"
+            {/* <a href={waOrderUrl} target="_blank" rel="noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "7px", padding: "13px 28px", fontSize: "14px", fontWeight: 700, borderRadius: "10px", background: "#25d366", color: "#fff", textDecoration: "none", fontFamily: "inherit" }}>
               💬 WhatsApp Order
-            </a>
+            </a> */}
           </div>
         </div>
       </div>

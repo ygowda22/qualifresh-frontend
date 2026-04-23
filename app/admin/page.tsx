@@ -300,7 +300,7 @@ export default function AdminPage() {
     if (!confirm(`Delete order ${orderNumber}? This cannot be undone.`)) return;
     setOrders(prev => prev.filter(o => o._id !== id)); // optimistic remove
     try {
-      const r = await fetch(`${API}/api/admin/orders/${id}`, { method: "DELETE", headers: authHeaders() });
+      const r = await fetch(`${API}/api/orders/${id}`, { method: "DELETE", headers: authHeaders() });
       if (r.ok) {
         showToast("✓ Order deleted");
       } else {

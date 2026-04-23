@@ -27,11 +27,18 @@ export default function SiteNav({ activePage }: Props) {
   const navRef    = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Hydration guard — dynamic values (cart, user) come from localStorage and must
+  // only be read on the client. Until mounted, we render static defaults so that
+  // SSR output matches the initial client render and hydration succeeds.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   // Products (for search + cart display)
   const [products, setProducts] = useState<Product[]>([]);
 
   // Cart state — global context (hydrates from localStorage immediately; no refresh reset)
-  const { cart, setCart, addToCart, removeFromCart } = useCart();
+  const { cart: rawCart, setCart, addToCart, removeFromCart } = useCart();
+  const cart = mounted ? rawCart : {};
   const [showCart, setShowCart] = useState(false);
   const [cartEnabled, setCartEnabled] = useState(true);
 
@@ -323,6 +330,9 @@ export default function SiteNav({ activePage }: Props) {
   const phoneCleanV = regPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const phoneValid = /^[6-9]\d{9}$/.test(phoneCleanV);
 
+  // Guard dynamic values so SSR output matches initial client render (prevents hydration mismatch)
+  const displayUser = mounted ? user : null;
+
   const navLinks = [
     { label: "Home",      href: "/"          },
     { label: "Products",  href: "/products"  },
@@ -435,13 +445,13 @@ export default function SiteNav({ activePage }: Props) {
           </div>
 
           {/* Sign In / User */}
-          {user ? (
+          {displayUser ? (
             <>
               {/* Desktop & Tablet (≥769px): state-controlled click dropdown */}
               <div className="sn-user-dropdown-wrap" ref={dropRef}>
                 <button className="sn-user-trigger" onClick={() => setDropOpen(v => !v)}>
                   <UserSvg />
-                  <span className="sn-user-name">Hi, {user.name.split(" ")[0]}</span>
+                  <span className="sn-user-name">Hi, {displayUser.name.split(" ")[0]}</span>
                   <span className="sn-drop-caret" style={{ transform: dropOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
                 </button>
                 <div className="sn-user-dropdown" style={{ display: dropOpen ? "block" : "none" }}>
@@ -782,16 +792,16 @@ export default function SiteNav({ activePage }: Props) {
       {/* ── Mobile/tablet slide-in menu (hamburger) — full screen ── */}
       {showAccountMenu && (
         <div style={{ position: "fixed", inset: 0, background: "#fff", zIndex: 500, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-          {user ? (
+          {displayUser ? (
             <>
               {/* Logged-in header */}
               <div style={{ padding: "1.5rem 1.2rem 1.3rem", background: "linear-gradient(135deg,#1a3c2e 0%,#2d8a4e 100%)", position: "relative", flexShrink: 0 }}>
                 <button onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); }} style={{ position: "absolute", top: "12px", right: "12px", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                 <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "rgba(255,255,255,0.18)", border: "2px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 800, color: "#fff", marginBottom: "10px" }}>
-                  {user.name.charAt(0).toUpperCase()}
+                  {displayUser.name.charAt(0).toUpperCase()}
                 </div>
-                <div style={{ fontWeight: 800, fontSize: "16px", color: "#fff", marginBottom: "3px" }}>Hi, {user.name.split(" ")[0]}!</div>
-                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", wordBreak: "break-all" }}>{user.email}</div>
+                <div style={{ fontWeight: 800, fontSize: "16px", color: "#fff", marginBottom: "3px" }}>Hi, {displayUser.name.split(" ")[0]}!</div>
+                <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", wordBreak: "break-all" }}>{displayUser.email}</div>
               </div>
               {/* Nav items */}
               <nav style={{ flex: 1 }}>

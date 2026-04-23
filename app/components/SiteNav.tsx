@@ -395,7 +395,7 @@ export default function SiteNav({ activePage }: Props) {
         <div className="sn-desk-nav">
           {navLinks.map(item => (
             <Link key={item.label} href={item.href}
-              className={`sn-link${`/${activePage}` === item.href ? " active" : ""}`}>
+              className={`sn-link${(`/${activePage}` === item.href || (item.href === "/" && pathname === "/")) ? " active" : ""}`}>
               {item.label}
             </Link>
           ))}

@@ -19,7 +19,9 @@ export default function ContactPage() {
   const [email, setEmail]   = useState("");
   const [phone, setPhone]   = useState("");
   const [msg, setMsg]       = useState("");
-  const [sent, setSent]     = useState(false);
+  const [sent, setSent]       = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   useEffect(() => { document.title = siteConfig.pageTitles.contact; }, []);
 
@@ -27,12 +29,19 @@ export default function ContactPage() {
   const phoneOk  = !phone || /^[6-9]\d{9}$/.test(phone.replace(/\s+/g, "").replace(/^(\+91|91)/, ""));
   const canSend  = name.trim() && email.trim() && emailOk && msg.trim() && phoneOk;
 
-  function handleSubmit() {
-    if (!canSend) return;
-    const subject = encodeURIComponent(`QualiFresh Enquiry from ${name}`);
-    const body    = encodeURIComponent(`Name: ${name}\nEmail: ${email}${phone ? `\nPhone: ${phone}` : ""}\n\nMessage:\n${msg}`);
-    window.open(`mailto:${siteConfig.email}?subject=${subject}&body=${body}`, "_blank");
-    setSent(true);
+  async function handleSubmit() {
+    if (!canSend || sending) return;
+    setSending(true); setSendError("");
+    try {
+      const r = await fetch("/backend/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), phone: phone.trim(), message: msg.trim() }),
+      });
+      if (!r.ok) { const d = await r.json(); setSendError(d.message || "Failed to send. Please try again."); return; }
+      setSent(true);
+    } catch { setSendError("Network error. Please try again."); }
+    finally { setSending(false); }
   }
 
   return (
@@ -160,8 +169,8 @@ export default function ContactPage() {
             {sent ? (
               <div style={{ textAlign: "center", padding: "2rem 0" }}>
                 <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Email Client Opened!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Message Sent!</h2>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>We received your message and will reply to your email within a few hours.</p>
                 <button onClick={() => { setSent(false); setName(""); setEmail(""); setPhone(""); setMsg(""); }} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Send Another</button>
               </div>
             ) : (
@@ -197,8 +206,9 @@ export default function ContactPage() {
                       style={{ width: "100%", padding: "10px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", fontFamily: "inherit", resize: "vertical" }}
                     />
                   </div>
-                  <button onClick={handleSubmit} disabled={!canSend} className="btn-g" style={{ padding: "13px", fontSize: "14.5px" }}>
-                    Send Message →
+                  {sendError && <p style={{ fontSize: "12px", color: "#ef4444", margin: "0" }}>{sendError}</p>}
+                  <button onClick={handleSubmit} disabled={!canSend || sending} className="btn-g" style={{ padding: "13px", fontSize: "14.5px" }}>
+                    {sending ? "Sending…" : "Send Message →"}
                   </button>
                   <div style={{ textAlign: "center" }}>
                     <a href={`https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent("Hi QualiFresh! I have a question.")}`}

@@ -91,6 +91,7 @@ export default function Home() {
   const [contactMsg, setContactMsg]     = useState("");
   const [contactSending, setContactSending] = useState(false);
   const [contactSent, setContactSent]   = useState(false);
+  const [contactError, setContactError] = useState("");
 
   // ── Auth modal ─────────────────────────────────────────────────────────────
   const [authTab, setAuthTab]           = useState<"login"|"register"|"forgot">("login");
@@ -1201,20 +1202,20 @@ export default function Home() {
       {/* ═══ CONTACT MODAL (mailto — opens user's email client) ═══ */}
       {showContactModal && (
         <>
-          <div onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); setContactSent(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
+          <div onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); setContactSent(false); setContactError(""); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
             {contactSent ? (
               <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
                 <div style={{ fontSize: "52px", marginBottom: "14px" }}>✅</div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Email Client Opened!</h2>
-                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>Your email app should have opened with your message pre-filled. Hit send from there!</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#166534", margin: "0 0 8px" }}>Message Sent!</h2>
+                <p style={{ fontSize: "13.5px", color: "#6b7280", marginBottom: "20px" }}>We received your message and will reply within a few hours.</p>
                 <button onClick={() => { setShowContactModal(false); setContactSent(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); }} className="btn-g" style={{ padding: "11px 28px", fontSize: "14px" }}>Close</button>
               </div>
             ) : (
               <>
                 {/* Header with logo */}
                 <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
-                  <button onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+                  <button onClick={() => { setShowContactModal(false); setContactName(""); setContactEmail(""); setContactMobile(""); setContactMsg(""); setContactError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
                   <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
@@ -1257,22 +1258,24 @@ export default function Home() {
                     <>
                       {contactEmail && !emailOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid email address</p>}
                       {contactMobile && !phoneOk && <p style={{ color: "#ef4444", fontSize: "12px", margin: "4px 0 0" }}>Please enter a valid 10-digit mobile number</p>}
-                      <button disabled={!canSend}
-                        onClick={() => {
-                          if (!canSend) return;
-                          const body = [
-                            `Name: ${contactName || "Not provided"}`,
-                            `Email: ${contactEmail}`,
-                            `Phone: ${contactMobile || "Not provided"}`,
-                            ``,
-                            `Message:`,
-                            contactMsg,
-                          ].join("\n");
-                          window.open(`mailto:${siteConfig.email}?subject=${encodeURIComponent("QualiFresh Website Enquiry")}&body=${encodeURIComponent(body)}`);
-                          setContactSent(true);
+                      {contactError && <p style={{ fontSize: "12px", color: "#ef4444", margin: "4px 0 0" }}>{contactError}</p>}
+                      <button disabled={!canSend || contactSending}
+                        onClick={async () => {
+                          if (!canSend || contactSending) return;
+                          setContactSending(true); setContactError("");
+                          try {
+                            const r = await fetch("/backend/api/contact", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ name: contactName.trim() || "Not provided", email: contactEmail.trim(), phone: contactMobile.trim(), message: contactMsg.trim() }),
+                            });
+                            if (!r.ok) { const d = await r.json(); setContactError(d.message || "Failed to send. Please try again."); return; }
+                            setContactSent(true);
+                          } catch { setContactError("Network error. Please try again."); }
+                          finally { setContactSending(false); }
                         }}
-                        style={{ width: "100%", marginTop: "14px", padding: "12px", fontSize: "14px", background: !canSend ? "#e5e7eb" : "#2d8a4e", color: !canSend ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: !canSend ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
-                        <MailSvg size={16} color={!canSend ? "#9ca3af" : "#fff"} /> Open Email to Send
+                        style={{ width: "100%", marginTop: "14px", padding: "12px", fontSize: "14px", background: (!canSend || contactSending) ? "#e5e7eb" : "#2d8a4e", color: (!canSend || contactSending) ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: (!canSend || contactSending) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "7px" }}>
+                        <MailSvg size={16} color={(!canSend || contactSending) ? "#9ca3af" : "#fff"} /> {contactSending ? "Sending…" : "Send Message"}
                       </button>
                       <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", marginTop: "8px" }}>
                         Or reach us directly at{" "}

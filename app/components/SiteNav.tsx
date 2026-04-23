@@ -12,19 +12,19 @@ interface Product { _id: string; name: string; price: number; slug: string; imag
 const { delivery: DEL } = siteConfig;
 
 function CartSvg() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>;
 }
 function UserSvg() {
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
 }
 function WhatsAppIcon({ size = 16 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>;
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>;
 }
 
 export default function SiteNav({ activePage }: Props) {
-  const router    = useRouter();
-  const pathname  = usePathname();
-  const navRef    = useRef<HTMLElement>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Hydration guard — dynamic values (cart, user) come from localStorage and must
@@ -43,27 +43,27 @@ export default function SiteNav({ activePage }: Props) {
   const [cartEnabled, setCartEnabled] = useState(true);
 
   // Checkout flow (step 1 = cart, step 2 = form, step 3 = payment, step 4 = confirmed)
-  const [cartStep, setCartStep]       = useState<1|2|3|4>(1);
-  const [payMethod, setPayMethod]     = useState<"cod"|"upi"|"card">("cod");
-  const [ckName, setCkName]           = useState("");
-  const [ckEmail, setCkEmail]         = useState("");
-  const [ckPhone, setCkPhone]         = useState("");
-  const [ckAddress, setCkAddress]     = useState("");
-  const [ckCity, setCkCity]           = useState("Pune");
-  const [ckSlot, setCkSlot]           = useState("Wednesday");
-  const [ckNotes, setCkNotes]         = useState("");
-  const [ckLoading, setCkLoading]     = useState(false);
-  const [ckOrderNum, setCkOrderNum]   = useState("");
-  const [ckError, setCkError]         = useState("");
+  const [cartStep, setCartStep] = useState<1 | 2 | 3 | 4>(1);
+  const [payMethod, setPayMethod] = useState<"cod" | "upi" | "card">("cod");
+  const [ckName, setCkName] = useState("");
+  const [ckEmail, setCkEmail] = useState("");
+  const [ckPhone, setCkPhone] = useState("");
+  const [ckAddress, setCkAddress] = useState("");
+  const [ckCity, setCkCity] = useState("Pune");
+  const [ckSlot, setCkSlot] = useState("Wednesday");
+  const [ckNotes, setCkNotes] = useState("");
+  const [ckLoading, setCkLoading] = useState(false);
+  const [ckOrderNum, setCkOrderNum] = useState("");
+  const [ckError, setCkError] = useState("");
 
   // Contact support modal (global — replaces mailto FAB on all pages)
   const [showContactModal, setShowContactModal] = useState(false);
-  const [contactName, setContactName]   = useState("");
+  const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactMobile, setContactMobile] = useState("");
-  const [contactMsg, setContactMsg]     = useState("");
+  const [contactMsg, setContactMsg] = useState("");
   const [contactSending, setContactSending] = useState(false);
-  const [contactSent, setContactSent]   = useState(false);
+  const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState("");
 
   function closeContactModal() {
@@ -90,17 +90,17 @@ export default function SiteNav({ activePage }: Props) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Login modal
-  const [showLogin, setShowLogin]   = useState(false);
-  const [authTab, setAuthTab]       = useState<"login" | "register" | "forgot">("login");
-  const [authEmail, setAuthEmail]   = useState("");
-  const [authPass, setAuthPass]     = useState("");
-  const [showPass, setShowPass]     = useState(false);
-  const [showPass2, setShowPass2]   = useState(false);
-  const [regName, setRegName]       = useState("");
-  const [regPhone, setRegPhone]     = useState("");
-  const [regPass2, setRegPass2]     = useState("");
-  const [authError, setAuthError]         = useState("");
-  const [emailFieldError, setEmailFieldError]     = useState("");
+  const [showLogin, setShowLogin] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "register" | "forgot">("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPass, setAuthPass] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showPass2, setShowPass2] = useState(false);
+  const [regName, setRegName] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regPass2, setRegPass2] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [emailFieldError, setEmailFieldError] = useState("");
   const [passwordFieldError, setPasswordFieldError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
@@ -116,9 +116,9 @@ export default function SiteNav({ activePage }: Props) {
           const cache = JSON.stringify(prods.map((p: Product) => ({ _id: p._id, name: p.name, price: p.price, slug: p.slug })));
           localStorage.setItem("qf_products_cache", cache);
           window.dispatchEvent(new StorageEvent("storage", { key: "qf_products_cache", newValue: cache }));
-        } catch {}
+        } catch { }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // ── Load user + cart + settings from localStorage ───────────────────────────
@@ -174,7 +174,7 @@ export default function SiteNav({ activePage }: Props) {
     fetch("/backend/api/users/cart", { headers: { Authorization: `Bearer ${user.token}` } })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.cart && typeof d.cart === "object" && Object.keys(d.cart).length > 0) setCart(d.cart as Record<string, number>); })
-      .catch(() => {});
+      .catch(() => { });
   }, [user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On every cart change: persist to backend so it survives cross-device/cross-browser refresh
@@ -183,19 +183,19 @@ export default function SiteNav({ activePage }: Props) {
     if (!user?.token) return;
     if (JSON.stringify(cart) === JSON.stringify(prevCartRef.current)) return;
     prevCartRef.current = cart;
-    saveCartToBackend(user.token, cart).catch(() => {});
+    saveCartToBackend(user.token, cart).catch(() => { });
   }, [cart, user?.token]); // eslint-disable-line react-hooks/exhaustive-deps
   // addToCart / removeFromCart / setCart come from CartContext
 
-  const cartItems    = products.filter(p => (cart[p._id] || 0) > 0);
-  const cartCount    = Object.values(cart).reduce((a, b) => a + b, 0);
-  const cartTotal    = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
+  const cartItems = products.filter(p => (cart[p._id] || 0) > 0);
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
+  const cartTotal = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;
-  const grandTotal   = cartTotal + deliveryCost;
+  const grandTotal = cartTotal + deliveryCost;
 
   const ckPhoneClean = ckPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const ckPhoneValid = /^[6-9]\d{9}$/.test(ckPhoneClean);
-  const ckCanSubmit  = ckName.trim() !== "" && ckPhone.trim() !== "" && ckPhoneValid && ckAddress.trim() !== "";
+  const ckCanSubmit = ckName.trim() !== "" && ckPhone.trim() !== "" && ckPhoneValid && ckAddress.trim() !== "";
 
   function closeCart() { setShowCart(false); setCartStep(1); setCkError(""); }
   function openCheckout() {
@@ -206,12 +206,12 @@ export default function SiteNav({ activePage }: Props) {
 
   const waOrderUrl = cartItems.length > 0
     ? `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
-        "Hi QualiFresh! I'd like to order:\n" +
-        cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
-        `\n\nTotal: ₹${grandTotal}${deliveryCost === 0 ? " (Free delivery!)" : ""}` +
-        (ckName ? `\n\nName: ${ckName}` : "") +
-        (ckPhone ? `\nPhone: ${ckPhone}` : "")
-      )}`
+      "Hi QualiFresh! I'd like to order:\n" +
+      cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
+      `\n\nTotal: ₹${grandTotal}${deliveryCost === 0 ? " (Free delivery!)" : ""}` +
+      (ckName ? `\n\nName: ${ckName}` : "") +
+      (ckPhone ? `\nPhone: ${ckPhone}` : "")
+    )}`
     : `https://wa.me/${siteConfig.whatsapp}`;
 
   function getIdFromToken(token: string): string | undefined {
@@ -233,7 +233,7 @@ export default function SiteNav({ activePage }: Props) {
       });
       const d = await r.json();
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
-      fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
+      fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => { });
       setCkOrderNum(d.orderNumber);
       setCartStep(4);
       setCart({});
@@ -349,11 +349,11 @@ export default function SiteNav({ activePage }: Props) {
   const displayUser = mounted ? user : null;
 
   const navLinks = [
-    { label: "Home",      href: "/"          },
-    { label: "Products",  href: "/products"  },
-    { label: "About Us",  href: "/about-us"  },
+    { label: "Home", href: "/" },
+    { label: "Products", href: "/products" },
+    { label: "About Us", href: "/about-us" },
     { label: "Our Farms", href: "/our-farms" },
-    { label: "Contact",   href: "/contact"   },
+    { label: "Contact", href: "/contact" },
   ];
 
   const inputStyle: React.CSSProperties = {
@@ -471,10 +471,10 @@ export default function SiteNav({ activePage }: Props) {
                 </button>
                 <div className="sn-user-dropdown" style={{ display: dropOpen ? "block" : "none" }}>
                   <div className="sn-user-dropdown-inner">
-                    <Link href="/user/profile"   className="sn-drop-item" onClick={() => setDropOpen(false)}><span>👤</span> My Profile</Link>
-                    <Link href="/user/orders"    className="sn-drop-item" onClick={() => setDropOpen(false)}><span>📦</span> My Orders</Link>
+                    <Link href="/user/profile" className="sn-drop-item" onClick={() => setDropOpen(false)}><span>👤</span> My Profile</Link>
+                    <Link href="/user/orders" className="sn-drop-item" onClick={() => setDropOpen(false)}><span>📦</span> My Orders</Link>
                     <Link href="/user/addresses" className="sn-drop-item" onClick={() => setDropOpen(false)}><span>📍</span> Addresses</Link>
-                    <Link href="/user/wishlist"  className="sn-drop-item" onClick={() => setDropOpen(false)}><span>❤️</span> Wishlist</Link>
+                    <Link href="/user/wishlist" className="sn-drop-item" onClick={() => setDropOpen(false)}><span>❤️</span> Wishlist</Link>
                     <div className="sn-drop-divider" />
                     <button className="sn-drop-item sn-drop-signout" onClick={() => { setDropOpen(false); logout(); }}>
                       <span>🚪</span> Sign Out
@@ -585,8 +585,28 @@ export default function SiteNav({ activePage }: Props) {
                       </div>
                     )}
                     <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder}
-                      style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginBottom: "8px" }}>
-                      {cartTotal >= DEL.minOrder ? "Proceed to Checkout →" : `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`}
+                      style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      {/* {cartTotal >= DEL.minOrder ? "Email Order →" : `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`} */}
+                      {cartTotal >= DEL.minOrder ? (
+                        <>
+                          {/* Email Icon */}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="18"
+                            height="18"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 
+        2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 
+        4-8 5-8-5V6l8 5 8-5v2z" />
+                          </svg>
+
+                          Email Order →
+                        </>
+                      ) : (
+                        `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`
+                      )}
                     </button>
                     <a href={waOrderUrl} target="_blank" rel="noreferrer"
                       style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "11px", background: "#25d366", color: "#fff", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", textDecoration: "none" }}>
@@ -696,10 +716,10 @@ export default function SiteNav({ activePage }: Props) {
                 {/* Payment method selector */}
                 <p style={{ fontSize: "11.5px", fontWeight: 700, color: "#374151", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Select Payment Method</p>
                 {([
-                  { id: "cod",  label: "Cash on Delivery", sub: "Pay when your order arrives",      icon: "💵" },
-                  { id: "upi",  label: "UPI / GPay",       sub: "Coming soon — not yet active",     icon: "📱" },
-                  { id: "card", label: "Card Payment",     sub: "Coming soon — not yet active",     icon: "💳" },
-                ] as { id: "cod"|"upi"|"card"; label: string; sub: string; icon: string }[]).map(m => (
+                  { id: "cod", label: "Cash on Delivery", sub: "Pay when your order arrives", icon: "💵" },
+                  { id: "upi", label: "UPI / GPay", sub: "Coming soon — not yet active", icon: "📱" },
+                  { id: "card", label: "Card Payment", sub: "Coming soon — not yet active", icon: "💳" },
+                ] as { id: "cod" | "upi" | "card"; label: string; sub: string; icon: string }[]).map(m => (
                   <div key={m.id} onClick={() => setPayMethod(m.id)}
                     style={{ display: "flex", alignItems: "center", gap: "12px", padding: "11px 14px", borderRadius: "10px", border: `2px solid ${payMethod === m.id ? "#2d8a4e" : "#e5e7eb"}`, background: payMethod === m.id ? "#f0fdf4" : "#fff", marginBottom: "8px", cursor: m.id === "cod" ? "pointer" : "default", opacity: m.id !== "cod" ? 0.55 : 1, transition: "all .18s" }}>
                     <span style={{ fontSize: "22px", lineHeight: 1 }}>{m.icon}</span>
@@ -755,8 +775,8 @@ export default function SiteNav({ activePage }: Props) {
         className={`qf-fab qf-fab-mail${cartEnabled && cartCount > 0 && !showCart ? " cart-active" : ""}`}
         style={{ cursor: "pointer" }}>
         <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+          <polyline points="22,6 12,13 2,6" />
         </svg>
       </button>
 
@@ -782,9 +802,9 @@ export default function SiteNav({ activePage }: Props) {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {([
-                    { label: "Your Name",     placeholder: "e.g. Priya Sharma", value: contactName,   set: setContactName,   type: "text" },
-                    { label: "Your Email",    placeholder: "your@email.com",     value: contactEmail,  set: setContactEmail,  type: "email", required: true },
-                    { label: "Mobile Number", placeholder: "e.g. 9876543210",    value: contactMobile, set: setContactMobile, type: "tel" },
+                    { label: "Your Name", placeholder: "e.g. Priya Sharma", value: contactName, set: setContactName, type: "text" },
+                    { label: "Your Email", placeholder: "your@email.com", value: contactEmail, set: setContactEmail, type: "email", required: true },
+                    { label: "Mobile Number", placeholder: "e.g. 9876543210", value: contactMobile, set: setContactMobile, type: "tel" },
                   ] as { label: string; placeholder: string; value: string; set: (v: string) => void; type: string; required?: boolean }[]).map(f => (
                     <div key={f.label}>
                       <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>
@@ -840,7 +860,7 @@ export default function SiteNav({ activePage }: Props) {
       {/* ── Floating cart button (visible on all SiteNav pages) ── */}
       {cartEnabled && cartCount > 0 && !showCart && (
         <button onClick={() => setShowCart(true)} className="qf-fab qf-fab-cart" style={{ display: "flex" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
           {cartCount} · <strong>₹{cartTotal}</strong>
         </button>
       )}
@@ -917,10 +937,10 @@ export default function SiteNav({ activePage }: Props) {
                 {profileExpanded && (
                   <>
                     {([
-                      { icon: "👤", label: "Profile",    href: "/user/profile"   },
-                      { icon: "📦", label: "My Orders",  href: "/user/orders"    },
-                      { icon: "📍", label: "Addresses",  href: "/user/addresses" },
-                      { icon: "❤️", label: "Wishlist",   href: "/user/wishlist"  },
+                      { icon: "👤", label: "Profile", href: "/user/profile" },
+                      { icon: "📦", label: "My Orders", href: "/user/orders" },
+                      { icon: "📍", label: "Addresses", href: "/user/addresses" },
+                      { icon: "❤️", label: "Wishlist", href: "/user/wishlist" },
                     ]).map(item => (
                       <Link key={item.label} href={item.href}
                         onClick={() => { setShowAccountMenu(false); setProfileExpanded(false); }}
@@ -966,17 +986,17 @@ export default function SiteNav({ activePage }: Props) {
               {/* Guest nav links — no login button here, Sign In stays in navbar */}
               <nav style={{ flex: 1 }}>
                 {([
-                  { icon: "🏠", label: "Home",      href: "/"          },
-                  { icon: "🛒", label: "Products",  href: "/products"  },
-                  { icon: "🌿", label: "About Us",  href: "/about-us"  },
+                  { icon: "🏠", label: "Home", href: "/" },
+                  { icon: "🛒", label: "Products", href: "/products" },
+                  { icon: "🌿", label: "About Us", href: "/about-us" },
                   { icon: "🚜", label: "Our Farms", href: "/our-farms" },
-                  { icon: "📞", label: "Contact",   href: "/contact"   },
+                  { icon: "📞", label: "Contact", href: "/contact" },
                 ]).map(item => (
                   <button key={item.label} onClick={() => { setShowAccountMenu(false); router.push(item.href); }}
                     style={{ display: "flex", alignItems: "center", gap: "14px", padding: "15px 1.4rem", color: "#1a3c2e", fontSize: "14.5px", fontWeight: 600, background: `/${activePage}` === item.href ? "#f0fdf4" : "none", border: "none", borderBottom: "1px solid #f3f4f6", width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                     <span style={{ fontSize: "18px", width: "26px", textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
                     {item.label}
-                    </button>
+                  </button>
                 ))}
               </nav>
             </>

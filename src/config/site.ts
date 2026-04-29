@@ -21,7 +21,7 @@ export const siteConfig = {
   phoneDisplay:"7276369948",
   email:       "rohit@qualifresh.in",
   whatsapp:    "917276369948",  // country code + number, no spaces
-  address:     "Pune, Maharashtra, India",
+  address:     "Pune, Maharashtra",
 
   // ── Social Media ───────────────────────────────────────────
   social: {
@@ -36,8 +36,8 @@ export const siteConfig = {
     freeDeliveryAbove:    600,
     deliveryCharge:       50,
     freeMicrogreensAbove: 1500,
-    days:                 ["Wednesday", "Saturday"],
-    orderCutoff:          { wednesday: "Tuesday", saturday: "Friday" },
+    days:                 ["Wed", "Sat"],
+    orderCutoff:          { wednesday: "Tue", saturday: "Fri" },
   },
 
   // ── Hero Section ───────────────────────────────────────────

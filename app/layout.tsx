@@ -4,12 +4,14 @@ import GlobalNav from "./components/GlobalNav";
 import GlobalTicker from "./components/GlobalTicker";
 import { CartProvider } from "./context/CartContext";
 
+const siteUrl = "https://qualifresh.in";
+
 export const metadata: Metadata = {
   title: {
-    default:  "QualiFresh — Fresh Exotic Vegetables, Pune",
+    default:  "QualiFresh — Quality First",
     template: "%s | QualiFresh",
   },
-  description: "Premium Korean, Exotic & Thai vegetables delivered twice a week in Pune & Mumbai. Farm to doorstep freshness guaranteed.",
+  description: "Premium farm-fresh produce delivered to your doorstep.",
   keywords: ["exotic vegetables", "Korean vegetables", "Thai vegetables", "Pune delivery", "farm fresh", "QualiFresh"],
   authors: [{ name: "QualiFresh" }],
   icons: {
@@ -18,11 +20,19 @@ export const metadata: Metadata = {
     apple:    "/logo.png",
   },
   openGraph: {
-    title:       "QualiFresh — Fresh Exotic Vegetables, Pune",
-    description: "Premium Korean, Exotic & Thai vegetables delivered twice a week in Pune & Mumbai.",
+    title:       "QualiFresh — Quality First",
+    description: "Premium farm-fresh produce delivered to your doorstep.",
     type:        "website",
     locale:      "en_IN",
-    images:      [{ url: "/logo.png" }],
+    url:         siteUrl,
+    images:      [{ url: `${siteUrl}/logo.png`, width: 512, height: 512, alt: "QualiFresh Logo" }],
+    siteName:    "QualiFresh",
+  },
+  twitter: {
+    card:        "summary_large_image",
+    title:       "QualiFresh — Quality First",
+    description: "Premium farm-fresh produce delivered to your doorstep.",
+    images:      [`${siteUrl}/logo.png`],
   },
 };
 

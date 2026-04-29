@@ -189,9 +189,9 @@ export default function Home() {
       });
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Responsive products per page (4 rows: 8 on tablet/mobile, 16 desktop) ─
+  // ── Responsive products per page (unlimited rows on mobile) ─
   useEffect(() => {
-    const update = () => setPerPage(window.innerWidth <= 480 ? 6 : window.innerWidth <= 1024 ? 8 : PER_PAGE);
+    const update = () => setPerPage(window.innerWidth <= 767 ? 20 : window.innerWidth <= 1023 ? 12 : PER_PAGE);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -476,9 +476,9 @@ export default function Home() {
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body{overflow-x:hidden;-webkit-text-size-adjust:100%;}
 
-        @media(max-width: 1024px) {
-          .prod-grid { grid-template-columns: repeat(2,1fr) !important; }
-        }
+        /* Product grid - Desktop: 5 cols */
+        .prod-grid { gap: 1.1rem; }
+        @media(min-width:1024px) { .prod-grid { grid-template-columns: repeat(5,1fr); } }
 
         @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse   { 0%,100%{box-shadow:0 6px 24px rgba(45,138,78,.45)} 50%{box-shadow:0 6px 32px rgba(45,138,78,.7)} }
@@ -517,8 +517,9 @@ export default function Home() {
           .hero-h1{font-size:2.2rem!important;}
           .hero-sub{font-size:14px!important;}
           .cat-grid{grid-template-columns:repeat(4,1fr)!important}
-          .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:1rem!important;}
         }
+        /* Tablet: 3 cols */
+        @media(min-width:768px) and (max-width:1023px) { .prod-grid { grid-template-columns: repeat(3,1fr) !important; gap: 12px !important; } }
         @media(max-width:1024px){
           .hero-inner{padding:3rem 1rem 2rem!important;min-height:unset!important}
           .hero-inner > div:first-child{max-width:100%!important;width:100%!important;}
@@ -532,7 +533,6 @@ export default function Home() {
           .cat-card-img{height:65px!important}
           .cat-card-label{font-size:9.5px!important;padding:5px 3px!important}
           .prod-section{padding:1.5rem 1rem 4rem!important}
-          .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:.75rem!important}
           .prod-name{font-size:12.5px!important}
           .why-section{padding:2rem 1rem!important}
           .why-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
@@ -554,9 +554,10 @@ export default function Home() {
           .hero-badge{font-size:10px!important;letter-spacing:0.04em!important;padding:5px 12px!important;}
           .fade-up{max-width:100%!important;width:100%!important;}
         }
-        @media(max-width:480px){
+        /* Mobile: 2 cols */
+        @media(max-width:767px){
+          .prod-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
           .cat-grid>div{width:70px!important}
-          .prod-grid{grid-template-columns:repeat(2,1fr)!important}
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
@@ -1161,90 +1162,83 @@ export default function Home() {
       {/* ═══ FOOTER ═══ */}
       <footer ref={footerRef} style={{ background: "linear-gradient(180deg,#081812 0%,#060f0c 100%)", color: "#fff", borderTop: "1px solid rgba(45,138,78,0.15)" }}>
         {/* Footer wave top */}
-        <div style={{ lineHeight: 0, marginTop: "-1px" }}>
-          <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "40px" }}>
-            <path d="M0,20 C360,40 720,0 1080,20 C1260,30 1360,14 1440,20 L1440,0 L0,0 Z" fill="#f4f6f0" />
-          </svg>
-        </div>
-        <div className="footer-wrap" style={{ maxWidth: "1200px", margin: "0 auto", padding: "2.5rem 1.5rem 1.5rem" }}>
-          <div className="footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
-            <div>
-              <div style={{ marginBottom: "14px" }}><QFLogo height={38} dark /></div>
-              <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
-              <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
-                {siteConfig.social.instagram && (
-                  <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
-                    style={{ width: "36px", height: "36px", background: "linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
-                    <InstagramIcon />
-                  </a>
-                )}
-                {siteConfig.social.facebook && (
-                  <a href={siteConfig.social.facebook} target="_blank" rel="noreferrer" aria-label="Facebook"
-                    style={{ width: "36px", height: "36px", background: "#1877f2", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
-                    <FacebookIcon />
-                  </a>
-                )}
-                <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"
-                  style={{ width: "36px", height: "36px", background: "#25d366", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
-                  <WhatsAppIcon size={18} />
-                </a>
-              </div>
-            </div>
-            <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
-              {([
-                { label: "Home",       href: null,          scroll: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-                { label: "Products",   href: "/products",   scroll: null },
-                { label: "About Us",   href: "/about-us",   scroll: null },
-                { label: "Our Farms",  href: "/our-farms",  scroll: null },
-                { label: "Contact Us", href: "/contact",    scroll: null },
-              ] as const).map(link => (
-                link.href ? (
-                  <a key={link.label} href={link.href}
-                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
-                    {link.label}
-                  </a>
-                ) : (
-                  <a key={link.label} href="#" onClick={e => { e.preventDefault(); link.scroll?.(); }}
-                    style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
-                    {link.label}
-                  </a>
-                )
-              ))}
-            </div>
-            <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
-                <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
-                <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
-                <div>📍 {siteConfig.address}</div>
-                <div>📅 {DEL.days.join(" & ")}</div>
-              </div>
-            </div>
-            <div>
-              <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
-              <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
-                <div>📦 Min order: ₹{DEL.minOrder}</div>
-                <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
-                <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
-                <div>⏰ Order by {DEL.orderCutoff.wednesday} for Wed</div>
-                <div>⏰ Order by {DEL.orderCutoff.saturday} for Sat</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
-              © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
-            </p>
-            <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
-              {siteConfig.footer.tagline}
-            </p>
-          </div>
-        </div>
+       <div style={{ lineHeight: 0, marginTop: "-1px" }}>
+                 <svg viewBox="0 0 1440 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style={{ display: "block", width: "100%", height: "40px" }}>
+                   <path d="M0,20 C360,40 720,0 1080,20 C1260,30 1360,14 1440,20 L1440,0 L0,0 Z" fill="#f4f6f0" />
+                 </svg>
+               </div>
+               <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2.5rem 1.5rem 1.5rem" }}>
+                 <div className="footer-grid-f" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
+                   <div>
+                     <div style={{ marginBottom: "14px" }}>
+                       <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                     </div>
+                     <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
+                     <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>
+                       {siteConfig.social.instagram && (
+                         <a href={siteConfig.social.instagram} target="_blank" rel="noreferrer" aria-label="Instagram"
+                           style={{ width: "36px", height: "36px", background: "linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                           <InstagramIcon />
+                         </a>
+                       )}
+                       {siteConfig.social.facebook && (
+                         <a href={siteConfig.social.facebook} target="_blank" rel="noreferrer" aria-label="Facebook"
+                           style={{ width: "36px", height: "36px", background: "#1877f2", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                           <FacebookIcon />
+                         </a>
+                       )}
+                       <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"
+                         style={{ width: "36px", height: "36px", background: "#25d366", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                         <WhatsAppIcon size={18} />
+                       </a>
+                     </div>
+                   </div>
+                   <div>
+                     <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Quick Links</h4>
+                     {[
+                       { label: "Home",       href: "/"          },
+                       { label: "Products",   href: "/products"  },
+                       { label: "About Us",   href: "/about-us"  },
+                       { label: "Our Farms",  href: "/our-farms" },
+                       { label: "Contact Us", href: "/contact"   },
+                     ].map(link => (
+                       <a key={link.label} href={link.href}
+                         style={{ display: "block", color: "rgba(255,255,255,0.5)", fontSize: "13px", marginBottom: "9px", textDecoration: "none", transition: "color .2s" }}
+                         onMouseEnter={e => (e.currentTarget.style.color = "#f0c040")}
+                         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}>
+                         {link.label}
+                       </a>
+                     ))}
+                   </div>
+                   <div>
+                     <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Contact</h4>
+                     <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
+                       <div>📞 <a href={`tel:${siteConfig.phone}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.phoneDisplay}</a></div>
+                       <div>✉️ <a href={`mailto:${siteConfig.email}`} style={{ color: "inherit", textDecoration: "none" }}>{siteConfig.email}</a></div>
+                       <div>📍 {siteConfig.address}</div>
+                       <div>📅 {DEL.days.join(" & ")}</div>
+                     </div>
+                   </div>
+                   <div>
+                     <h4 style={{ color: "#f0c040", fontWeight: 700, marginBottom: "14px", fontSize: "11px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Delivery Info</h4>
+                     <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)", lineHeight: 2 }}>
+                       <div>📦 Min order: ₹{DEL.minOrder}</div>
+                       <div>🚚 Free delivery above ₹{DEL.freeDeliveryAbove}</div>
+                       <div>🎁 Free microgreens above ₹{DEL.freeMicrogreensAbove}</div>
+                       <div>⏰ Order by {DEL.orderCutoff.wednesday} for Wed</div>
+                       <div>⏰ Order by {DEL.orderCutoff.saturday} for Sat</div>
+                     </div>
+                   </div>
+                 </div>
+                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
+                   <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
+                     © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
+                   </p>
+                   <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
+                     {siteConfig.footer.tagline}
+                   </p>
+                 </div>
+               </div>
       </footer>
     </div>
   );

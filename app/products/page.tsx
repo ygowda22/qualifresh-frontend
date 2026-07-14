@@ -6,7 +6,7 @@ import { useCart } from "../context/CartContext";
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
-  imageUrl: string; category: string; quantityLabel?: string; available?: boolean;
+  imageUrl: string; category: string; quantityLabel?: string; available?: boolean; stock?: number;
 }
 
 const { delivery: DEL } = siteConfig;
@@ -443,7 +443,7 @@ function ProductsContent() {
             <div className="p-grid">
               {paginated.map((p, i) => {
                 const qty = cart[p._id] || 0;
-                const inStock = p.available !== false;
+                const inStock = p.available !== false && p.stock !== 0;
                 return (
                   <div key={p._id} className="p-card"
                     style={{ animation: `pfadeUp .4s ${(i % perPage) * 0.03}s both` }}
@@ -479,6 +479,10 @@ function ProductsContent() {
                             style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", padding: "7px", background: "#25d366", color: "#fff", borderRadius: "8px", textAlign: "center", textDecoration: "none", fontSize: "12.5px", fontWeight: 700 }}>
                             WhatsApp Order
                           </a>
+                        ) : !inStock ? (
+                          <button className="p-add-btn" disabled>
+                            Out of Stock
+                          </button>
                         ) : qty > 0 ? (
                           <div className="p-qty-ctrl">
                             <button className="p-qty-btn p-qty-minus" onClick={() => remove(p._id)}>−</button>
@@ -486,8 +490,8 @@ function ProductsContent() {
                             <button className="p-qty-btn p-qty-plus" onClick={() => add(p._id)}>+</button>
                           </div>
                         ) : (
-                          <button className="p-add-btn" onClick={() => inStock && add(p._id)} disabled={!inStock}>
-                            {inStock ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
+                          <button className="p-add-btn" onClick={() => add(p._id)}>
+                            <CartSvg /> Add to Cart
                           </button>
                         )}
                       </div>

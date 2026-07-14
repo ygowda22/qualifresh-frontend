@@ -6,7 +6,7 @@ const { delivery: DEL } = siteConfig;
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
-  imageUrl?: string; quantityLabel?: string;
+  imageUrl?: string; quantityLabel?: string; stock?: number;
 }
 
 function WhatsAppIcon({ size = 16 }: { size?: number }) {
@@ -51,11 +51,20 @@ export default function CheckoutPage() {
   const cartTotal    = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;
   const grandTotal   = cartTotal + deliveryCost;
+  const hasOutOfStockItem = cartItems.some(p => p.stock === 0);
+
+  function removeItemFromCart(id: string) {
+    const updated = { ...cart };
+    delete updated[id];
+    setCart(updated);
+    localStorage.setItem("qf_cart", JSON.stringify(updated));
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: JSON.stringify(updated) }));
+  }
 
   // Validation
   const cleanPhone  = phone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const phoneValid  = /^[6-9]\d{9}$/.test(cleanPhone);
-  const canSubmit   = name.trim() !== "" && phone.trim() !== "" && phoneValid && address.trim() !== "" && slot !== "";
+  const canSubmit   = name.trim() !== "" && phone.trim() !== "" && phoneValid && address.trim() !== "" && slot !== "" && !hasOutOfStockItem;
 
   const waOrderUrl = cartItems.length > 0
     ? `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
@@ -223,6 +232,12 @@ export default function CheckoutPage() {
               </div>
             )}
 
+            {hasOutOfStockItem && (
+              <div style={{ marginTop: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626", fontWeight: 600 }}>
+                Out of Stock – Remove to Proceed
+              </div>
+            )}
+
             {apiError && (
               <div style={{ marginTop: "12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "13px", color: "#dc2626" }}>{apiError}</div>
             )}
@@ -238,8 +253,10 @@ export default function CheckoutPage() {
             {/* WhatsApp alternative */}
             <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6", textAlign: "center" }}>
               <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "10px" }}>Or order directly via WhatsApp</p>
-              <a href={waOrderUrl} target="_blank" rel="noreferrer"
-                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "#25d366", color: "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px" }}>
+              <a href={hasOutOfStockItem ? undefined : waOrderUrl} target={hasOutOfStockItem ? undefined : "_blank"} rel="noreferrer"
+                onClick={e => { if (hasOutOfStockItem) e.preventDefault(); }}
+                aria-disabled={hasOutOfStockItem}
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: hasOutOfStockItem ? "#e5e7eb" : "#25d366", color: hasOutOfStockItem ? "#9ca3af" : "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px", cursor: hasOutOfStockItem ? "not-allowed" : "pointer" }}>
                 <WhatsAppIcon size={16} /> WhatsApp Order
               </a>
             </div>
@@ -264,16 +281,31 @@ export default function CheckoutPage() {
                 <>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
                     {cartItems.map(p => (
-                      <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 0", borderBottom: "1px solid #f3f4f6", gap: "10px" }}>
+                      <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 0", borderBottom: "1px solid #f3f4f6", gap: "10px", flexWrap: "wrap" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: "13px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                           {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>}
                           <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#6b7280" }}>₹{p.price} × {cart[p._id]}</p>
+                          {p.stock === 0 && (
+                            <p style={{ margin: "3px 0 0", fontWeight: 700, color: "#dc2626", fontSize: "11px" }}>Out of Stock – Remove to Proceed</p>
+                          )}
                         </div>
-                        <span style={{ fontWeight: 800, color: "#2d8a4e", fontSize: "14px", flexShrink: 0 }}>₹{p.price * cart[p._id]}</span>
+                        {p.stock === 0 ? (
+                          <button onClick={() => removeItemFromCart(p._id)}
+                            style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "6px", padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: "12px", flexShrink: 0 }}>
+                            Remove
+                          </button>
+                        ) : (
+                          <span style={{ fontWeight: 800, color: "#2d8a4e", fontSize: "14px", flexShrink: 0 }}>₹{p.price * cart[p._id]}</span>
+                        )}
                       </div>
                     ))}
                   </div>
+                  {hasOutOfStockItem && (
+                    <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "7px", padding: "8px 12px", fontSize: "12px", color: "#dc2626", marginTop: "10px", fontWeight: 600 }}>
+                      ⚠️ Remove out-of-stock items to proceed with checkout.
+                    </div>
+                  )}
 
                   {/* Totals */}
                   <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "2px solid #f0fdf4" }}>

@@ -7,7 +7,7 @@ import { fetchAndMergeCart, saveAndClearCart, saveCartToBackend } from "../lib/c
 import { useCart } from "../context/CartContext";
 
 interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"; }
-interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; }
+interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; stock?: number; }
 
 const { delivery: DEL } = siteConfig;
 
@@ -105,9 +105,9 @@ export default function SiteNav({ activePage }: Props) {
   const [authLoading, setAuthLoading] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
 
-  // ── Fetch products ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    fetch("/backend/api/products")
+  // ── Fetch products (also used to refresh live stock for the cart) ───────────
+  function refreshProducts() {
+    return fetch("/backend/api/products")
       .then(r => r.json())
       .then(d => {
         const prods = Array.isArray(d) ? d : [];
@@ -119,7 +119,20 @@ export default function SiteNav({ activePage }: Props) {
         } catch { }
       })
       .catch(() => { });
-  }, []);
+  }
+  useEffect(() => { refreshProducts(); }, []);
+
+  // Re-check live stock whenever the cart is opened, so admin stock changes
+  // (e.g. 0 → back in stock) aren't shown stale from the initial page-load fetch.
+  useEffect(() => { if (showCart) refreshProducts(); }, [showCart]);
+
+  // Re-check live stock whenever the user searches, so navbar search suggestions
+  // never show stale stock from the initial page-load fetch.
+  useEffect(() => {
+    if (search.trim().length <= 1) return;
+    const t = setTimeout(() => { refreshProducts(); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // ── Load user + cart + settings from localStorage ───────────────────────────
   useEffect(() => {
@@ -192,6 +205,13 @@ export default function SiteNav({ activePage }: Props) {
   const cartTotal = cartItems.reduce((s, p) => s + p.price * cart[p._id], 0);
   const deliveryCost = cartTotal >= DEL.freeDeliveryAbove ? 0 : cartTotal > 0 ? DEL.deliveryCharge : 0;
   const grandTotal = cartTotal + deliveryCost;
+  const hasOutOfStockItem = cartItems.some(p => p.stock === 0);
+
+  function removeItemFromCart(id: string) {
+    const updated = { ...cart };
+    delete updated[id];
+    setCart(updated);
+  }
 
   const ckPhoneClean = ckPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const ckPhoneValid = /^[6-9]\d{9}$/.test(ckPhoneClean);
@@ -199,6 +219,7 @@ export default function SiteNav({ activePage }: Props) {
 
   function closeCart() { setShowCart(false); setCartStep(1); setCkError(""); }
   function openCheckout() {
+    refreshProducts();
     if (user && !ckName) setCkName(user.name);
     if (user && !ckEmail) setCkEmail(user.email);
     setCartStep(2);
@@ -223,6 +244,7 @@ export default function SiteNav({ activePage }: Props) {
 
   async function placeOrder() {
     if (ckLoading || !ckCanSubmit) return;
+    if (hasOutOfStockItem) { setCkError("Remove out-of-stock items from your cart to proceed."); return; }
     setCkError(""); setCkLoading(true);
     try {
       const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
@@ -448,11 +470,17 @@ export default function SiteNav({ activePage }: Props) {
                   <div key={p._id} className="sn-suggestion-item">
                     <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
                     <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
-                    <button
-                      onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
-                      style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
-                      + Add
-                    </button>
+                    {p.stock === 0 ? (
+                      <span style={{ padding: "3px 10px", borderRadius: "6px", background: "#f3f4f6", color: "#9ca3af", fontWeight: 700, fontSize: "11px", flexShrink: 0, fontFamily: "inherit" }}>
+                        Out of Stock
+                      </span>
+                    ) : (
+                      <button
+                        onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
+                        style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
+                        + Add
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -547,7 +575,7 @@ export default function SiteNav({ activePage }: Props) {
                       </a>
                     </div>
                   ) : cartItems.map(p => (
-                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px" }}>
+                    <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px", flexWrap: "wrap" }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
                         {p.imageUrl && p.imageUrl.startsWith("http") ? (
                           <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
@@ -558,13 +586,23 @@ export default function SiteNav({ activePage }: Props) {
                           <p style={{ margin: "0 0 1px", fontWeight: 700, fontSize: "12.5px", color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                           {p.quantityLabel && <p style={{ margin: 0, fontSize: "11px", color: "#9ca3af" }}>{p.quantityLabel}</p>}
                           <p style={{ margin: "2px 0 0", fontWeight: 800, color: "#2d8a4e", fontSize: "13.5px" }}>₹{p.price * cart[p._id]}</p>
+                          {p.stock === 0 && (
+                            <p style={{ margin: "3px 0 0", fontWeight: 700, color: "#dc2626", fontSize: "11px" }}>Out of Stock – Remove to Proceed</p>
+                          )}
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
-                        <button onClick={() => removeFromCart(p._id)} style={{ background: "#f3f4f6", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>−</button>
-                        <span style={{ fontWeight: 800, minWidth: "18px", textAlign: "center", fontSize: "13px" }}>{cart[p._id]}</span>
-                        <button onClick={() => addToCart(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>+</button>
-                      </div>
+                      {p.stock === 0 ? (
+                        <button onClick={() => removeItemFromCart(p._id)}
+                          style={{ background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "6px", padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: "12px", flexShrink: 0 }}>
+                          Remove
+                        </button>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
+                          <button onClick={() => removeFromCart(p._id)} style={{ background: "#f3f4f6", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>−</button>
+                          <span style={{ fontWeight: 800, minWidth: "18px", textAlign: "center", fontSize: "13px" }}>{cart[p._id]}</span>
+                          <button onClick={() => addToCart(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "26px", height: "26px", cursor: "pointer", fontWeight: 800, fontSize: "14px" }}>+</button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -584,10 +622,17 @@ export default function SiteNav({ activePage }: Props) {
                         🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
                       </div>
                     )}
-                    <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder}
-                      style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                    {hasOutOfStockItem && (
+                      <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#dc2626", marginBottom: "10px", fontWeight: 600 }}>
+                        ⚠️ Out of Stock – Remove to Proceed
+                      </div>
+                    )}
+                    <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder || hasOutOfStockItem}
+                      style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                       {/* {cartTotal >= DEL.minOrder ? "Email Order →" : `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`} */}
-                      {cartTotal >= DEL.minOrder ? (
+                      {hasOutOfStockItem ? (
+                        "Remove Out of Stock Items"
+                      ) : cartTotal >= DEL.minOrder ? (
                         <>
                           {/* Email Icon */}
                           <svg
@@ -608,8 +653,10 @@ export default function SiteNav({ activePage }: Props) {
                         `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`
                       )}
                     </button>
-                    <a href={waOrderUrl} target="_blank" rel="noreferrer"
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "11px", background: "#25d366", color: "#fff", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", textDecoration: "none" }}>
+                    <a href={hasOutOfStockItem ? undefined : waOrderUrl} target={hasOutOfStockItem ? undefined : "_blank"} rel="noreferrer"
+                      onClick={e => { if (hasOutOfStockItem) e.preventDefault(); }}
+                      aria-disabled={hasOutOfStockItem}
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "11px", background: hasOutOfStockItem ? "#e5e7eb" : "#25d366", color: hasOutOfStockItem ? "#9ca3af" : "#fff", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", textDecoration: "none", cursor: hasOutOfStockItem ? "not-allowed" : "pointer" }}>
                       <WhatsAppIcon size={16} /> WhatsApp Order
                     </a>
                   </div>
@@ -887,11 +934,17 @@ export default function SiteNav({ activePage }: Props) {
                   <div key={p._id} className="sn-suggestion-item">
                     <span style={{ fontSize: "12.5px", color: "#111827", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</span>
                     <span style={{ fontSize: "12px", color: "#6b7280", flexShrink: 0, margin: "0 8px" }}>₹{p.price}</span>
-                    <button
-                      onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
-                      style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
-                      + Add
-                    </button>
+                    {p.stock === 0 ? (
+                      <span style={{ padding: "3px 10px", borderRadius: "6px", background: "#f3f4f6", color: "#9ca3af", fontWeight: 700, fontSize: "11px", flexShrink: 0, fontFamily: "inherit" }}>
+                        Out of Stock
+                      </span>
+                    ) : (
+                      <button
+                        onMouseDown={e => { e.preventDefault(); addToCart(p._id); setSearch(""); setSearchOpen(false); }}
+                        style={{ padding: "3px 10px", borderRadius: "6px", border: "none", background: "#2d8a4e", color: "#fff", fontWeight: 700, fontSize: "11px", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>
+                        + Add
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

@@ -736,7 +736,7 @@ export default function Home() {
                       )}
                       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,.2) 0%,transparent 55%)" }} />
                       <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock > 0 ? "rgba(22,163,74,.9)" : "rgba(220,38,38,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600 }}>
-                        {p.stock > 0 ? "In Stock" : "Out"}
+                        {p.stock > 0 ? "In Stock" : "Out of Stock"}
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(p._id); }}
                         title={wishlist.includes(p._id) ? "Remove from wishlist" : "Add to wishlist"}
@@ -759,16 +759,23 @@ export default function Home() {
                           <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb", fontSize: "12px", color: "#9ca3af", fontWeight: 500 }}>
                             Ordering paused
                           </div>
+                        ) : p.stock === 0 ? (
+                          <button disabled
+                            style={{ width: "100%", minHeight: "38px", padding: "6px 8px", fontSize: "13px", background: "#f3f4f6", color: "#9ca3af", border: "none", borderRadius: "8px", cursor: "not-allowed", fontWeight: 700, fontFamily: "inherit" }}>
+                            Out of Stock
+                          </button>
                         ) : qty > 0 ? (
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f0fdf4", borderRadius: "8px", padding: "0 8px", border: "1.5px solid #86efac", width: "100%" }}>
-                            <button onClick={() => remove(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>−</button>
+                            <button onClick={() => remove(p._id)}
+                              style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>−</button>
                             <span style={{ fontWeight: 800, color: "#166534", fontSize: "15px" }}>{qty}</span>
-                            <button onClick={() => add(p._id)} style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>+</button>
+                            <button onClick={() => add(p._id)}
+                              style={{ background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "6px", width: "28px", height: "28px", cursor: "pointer", fontSize: "16px", fontWeight: 800, flexShrink: 0 }}>+</button>
                           </div>
                         ) : (
-                          <button onClick={() => p.stock > 0 && add(p._id)} disabled={p.stock === 0}
-                            style={{ width: "100%", minHeight: "38px", padding: "6px 8px", fontSize: "13px", background: p.stock > 0 ? "#2d8a4e" : "#f3f4f6", color: p.stock > 0 ? "#fff" : "#9ca3af", border: "none", borderRadius: "8px", cursor: p.stock > 0 ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                            {p.stock > 0 ? <><CartSvg /> Add to Cart</> : "Out of Stock"}
+                          <button onClick={() => add(p._id)}
+                            style={{ width: "100%", minHeight: "38px", padding: "6px 8px", fontSize: "13px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: 700, fontFamily: "inherit", transition: "background .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                            <CartSvg /> Add to Cart
                           </button>
                         )}
                       </div>

@@ -5,7 +5,7 @@ import { siteConfig } from "../../src/config/site";
 import { saveAndClearCart } from "../lib/cartSync";
 import { useCart } from "../context/CartContext";
 
-interface UserData { name: string; email: string; token: string; phone?: string; }
+interface UserData { name: string; email: string; token: string; phone?: string; createdAt?: string; }
 interface OrderItem { name: string; quantity: number; price: number; }
 interface Order {
   _id: string; orderNumber: string; status: string; total: number; subtotal: number;
@@ -13,7 +13,7 @@ interface Order {
   items: OrderItem[]; createdAt: string;
 }
 interface Address { id: string; label: string; line1: string; city: string; pincode?: string; }
-interface WishProd { _id: string; name: string; price: number; imageUrl?: string; category: string; quantityLabel?: string; }
+interface WishProd { _id: string; name: string; price: number; imageUrl?: string; category: string; quantityLabel?: string; stock?: number; }
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b", confirmed: "#3b82f6", out_for_delivery: "#8b5cf6",
@@ -78,11 +78,9 @@ export default function UserPage() {
       setUser(u);
       loadOrders(u.token);
       loadWishlist(u.token);
+      loadProfile(u.token);
+      loadAddresses(u.token);
     } catch { router.push("/"); }
-    try {
-      const a = localStorage.getItem("qf_addresses");
-      if (a) setAddresses(JSON.parse(a));
-    } catch {}
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadOrders(token: string) {
@@ -95,6 +93,34 @@ export default function UserPage() {
       if (r.ok) { const d = await r.json(); setOrders(d.orders || d || []); }
     } catch { /* ignore */ }
     finally { setOrdersLoading(false); }
+  }
+
+  async function loadProfile(token: string) {
+    try {
+      const r = await fetch("/backend/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (d?.user?.createdAt) {
+          setUser(prev => prev ? { ...prev, createdAt: d.user.createdAt } : prev);
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function loadAddresses(token: string) {
+    try {
+      const r = await fetch("/backend/api/users/addresses", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (Array.isArray(d?.addresses)) {
+          setAddresses(d.addresses.map((a: any) => ({ id: a._id, label: a.label, line1: a.line1, city: a.city, pincode: a.pincode })));
+        }
+      }
+    } catch { /* ignore */ }
   }
 
   async function loadWishlist(token: string) {
@@ -120,8 +146,11 @@ export default function UserPage() {
     setCart({});
     setWishlist([]);
     setWishProds([]);
+    setAddresses([]);
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
+    localStorage.removeItem("qf_addresses");
+    sessionStorage.clear();
     router.push("/");
   }
 
@@ -159,25 +188,29 @@ export default function UserPage() {
   }
 
   // ── Addresses ────────────────────────────────────────────────────────────────
-  function saveAddress() {
-    if (!addrLine1.trim() || !addrCity.trim()) return;
-    const entry: Address = {
-      id: addrEditId || Date.now().toString(),
-      label: addrLabel, line1: addrLine1.trim(),
-      city: addrCity.trim(), pincode: addrPincode.trim() || undefined,
-    };
-    const updated = addrEditId
-      ? addresses.map(a => a.id === addrEditId ? entry : a)
-      : [...addresses, entry];
-    setAddresses(updated);
-    localStorage.setItem("qf_addresses", JSON.stringify(updated));
+  async function saveAddress() {
+    if (!user || !addrLine1.trim() || !addrCity.trim()) return;
+    const body = { label: addrLabel, line1: addrLine1.trim(), city: addrCity.trim(), pincode: addrPincode.trim() || undefined };
+    try {
+      await fetch(addrEditId ? `/backend/api/users/addresses/${addrEditId}` : "/backend/api/users/addresses", {
+        method: addrEditId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify(body),
+      });
+      await loadAddresses(user.token);
+    } catch { /* ignore */ }
     resetAddrForm();
   }
 
-  function deleteAddress(id: string) {
-    const updated = addresses.filter(a => a.id !== id);
-    setAddresses(updated);
-    localStorage.setItem("qf_addresses", JSON.stringify(updated));
+  async function deleteAddress(id: string) {
+    if (!user) return;
+    try {
+      await fetch(`/backend/api/users/addresses/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      await loadAddresses(user.token);
+    } catch { /* ignore */ }
   }
 
   function startEditAddress(a: Address) {
@@ -436,6 +469,14 @@ export default function UserPage() {
                     <Pagination total={orders.length} page={ordersPage} setPage={setOrdersPage} perPage={ORDER_ITEMS_PER_PAGE} />
                   </>
                 )}
+                {!ordersLoading && (
+                  <p style={{ marginTop: "1.2rem", fontSize: "12.5px", color: "#6b7280", lineHeight: 1.6 }}>
+                    Email orders placed from your account will appear here.
+                    <br /><br />
+                    WhatsApp orders are not shown because we do not use the WhatsApp Business API.
+                    WhatsApp orders are handled directly through WhatsApp and cannot be tracked on the website.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -503,7 +544,13 @@ export default function UserPage() {
                     </div>
                     <div className="up-profile-row">
                       <span className="up-profile-label">Member Since</span>
-                      <span className="up-profile-value">QualiFresh Customer</span>
+                      <span className="up-profile-value">
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleString("en-IN", {
+                              day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "numeric",
+                            })
+                          : "QualiFresh Customer"}
+                      </span>
                     </div>
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "1.5rem" }}>
                       <a href={`https://wa.me/${siteConfig.whatsapp}`} target="_blank" rel="noreferrer"
@@ -646,6 +693,9 @@ export default function UserPage() {
                               ? <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>🥬</div>
                             }
+                            <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock === 0 ? "rgba(220,38,38,.9)" : "rgba(22,163,74,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600 }}>
+                              {p.stock === 0 ? "Out of Stock" : "In Stock"}
+                            </div>
                             <button onClick={() => removeFromWishlist(p._id)} title="Remove from wishlist"
                               style={{ position: "absolute", top: "7px", right: "7px", width: "28px", height: "28px", borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", boxShadow: "0 2px 8px rgba(0,0,0,.18)" }}>
                               ❤️
@@ -655,9 +705,9 @@ export default function UserPage() {
                             <p style={{ fontSize: "12.5px", fontWeight: 700, color: "#111827", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</p>
                             {p.quantityLabel && <p style={{ fontSize: "11px", color: "#9ca3af", margin: "0 0 4px" }}>{p.quantityLabel}</p>}
                             <p style={{ fontSize: "14px", fontWeight: 800, color: "#2d8a4e", margin: "0 0 8px" }}>₹{p.price}</p>
-                            <button onClick={() => addToCart(p._id)}
-                              style={{ width: "100%", padding: "7px", borderRadius: "7px", border: "none", background: "#2d8a4e", color: "#fff", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
-                              + Add to Cart
+                            <button onClick={() => p.stock !== 0 && addToCart(p._id)} disabled={p.stock === 0}
+                              style={{ width: "100%", padding: "7px", borderRadius: "7px", border: "none", background: p.stock === 0 ? "#f3f4f6" : "#2d8a4e", color: p.stock === 0 ? "#9ca3af" : "#fff", cursor: p.stock === 0 ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
+                              {p.stock === 0 ? "Out of Stock" : "+ Add to Cart"}
                             </button>
                           </div>
                         </div>

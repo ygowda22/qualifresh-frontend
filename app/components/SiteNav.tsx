@@ -220,8 +220,32 @@ export default function SiteNav({ activePage }: Props) {
   function closeCart() { setShowCart(false); setCartStep(1); setCkError(""); }
   function openCheckout() {
     refreshProducts();
-    if (user && !ckName) setCkName(user.name);
-    if (user && !ckEmail) setCkEmail(user.email);
+    if (user) {
+      if (!ckName) setCkName(user.name);
+      if (!ckEmail) setCkEmail(user.email);
+
+      // Autofill mobile number from the profile API
+      if (!ckPhone) {
+        fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${user.token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => { if (d?.user?.phone) setCkPhone(d.user.phone); })
+          .catch(() => {});
+      }
+
+      // Autofill delivery address from the first saved address (backend)
+      if (!ckAddress) {
+        fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${user.token}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            const addresses: { line1: string; city: string }[] = Array.isArray(d?.addresses) ? d.addresses : [];
+            if (addresses.length > 0) {
+              setCkAddress(addresses[0].line1);
+              if (!ckCity) setCkCity(addresses[0].city);
+            }
+          })
+          .catch(() => {});
+      }
+    }
     setCartStep(2);
   }
 
@@ -295,6 +319,7 @@ export default function SiteNav({ activePage }: Props) {
         return;
       }
       const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
+      localStorage.removeItem("qf_addresses"); // don't carry over a previous account's saved addresses
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       // Merge guest cart with user's saved backend cart
       const guestCart = cart; // current state before merging
@@ -322,6 +347,7 @@ export default function SiteNav({ activePage }: Props) {
       const d = await r.json();
       if (!r.ok) { setAuthError(d.message || "Registration failed"); return; }
       const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
+      localStorage.removeItem("qf_addresses"); // don't carry over a previous account's saved addresses
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
       // New accounts start with whatever guest cart items they had
       const guestCart = cart;
@@ -340,6 +366,8 @@ export default function SiteNav({ activePage }: Props) {
     setUser(null);
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
+    localStorage.removeItem("qf_addresses");
+    sessionStorage.clear();
     router.push("/");
   }
   function closeLogin() { setShowLogin(false); setAuthError(""); setEmailFieldError(""); setPasswordFieldError(""); setAuthEmail(""); setAuthPass(""); setForgotSent(false); }

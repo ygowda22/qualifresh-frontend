@@ -268,6 +268,8 @@ export default function Home() {
     setWishlist([]);
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
+    localStorage.removeItem("qf_addresses");
+    sessionStorage.clear();
   }
 
   function toggleWishlist(productId: string) {

@@ -12,6 +12,19 @@ export interface CategoryConfig {
   pageTitle: string;   // browser tab title suffix when this category is filtered
 }
 
+// Reusable dynamic stats derived from the live products collection — used
+// anywhere a product/category count is shown (hero stats bar, About Us,
+// What Drives Us), instead of hardcoding numbers that go stale.
+export function getDynamicStats(products: any[] = []) {
+  const totalProducts = products.length;
+  const totalCategories = new Set(products.map((p: any) => p?.category).filter(Boolean)).size;
+  // No dedicated "Exotic" category exists in this catalog — the whole
+  // catalog is marketed as exotic produce, so exoticCount mirrors totalProducts.
+  const exoticCount = totalProducts;
+  const featuredProducts = products.slice(0, 6);
+  return { totalProducts, totalCategories, exoticCount, featuredProducts };
+}
+
 export const siteConfig = {
 
   // ── Business Info ──────────────────────────────────────────
@@ -53,7 +66,7 @@ export const siteConfig = {
 
   // ── Stats Bar (hero bottom) ─────────────────────────────────
   stats: [
-    { value: "57+",        label: "Exotic Varieties"   },
+    { value: "",           label: "Exotic Varieties"   }, // value is computed dynamically at render time via getDynamicStats()
     { value: "2×",         label: "Wed & Sat Delivery" },
     { value: "No Advance", label: "Pay After Delivery" },
   ],
@@ -129,11 +142,19 @@ export const siteConfig = {
   ] as CategoryConfig[],
 
   // ── Footer ─────────────────────────────────────────────────
+  // footer: {
+  //   about:     "Premium exotic vegetables grown on our Pune farms. Freshly delivered across Pune & Mumbai twice a week",
+  //   developer: "Web Development By https://www.linkedin.com/in/yogeshwari/",
+  //   tagline:   "Designed with ❤️ for fresh farming · Pune, India",
+  // },
+
   footer: {
-    about:     "Premium exotic vegetables sourced from trusted Pune farms. Delivering freshness across Pune & Mumbai twice a week.",
-    developer: "Web Development By Yogeshwari Gowda",
-    tagline:   "Designed with ❤️ for fresh farming · Pune, India",
-  },
+  about: "Premium exotic vegetables grown on our Pune farms. Freshly delivered across Pune & Mumbai twice a week",
+  developer: "Web Development By",
+  developerName: "Yogeshwari",
+  developerUrl: "https://www.linkedin.com/in/yogeshwari/",
+  tagline: "Designed with ❤️ for fresh farming · Pune, India",
+},
 
   // ── Page Titles (section-based) ────────────────────────────
   pageTitles: {
@@ -148,6 +169,6 @@ export const siteConfig = {
   // ── API ────────────────────────────────────────────────────
   apiUrl: "http://localhost:4000",
 
-  // ── Products per page ──────────────────────────────────────
-  productsPerPage: 15,
+  // ── Products per page (desktop/laptop default; mobile/tablet overridden responsively) ──
+  productsPerPage: 40,
 };

@@ -5,7 +5,7 @@ export default function Hero() {
         Fresh. Exotic. Delivered Daily.
       </h2>
       <p className="text-gray-700 text-lg max-w-2xl mx-auto">
-        Premium exotic vegetables sourced directly from trusted farmers in Pune & Mumbai.
+        Premium exotic vegetables grown on our Pune farms. Freshly delivered across Pune & Mumbai twice a week
       </p>
     </section>
   );

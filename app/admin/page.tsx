@@ -13,6 +13,11 @@ const CAT_COLOR_OPTIONS = ["#1d4ed8","#16a34a","#15803d","#b91c1c","#0d9488","#c
 
 const DEFAULT_FARM_PHOTOS: FarmPhoto[] = [];
 
+// ── Testimonials ─────────────────────────────────────────────────────────────
+interface TestimonialImage { url: string; alt: string; }
+interface Testimonial { id: string; name: string; role: string; message: string; rating: number; avatarUrl: string; images: TestimonialImage[]; location: string; isActive: boolean; sortOrder: number; }
+const DEFAULT_TESTIMONIALS: Testimonial[] = [];
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
 
@@ -133,6 +138,17 @@ export default function AdminPage() {
   const [catUploading,  setCatUploading]  = useState(false);
   const catFileRef = useRef<HTMLInputElement>(null);
 
+  // ── Testimonials state ────────────────────────────────────────────────────
+  const [testimonials, setTestimonials]         = useState<Testimonial[]>(DEFAULT_TESTIMONIALS);
+  const [showTestiModal, setShowTestiModal]     = useState(false);
+  const [editingTesti, setEditingTesti]         = useState<Testimonial | null>(null);
+  const [testiForm, setTestiForm]               = useState<{ name: string; role: string; message: string; rating: number; avatarUrl: string; images: TestimonialImage[]; location: string; isActive: boolean; sortOrder: number }>({ name: "", role: "", message: "", rating: 5, avatarUrl: "", images: [], location: "", isActive: true, sortOrder: 0 });
+  const [testiPhotosUploading, setTestiPhotosUploading] = useState(false);
+  const testiPhotosFileRef = useRef<HTMLInputElement>(null);
+  const [testiUploadError, setTestiUploadError] = useState<string | null>(null);
+  const [testiUploading, setTestiUploading]     = useState(false);
+  const testiFileRef = useRef<HTMLInputElement>(null);
+
   function copyText(text: string, key: string) {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(key);
@@ -237,8 +253,18 @@ export default function AdminPage() {
   // ── Load data when logged in ───────────────────────────────────────────────
   useEffect(() => {
     if (!token) return;
-    loadStats(); loadAnalytics(); loadOrders(); loadProducts(); loadUsers();
+    loadStats(); loadAnalytics(); loadOrders(); loadProducts(); loadUsers(); loadTestimonials();
   }, [token]);
+
+  function loadTestimonials() {
+    fetch(`${API}/api/testimonials/all`, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => {
+        if (!data || !Array.isArray(data)) return;
+        setTestimonials(data.map(t => ({ id: t._id, name: t.name, role: t.role, message: t.message, rating: t.rating, avatarUrl: t.avatarUrl, images: t.images || [], location: t.location, isActive: t.isActive, sortOrder: t.sortOrder })));
+      })
+      .catch(() => {});
+  }
 
   async function loadStats() {
     try {
@@ -396,13 +422,19 @@ export default function AdminPage() {
     if (!prodForm.name || !prodForm.slug || !prodForm.price) {
       showToast("Name, slug, and price are required", false); return;
     }
+    if (!prodForm.quantityLabel || !prodForm.quantityLabel.trim()) {
+      showToast("Quantity Label is required", false); return;
+    }
     // Strip cache-bust timestamp before storing in DB — only the clean Supabase public URL should be persisted
     const cleanImageUrl = prodForm.imageUrl ? prodForm.imageUrl.split("?")[0] : "";
     const body = { ...prodForm, imageUrl: cleanImageUrl, price: Number(prodForm.price), stock: Number(prodForm.stock) };
-    if (editProd) {
-      await fetch(`${API}/api/products/${editProd._id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) });
-    } else {
-      await fetch(`${API}/api/products`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+    const r = editProd
+      ? await fetch(`${API}/api/products/${editProd._id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) })
+      : await fetch(`${API}/api/products`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      showToast(d.error || d.message || "Failed to save product", false);
+      return;
     }
     localStorage.setItem("qf_products_updated", Date.now().toString());
     await loadProducts(); // load fresh data BEFORE closing so list is ready instantly
@@ -413,6 +445,8 @@ export default function AdminPage() {
 
   const ALLOWED_MIME = ["image/jpeg","image/png","image/webp","image/gif","image/avif"];
   const ALLOWED_EXT  = [".jpg",".jpeg",".png",".webp",".gif",".avif"];
+  const TESTI_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
+  const TESTI_ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp"];
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -547,6 +581,109 @@ export default function AdminPage() {
       ));
     } catch (err: any) { setFarmUploadError(err.message || "Upload failed"); }
     finally { setFarmUploading(false); e.target.value = ""; }
+  }
+
+  // ── Testimonial helpers ───────────────────────────────────────────────────
+  function openTestiModal(t?: Testimonial) {
+    if (t) { setEditingTesti(t); setTestiForm({ name: t.name, role: t.role, message: t.message, rating: t.rating, avatarUrl: t.avatarUrl, images: t.images || [], location: t.location, isActive: t.isActive, sortOrder: t.sortOrder }); }
+    else { setEditingTesti(null); setTestiForm({ name: "", role: "", message: "", rating: 5, avatarUrl: "", images: [], location: "", isActive: true, sortOrder: 0 }); }
+    setTestiUploadError(null);
+    setShowTestiModal(true);
+  }
+
+  async function saveTestimonial() {
+    if (!testiForm.name || !testiForm.message) { setTestiUploadError("Name and message are required."); return; }
+    try {
+      let updated: Testimonial[];
+      if (editingTesti) {
+        const r = await fetch(`${API}/api/testimonials/${editingTesti.id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(testiForm) });
+        if (!r.ok) throw new Error("Save failed");
+        const saved = await r.json();
+        updated = testimonials.map(t => t.id === editingTesti.id ? { id: saved._id, ...testiForm } : t);
+      } else {
+        const r = await fetch(`${API}/api/testimonials`, { method: "POST", headers: authHeaders(), body: JSON.stringify(testiForm) });
+        if (!r.ok) throw new Error("Save failed");
+        const created = await r.json();
+        updated = [...testimonials, { id: created._id, ...testiForm }];
+      }
+      setTestimonials(updated);
+      setShowTestiModal(false);
+      showToast(editingTesti ? "✓ Testimonial updated!" : "✓ Testimonial added!");
+    } catch {
+      showToast("✗ Failed to save testimonial — is the backend running?", false);
+    }
+  }
+
+  async function deleteTestimonial(id: string) {
+    if (!confirm("Remove this testimonial?")) return;
+    try { await fetch(`${API}/api/testimonials/${id}`, { method: "DELETE", headers: authHeaders() }); } catch {}
+    setTestimonials(prev => prev.filter(t => t.id !== id));
+  }
+
+  async function uploadTestimonialAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setTestiUploadError(null);
+    const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+    if (!TESTI_ALLOWED_MIME.includes(file.type) || !TESTI_ALLOWED_EXT.includes(ext)) { setTestiUploadError("Invalid file type. Use JPG, PNG, or WebP."); e.target.value = ""; return; }
+    if (file.size > 5 * 1024 * 1024) { setTestiUploadError("File too large — max 5 MB."); e.target.value = ""; return; }
+    setTestiUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      fd.append("bucket", "testimonial-avatars");
+      const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      if (!r.ok) throw new Error("Upload failed");
+      const d = await r.json();
+      setTestiForm(f => ({ ...f, avatarUrl: d.url }));
+    } catch (err: any) { setTestiUploadError(err.message || "Upload failed"); }
+    finally { setTestiUploading(false); e.target.value = ""; }
+  }
+
+  async function uploadTestiFoodPhotos(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (files.length === 0) return;
+    setTestiUploadError(null);
+    const remaining = 4 - testiForm.images.length;
+    const toUpload = files.slice(0, Math.max(0, remaining));
+    if (toUpload.length < files.length) setTestiUploadError("Only up to 4 food photos are allowed — extra files were skipped.");
+    for (const file of toUpload) {
+      const ext = (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+      if (!TESTI_ALLOWED_MIME.includes(file.type) || !TESTI_ALLOWED_EXT.includes(ext)) { setTestiUploadError("Invalid file type. Use JPG, PNG, or WebP."); continue; }
+      if (file.size > 5 * 1024 * 1024) { setTestiUploadError("File too large — max 5 MB."); continue; }
+      setTestiPhotosUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append("image", file);
+        fd.append("bucket", "testimonial-photos");
+        const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+        if (!r.ok) throw new Error("Upload failed");
+        const d = await r.json();
+        setTestiForm(f => ({ ...f, images: [...f.images, { url: d.url, alt: "" }] }));
+      } catch (err: any) {
+        setTestiUploadError(err.message || "Upload failed");
+      }
+    }
+    setTestiPhotosUploading(false);
+    e.target.value = "";
+  }
+
+  function removeTestiFoodPhoto(index: number) {
+    setTestiForm(f => ({ ...f, images: f.images.filter((_, i) => i !== index) }));
+  }
+
+  function moveTestiFoodPhoto(index: number, dir: -1 | 1) {
+    setTestiForm(f => {
+      const to = index + dir;
+      if (to < 0 || to >= f.images.length) return f;
+      const images = [...f.images];
+      [images[index], images[to]] = [images[to], images[index]];
+      return { ...f, images };
+    });
+  }
+
+  function updateTestiFoodPhotoAlt(index: number, alt: string) {
+    setTestiForm(f => ({ ...f, images: f.images.map((im, i) => i === index ? { ...im, alt } : im) }));
   }
 
   // ── Category helpers ──────────────────────────────────────────────────────
@@ -719,6 +856,9 @@ export default function AdminPage() {
         .admin-mobile-nav{display:none}
         .admin-main{flex:1;overflow:auto;padding:2rem}
         .admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .order-type-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;color:#fff;margin-top:4px}
+        .order-type-badge.whatsapp{background-color:#25D366}
+        .order-type-badge.email{background-color:#007bff}
         .admin-charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
         .admin-recent-row{display:grid;grid-template-columns:1fr 1.6fr;gap:1rem}
         @media(max-width:768px){
@@ -907,8 +1047,16 @@ export default function AdminPage() {
                     <tr key={o._id} style={{ borderTop: "1px solid #f1f5f9" }}>
                       <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d8a4e" }}>{o.orderNumber}</td>
                       <td style={{ padding: "12px 14px" }}>
-                        <div style={{ fontWeight: 600, color: "#111827" }}>{o.guestName || o.user?.name || "Guest"}</div>
-                        <div style={{ fontSize: "11px", color: "#9ca3af" }}>{o.guestPhone || o.user?.phone || ""}</div>
+                        <div className="customer-info">
+                          <div style={{ fontWeight: 600, color: "#111827" }}>{o.guestName || o.user?.name || "Guest"}</div>
+                          <div style={{ fontSize: "11px", color: "#9ca3af" }}>Phone: {o.guestPhone || o.user?.phone || ""}</div>
+                          {o.deliveryAddress && (
+                            <div style={{ fontSize: "11px", color: "#9ca3af" }}>Address: {o.deliveryAddress}{o.city ? `, ${o.city}` : ""}</div>
+                          )}
+                          <span className={`order-type-badge ${o.source === "whatsapp" ? "whatsapp" : "email"}`}>
+                            {o.source === "whatsapp" ? "WhatsApp" : "Email"}
+                          </span>
+                        </div>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "220px" }}>
@@ -1302,6 +1450,63 @@ export default function AdminPage() {
               )}
             </div>
 
+            {/* ── Testimonials Card ── */}
+            <div style={{ background: "#fff", borderRadius: "16px", padding: "1.8rem", boxShadow: "0 2px 12px rgba(0,0,0,.06)", marginBottom: "1.5rem", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.2rem", flexWrap: "wrap", gap: "10px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span style={{ fontSize: "22px" }}>💬</span>
+                    <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "#111827" }}>Testimonials</h2>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#6b7280" }}>Shown on the homepage. Only active testimonials appear on the site.</p>
+                </div>
+                <button onClick={() => openTestiModal()}
+                  style={{ padding: "9px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                  + Add Testimonial
+                </button>
+              </div>
+
+              {testimonials.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "2.5rem", color: "#9ca3af", border: "2px dashed #e5e7eb", borderRadius: "10px" }}>
+                  <span style={{ fontSize: "32px" }}>💬</span>
+                  <p style={{ margin: "8px 0 0", fontSize: "13px" }}>No testimonials yet. Click "+ Add Testimonial" to add one.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: "12px" }}>
+                  {testimonials.map(t => (
+                    <div key={t.id} style={{ borderRadius: "12px", border: "1.5px solid #e9ede4", background: "#f9fafb", padding: "12px", opacity: t.isActive ? 1 : 0.5 }}>
+                      <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
+                        {t.avatarUrl ? (
+                          <img src={t.avatarUrl} alt={t.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        ) : (
+                          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#dbeafe", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#1d4ed8" }}>{(t.name || "?")[0]}</div>
+                        )}
+                        {t.images && t.images.length > 0 && (
+                          <div style={{ position: "relative", width: "36px", height: "36px", borderRadius: "8px", overflow: "hidden", flexShrink: 0 }}>
+                            <img src={t.images[0].url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                            {t.images.length > 1 && (
+                              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+{t.images.length - 1}</div>
+                            )}
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: "13px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
+                          <div style={{ fontSize: "11px", color: "#9ca3af" }}>{t.role}{!t.isActive && " · Inactive"}</div>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: "12px", color: "#4b5563", marginBottom: "8px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{t.message}</p>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button onClick={() => openTestiModal(t)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                        <button onClick={() => deleteTestimonial(t.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Save button */}
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button onClick={() => saveSettings(cartEnabled, farmPhotos)}
@@ -1378,7 +1583,7 @@ export default function AdminPage() {
               </select>
             </Field>
             <Field label="Stock" required><input type="number" value={prodForm.stock || ""} onChange={e => setProdForm((f: any) => ({ ...f, stock: e.target.value }))} style={inputStyle} /></Field>
-            <Field label="Quantity Label"><input value={prodForm.quantityLabel || ""} onChange={e => setProdForm((f: any) => ({ ...f, quantityLabel: e.target.value }))} placeholder="e.g. 250gm" style={inputStyle} /></Field>
+            <Field label="Quantity Label" required><input value={prodForm.quantityLabel || ""} onChange={e => setProdForm((f: any) => ({ ...f, quantityLabel: e.target.value }))} placeholder="e.g. 250gm" style={inputStyle} /></Field>
           </div>
           <Field label="Description">
             <textarea value={prodForm.description || ""} onChange={e => setProdForm((f: any) => ({ ...f, description: e.target.value }))} rows={2} style={{ ...inputStyle, resize: "vertical" }} />
@@ -1393,8 +1598,8 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
             <button onClick={() => setShowProdModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-            <button onClick={saveProd} disabled={uploading}
-              style={{ padding: "10px 24px", background: uploading ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: uploading ? "not-allowed" : "pointer", fontWeight: 700, opacity: uploading ? 0.6 : 1 }}>
+            <button onClick={saveProd} disabled={uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()}
+              style={{ padding: "10px 24px", background: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "not-allowed" : "pointer", fontWeight: 700, opacity: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? 0.6 : 1 }}>
               {editProd ? "Save Changes" : "Add Product"}
             </button>
           </div>
@@ -1447,6 +1652,128 @@ export default function AdminPage() {
             <button onClick={saveFarmPhoto} disabled={!farmForm.imageUrl || farmUploading}
               style={{ padding: "10px 24px", background: !farmForm.imageUrl || farmUploading ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: !farmForm.imageUrl || farmUploading ? "not-allowed" : "pointer", fontWeight: 700, opacity: !farmForm.imageUrl || farmUploading ? 0.7 : 1 }}>
               {editingFarm ? "Save Changes" : "Add Photo"}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Testimonial Modal ── */}
+      {showTestiModal && (
+        <Modal onClose={() => setShowTestiModal(false)}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#111827" }}>{editingTesti ? "Edit Testimonial" : "Add Testimonial"}</h2>
+            <button onClick={() => setShowTestiModal(false)} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+          </div>
+
+          {/* Avatar preview */}
+          {testiForm.avatarUrl && (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+              <div style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
+                <img src={testiForm.avatarUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+              </div>
+              <button onClick={() => setTestiForm(f => ({ ...f, avatarUrl: "" }))}
+                style={{ padding: "6px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>
+                Remove Photo
+              </button>
+            </div>
+          )}
+
+          {/* Avatar upload */}
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Customer Photo <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional — JPG, PNG or WebP, max 5MB)</span></label>
+            <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
+              <input ref={testiFileRef} type="file" accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestimonialAvatar} style={{ display: "none" }} />
+              <button onClick={() => { setTestiUploadError(null); testiFileRef.current?.click(); }} disabled={testiUploading}
+                style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
+                {testiUploading ? "⏳ Uploading…" : testiForm.avatarUrl ? "📁 Replace Photo" : "📁 Upload Photo"}
+              </button>
+              <span style={{ fontSize: "12px", color: "#9ca3af", alignSelf: "center" }}>or</span>
+              <input value={testiForm.avatarUrl} onChange={e => setTestiForm(f => ({ ...f, avatarUrl: e.target.value }))} placeholder="Paste image URL…"
+                style={{ ...inputStyle, flex: 1, minWidth: "160px" }} />
+            </div>
+            {testiUploadError && <p style={{ margin: "6px 0 0", fontSize: "11.5px", color: "#dc2626" }}>⚠ {testiUploadError}</p>}
+          </div>
+
+          {/* Food photos */}
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Food photos shared by customer <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional, up to 4)</span></label>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {testiForm.images.map((im, i) => (
+                <div key={i} style={{ width: "88px" }}>
+                  <div style={{ width: "88px", height: "88px", borderRadius: "8px", overflow: "hidden", background: "#f1f5f9", position: "relative" }}>
+                    <img src={im.url} alt={im.alt || "Food photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                    <button onClick={() => removeTestiFoodPhoto(i)} title="Remove"
+                      style={{ position: "absolute", top: "3px", right: "3px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: "12px", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
+                  </div>
+                  <div style={{ display: "flex", gap: "3px", marginTop: "3px" }}>
+                    <button onClick={() => moveTestiFoodPhoto(i, -1)} disabled={i === 0} title="Move left"
+                      style={{ flex: 1, padding: "2px", fontSize: "11px", background: "#f3f4f6", border: "none", borderRadius: "4px", cursor: i === 0 ? "not-allowed" : "pointer", opacity: i === 0 ? 0.4 : 1 }}>◀</button>
+                    <button onClick={() => moveTestiFoodPhoto(i, 1)} disabled={i === testiForm.images.length - 1} title="Move right"
+                      style={{ flex: 1, padding: "2px", fontSize: "11px", background: "#f3f4f6", border: "none", borderRadius: "4px", cursor: i === testiForm.images.length - 1 ? "not-allowed" : "pointer", opacity: i === testiForm.images.length - 1 ? 0.4 : 1 }}>▶</button>
+                  </div>
+                  <input value={im.alt} onChange={e => updateTestiFoodPhotoAlt(i, e.target.value)} placeholder="Alt text…"
+                    style={{ width: "100%", marginTop: "3px", padding: "4px 6px", fontSize: "10.5px", borderRadius: "5px", border: "1.5px solid #e5e7eb", boxSizing: "border-box" }} />
+                </div>
+              ))}
+              {testiForm.images.length < 4 && (
+                <div>
+                  <input ref={testiPhotosFileRef} type="file" multiple accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestiFoodPhotos} style={{ display: "none" }} />
+                  <button onClick={() => { setTestiUploadError(null); testiPhotosFileRef.current?.click(); }} disabled={testiPhotosUploading}
+                    style={{ width: "88px", height: "88px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiPhotosUploading ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+                    {testiPhotosUploading ? "⏳" : "+ Add Photo"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Name</label>
+              <input value={testiForm.name} onChange={e => setTestiForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Priya Sharma" style={inputStyle} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Role <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
+              <input value={testiForm.role} onChange={e => setTestiForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Home Chef" style={inputStyle} />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Location <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
+            <input value={testiForm.location} onChange={e => setTestiForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Pune" style={inputStyle} />
+          </div>
+
+          <div style={{ marginBottom: "10px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Message <span style={{ color: "#9ca3af", fontWeight: 400 }}>({testiForm.message.length}/220 · 15–30 words works best)</span></label>
+            <textarea value={testiForm.message} onChange={e => setTestiForm(f => ({ ...f, message: e.target.value.slice(0, 220) }))}
+              placeholder="What did the customer say?" rows={3}
+              style={{ ...inputStyle, resize: "vertical" as const, fontFamily: "inherit" }} />
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", marginBottom: "16px", alignItems: "flex-end" }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Rating</label>
+              <select value={testiForm.rating} onChange={e => setTestiForm(f => ({ ...f, rating: Number(e.target.value) }))} style={inputStyle}>
+                {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{"★".repeat(n)}{"☆".repeat(5 - n)}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "4px" }}>Sort Order</label>
+              <input type="number" value={testiForm.sortOrder} onChange={e => setTestiForm(f => ({ ...f, sortOrder: Number(e.target.value) }))} style={inputStyle} />
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: 600, color: "#374151", padding: "10px 0" }}>
+              <input type="checkbox" checked={testiForm.isActive} onChange={e => setTestiForm(f => ({ ...f, isActive: e.target.checked }))} />
+              Active
+            </label>
+          </div>
+
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <button onClick={() => setShowTestiModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={saveTestimonial} disabled={!testiForm.name || !testiForm.message}
+              style={{ padding: "10px 24px", background: !testiForm.name || !testiForm.message ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: !testiForm.name || !testiForm.message ? "not-allowed" : "pointer", fontWeight: 700, opacity: !testiForm.name || !testiForm.message ? 0.7 : 1 }}>
+              {editingTesti ? "Save Changes" : "Add Testimonial"}
             </button>
           </div>
         </Modal>

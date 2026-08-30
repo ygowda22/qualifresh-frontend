@@ -100,7 +100,8 @@ export default function GlobalFooter() {
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
-            © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
+            © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}{" "}
+            <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{siteConfig.footer.developerName}</a>
           </p>
           <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
             {siteConfig.footer.tagline}

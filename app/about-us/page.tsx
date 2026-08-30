@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { siteConfig } from "../../src/config/site";
+import { siteConfig, getDynamicStats } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
 
 const { delivery: DEL } = siteConfig;
@@ -56,6 +56,16 @@ export default function AboutPage() {
   // Cart-aware WhatsApp state
   const { cart: waCart } = useCart();
   const [waProds, setWaProds]     = useState<{_id:string;name:string;price:number}[]>([]);
+
+  // Live product data for dynamic stats (Exotic Varieties count etc.)
+  const [products, setProducts] = useState<any[]>([]);
+  useEffect(() => {
+    fetch("/backend/api/products")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: any[]) => { if (data && Array.isArray(data)) setProducts(data); })
+      .catch(() => {});
+  }, []);
+  const dynamicStats = getDynamicStats(products);
 
   useEffect(() => {
     document.title = siteConfig.pageTitles.aboutUs;
@@ -201,7 +211,7 @@ export default function AboutPage() {
           </div>
           <div className="about-stats-grid">
             {[
-              { value: "57+", label: "Exotic Varieties",  sub: "Korean, Thai & more",   color: "#a3e635" },
+              { value: `${dynamicStats.exoticCount}+`, label: "Exotic Varieties",  sub: "Korean, Thai & more",   color: "#a3e635" },
               { value: "20+", label: "Farm Partners",     sub: "Trusted Pune farms",     color: "#34d399" },
               { value: "2",   label: "Cities Served",     sub: "Pune & Mumbai",          color: "#60a5fa" },
               { value: "2×",  label: "Weekly Deliveries", sub: "Wednesday & Saturday",   color: "#f59e0b" },
@@ -238,9 +248,9 @@ export default function AboutPage() {
               </p>
               <blockquote style={{ borderLeft: "4px solid #2d8a4e", paddingLeft: "1.2rem", margin: 0 }}>
                 <p style={{ fontSize: "15px", color: "#1a3c2e", fontStyle: "italic", fontWeight: 600, lineHeight: 1.7, margin: "0 0 6px" }}>"Quality isn't just a word for us — it's the reason we wake up every morning."</p>
-                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Manje Gowda, Founder & CEO, QualiFresh</cite>
+                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Manje Gowda, Founder, QualiFresh</cite>
                 <br />
-                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit Gowda, Co‑Founder & COO, QualiFresh</cite>
+                <cite style={{ fontSize: "12.5px", color: "#6b7280", fontStyle: "normal", fontWeight: 600 }}>— Rohit Gowda, Co‑Founder & CEO, QualiFresh</cite>
               </blockquote>
             </div>
             {storyImg && (
@@ -261,7 +271,7 @@ export default function AboutPage() {
           </div>
           <div className="about-mv-grid">
             {[
-              { icon: "🎯", img: "/products/ourmission.jpg", stat: "57+", statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
+              { icon: "🎯", img: "/products/ourmission.jpg", stat: `${dynamicStats.exoticCount}+`, statSub: "Exotic varieties", title: "Our Mission", text: "To grow the world's finest exotic vegetables - Korean, Thai, Japanese, and beyond - accessible to every home cook and family across India, at fair prices with zero compromise on freshness and quality." },
               { icon: "🌏", img: "/products/ourvision.jpg", stat: "All India", statSub: "Our reach goal", title: "Our Vision",  text: "A future where every Indian household has access to farm-fresh, globally diverse produce. We're building the infrastructure — farm partnerships, cold chain, and community — to make that happen." },
               { icon: "🤝", img: "/products/ourpromise.jpg", stat: "Zero", statSub: "Advance required", title: "Our Promise", text: "No advance payment. Pay only after delivery. Not satisfied? We replace it, no questions asked. Every batch is inspected for freshness and quality before it leaves the farm." },
             ].map((card, i) => (
@@ -435,7 +445,8 @@ export default function AboutPage() {
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
             <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
-              © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
+              © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}{" "}
+              <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{siteConfig.footer.developerName}</a>
             </p>
             <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
               {siteConfig.footer.tagline}

@@ -4,6 +4,8 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const FOLDER_MAP: Record<string, string> = {
   "farm-images": "qualifresh-farms",
+  "testimonial-avatars": "qualifresh-testimonials",
+  "testimonial-photos": "qualifresh-testimonial-photos",
 };
 
 export async function POST(request: NextRequest) {

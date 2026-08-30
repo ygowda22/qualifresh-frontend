@@ -66,18 +66,6 @@ export default function CheckoutPage() {
   const phoneValid  = /^[6-9]\d{9}$/.test(cleanPhone);
   const canSubmit   = name.trim() !== "" && phone.trim() !== "" && phoneValid && address.trim() !== "" && slot !== "" && !hasOutOfStockItem;
 
-  const waOrderUrl = cartItems.length > 0
-    ? `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
-        `Hi QualiFresh! I'd like to order:\n` +
-        cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
-        `\n\nTotal: ₹${grandTotal}${deliveryCost === 0 ? " (Free delivery!)" : ""}` +
-        `\n\nName: ${name || "—"}` +
-        (phone ? `\nPhone: ${phone}` : "") +
-        (address ? `\nAddress: ${address}${city ? ", " + city : ""}` : "") +
-        `\nSlot: ${slot}`
-      )}`
-    : `https://wa.me/${siteConfig.whatsapp}`;
-
   async function placeOrder() {
     if (!canSubmit) return;
     setApiError(""); setSubmitting(true);
@@ -92,6 +80,28 @@ export default function CheckoutPage() {
       fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
       setOrderNum(d.orderNumber);
       setDone(true);
+      const empty = "{}";
+      localStorage.setItem("qf_cart", empty);
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: empty }));
+    } catch { setApiError("Network error. Please try again."); }
+    finally { setSubmitting(false); }
+  }
+
+  // Same as placeOrder(), but tagged source: "whatsapp" and redirects to WhatsApp instead of
+  // showing the confirmation screen. Requires the same fields (name/phone/address) as placeOrder.
+  async function placeWhatsAppOrder() {
+    if (!canSubmit || submitting) return;
+    setApiError(""); setSubmitting(true);
+    try {
+      const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
+      // Logs the order in the DB and gets back the WhatsApp URL — only redirect after this responds.
+      const r = await fetch("/backend/api/whatsapp-order", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address, city, deliverySlot: slot, notes, name, email, phone }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setApiError(d.message || "Order failed. Please try again."); return; }
+      window.open(d.whatsappMessageUrl, "_blank");
       const empty = "{}";
       localStorage.setItem("qf_cart", empty);
       window.dispatchEvent(new StorageEvent("storage", { key: "qf_cart", newValue: empty }));
@@ -253,12 +263,11 @@ export default function CheckoutPage() {
             {/* WhatsApp alternative */}
             <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #f3f4f6", textAlign: "center" }}>
               <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "10px" }}>Or order directly via WhatsApp</p>
-              <a href={hasOutOfStockItem ? undefined : waOrderUrl} target={hasOutOfStockItem ? undefined : "_blank"} rel="noreferrer"
-                onClick={e => { if (hasOutOfStockItem) e.preventDefault(); }}
-                aria-disabled={hasOutOfStockItem}
-                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: hasOutOfStockItem ? "#e5e7eb" : "#25d366", color: hasOutOfStockItem ? "#9ca3af" : "#fff", padding: "10px 22px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13.5px", cursor: hasOutOfStockItem ? "not-allowed" : "pointer" }}>
+              <button type="button" disabled={!canSubmit || submitting} onClick={placeWhatsAppOrder}
+                style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: !canSubmit ? "#e5e7eb" : "#25d366", color: !canSubmit ? "#9ca3af" : "#fff", padding: "10px 22px", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "13.5px", fontFamily: "inherit", cursor: !canSubmit || submitting ? "not-allowed" : "pointer" }}>
                 <WhatsAppIcon size={16} /> WhatsApp Order
-              </a>
+              </button>
+              {!canSubmit && <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "8px" }}>Fill in name, phone &amp; address above first</p>}
             </div>
           </div>
 
@@ -360,7 +369,8 @@ export default function CheckoutPage() {
         </div>
         <div style={{ padding: "1.5rem", textAlign: "center" }}>
           <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)", marginBottom: "4px" }}>
-            © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}
+            © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}{" "}
+            <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{siteConfig.footer.developerName}</a>
           </p>
           <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
             {siteConfig.footer.tagline}

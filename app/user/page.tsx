@@ -471,10 +471,7 @@ export default function UserPage() {
                 )}
                 {!ordersLoading && (
                   <p style={{ marginTop: "1.2rem", fontSize: "12.5px", color: "#6b7280", lineHeight: 1.6 }}>
-                    Email orders placed from your account will appear here.
-                    <br /><br />
-                    WhatsApp orders are not shown because we do not use the WhatsApp Business API.
-                    WhatsApp orders are handled directly through WhatsApp and cannot be tracked on the website.
+                    Orders placed from your account will appear here, whether you checked out by email or WhatsApp.
                   </p>
                 )}
               </div>

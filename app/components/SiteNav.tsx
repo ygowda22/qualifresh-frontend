@@ -56,6 +56,15 @@ export default function SiteNav({ activePage }: Props) {
   const [ckOrderNum, setCkOrderNum] = useState("");
   const [ckError, setCkError] = useState("");
 
+  // WhatsApp order — fully separate from the email checkout state above.
+  const [waPopupOpen, setWaPopupOpen] = useState(false);
+  const [waName, setWaName] = useState("");
+  const [waPhone, setWaPhone] = useState("");
+  const [waAddress, setWaAddress] = useState("");
+  const [waCity, setWaCity] = useState("Pune");
+  const [waLoading, setWaLoading] = useState(false);
+  const [waError, setWaError] = useState("");
+
   // Contact support modal (global — replaces mailto FAB on all pages)
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactName, setContactName] = useState("");
@@ -249,16 +258,6 @@ export default function SiteNav({ activePage }: Props) {
     setCartStep(2);
   }
 
-  const waOrderUrl = cartItems.length > 0
-    ? `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(
-      "Hi QualiFresh! I'd like to order:\n" +
-      cartItems.map(p => `• ${p.name} ×${cart[p._id]} — ₹${p.price * cart[p._id]}`).join("\n") +
-      `\n\nTotal: ₹${grandTotal}${deliveryCost === 0 ? " (Free delivery!)" : ""}` +
-      (ckName ? `\n\nName: ${ckName}` : "") +
-      (ckPhone ? `\nPhone: ${ckPhone}` : "")
-    )}`
-    : `https://wa.me/${siteConfig.whatsapp}`;
-
   function getIdFromToken(token: string): string | undefined {
     try {
       const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -273,9 +272,13 @@ export default function SiteNav({ activePage }: Props) {
     try {
       const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
+      // Logged-in orders use the account's own identity (name/email), never the editable
+      // guest-style form fields, so the confirmation email always goes to the right address.
+      const identityName  = user ? user.name  : ckName;
+      const identityEmail = user ? user.email : ckEmail;
       const r = await fetch("/backend/api/orders", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: ckName, guestEmail: ckEmail, guestPhone: ckPhone, userId }),
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: identityName, guestEmail: identityEmail, guestPhone: ckPhone, userId }),
       });
       const d = await r.json();
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
@@ -285,6 +288,70 @@ export default function SiteNav({ activePage }: Props) {
       setCart({});
     } catch { setCkError("Network error. Please try again."); }
     finally { setCkLoading(false); }
+  }
+
+  // Saves a WhatsApp-sourced order via the dedicated /api/whatsapp-order endpoint, then opens
+  // WhatsApp using the URL the backend returns — never redirects before that response lands.
+  // Fully separate from placeOrder()/the email flow: own loading/error state, own route.
+  async function saveWhatsAppOrderAndRedirect(vals: { name: string; email: string; phone: string; address: string; city: string }) {
+    if (waLoading) return;
+    if (hasOutOfStockItem) { setWaError("Remove out-of-stock items from your cart to proceed."); return; }
+    setWaError(""); setWaLoading(true);
+    try {
+      const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
+      const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
+      const r = await fetch("/backend/api/whatsapp-order", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: ckSlot, name: vals.name, email: vals.email, phone: vals.phone, userId }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setWaError(d.message || "Order failed. Please try again."); return; }
+      window.open(d.whatsappMessageUrl, "_blank");
+      setCart({});
+      setWaPopupOpen(false);
+      closeCart();
+    } catch { setWaError("Network error. Please try again."); }
+    finally { setWaLoading(false); }
+  }
+
+  // Entry point for the WhatsApp-order button. Logged-in users with a saved phone + address on
+  // file go straight through — no intermediate step. Guests, and logged-in users missing saved
+  // info, get a small popup asking for name/phone/address (never the multi-step email form).
+  async function placeWhatsAppOrder() {
+    if (waLoading) return;
+    if (user) {
+      let name = user.name, email = user.email, phone = "", address = "", city = "Pune";
+      try {
+        const rp = await fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${user.token}` } });
+        const dp = rp.ok ? await rp.json() : null;
+        if (dp?.user?.phone) phone = dp.user.phone;
+        const ra = await fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${user.token}` } });
+        const da = ra.ok ? await ra.json() : null;
+        const addresses: { line1: string; city: string }[] = Array.isArray(da?.addresses) ? da.addresses : [];
+        if (addresses.length > 0) { address = addresses[0].line1; if (addresses[0].city) city = addresses[0].city; }
+      } catch { /* fall through to the popup below */ }
+
+      const phoneClean = phone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
+      const phoneValid = /^[6-9]\d{9}$/.test(phoneClean);
+      if (name && phone && phoneValid && address) {
+        await saveWhatsAppOrderAndRedirect({ name, email, phone, address, city });
+        return;
+      }
+      setWaName(name || ""); setWaPhone(phone); setWaAddress(address); setWaCity(city);
+      setWaError(""); setWaPopupOpen(true);
+      return;
+    }
+    setWaName(""); setWaPhone(""); setWaAddress(""); setWaCity("Pune");
+    setWaError(""); setWaPopupOpen(true);
+  }
+
+  const waPhoneClean = waPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
+  const waPhoneValid = /^[6-9]\d{9}$/.test(waPhoneClean);
+  const waCanSubmit = waName.trim() !== "" && waPhone.trim() !== "" && waPhoneValid && waAddress.trim() !== "";
+
+  async function submitWaPopup() {
+    if (!waCanSubmit) return;
+    await saveWhatsAppOrderAndRedirect({ name: waName, email: user?.email || "", phone: waPhone, address: waAddress, city: waCity });
   }
 
   // ── Search suggestions ───────────────────────────────────────────────────────
@@ -415,6 +482,10 @@ export default function SiteNav({ activePage }: Props) {
   return (
     <>
       <style>{`
+        .sn-cart-order-btn{flex:1;min-width:140px;padding:12px 8px;font-size:clamp(12px,2.8vw,16px);white-space:nowrap;border-radius:8px;text-align:center;}
+        @media(max-width:400px){
+          .sn-cart-order-btn{min-width:120px;padding:10px 6px;font-size:12px;}
+        }
         .sn-nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:76px;box-shadow:0 1px 0 #e9ede4,0 4px 20px rgba(0,0,0,.08);overflow:visible;}
         .sn-desk-nav{display:flex;gap:2.2rem;flex:1 1 auto;justify-content:center;align-items:center;}
         .sn-link{color:#4b5563;text-decoration:none;font-size:14px;font-weight:500;padding:5px 0;border-bottom:2px solid transparent;transition:all .22s;letter-spacing:0.01em;}
@@ -655,38 +726,40 @@ export default function SiteNav({ activePage }: Props) {
                         ⚠️ Out of Stock – Remove to Proceed
                       </div>
                     )}
-                    <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder || hasOutOfStockItem}
-                      style={{ width: "100%", padding: "13px", fontSize: "14.5px", background: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "#2d8a4e" : "#e5e7eb", color: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "#fff" : "#9ca3af", border: "none", borderRadius: "9px", cursor: cartTotal >= DEL.minOrder && !hasOutOfStockItem ? "pointer" : "not-allowed", fontWeight: 700, fontFamily: "inherit", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                      {/* {cartTotal >= DEL.minOrder ? "Email Order →" : `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`} */}
-                      {hasOutOfStockItem ? (
-                        "Remove Out of Stock Items"
-                      ) : cartTotal >= DEL.minOrder ? (
-                        <>
-                          {/* Email Icon */}
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            fill="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 
-        2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 
+                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder || hasOutOfStockItem} className="sn-cart-order-btn"
+                        style={{ background: hasOutOfStockItem ? "#e5e7eb" : cartTotal < DEL.minOrder ? "#e0e0e0" : "#28a745", color: hasOutOfStockItem ? "#9ca3af" : cartTotal < DEL.minOrder ? "#999" : "#fff", border: "none", cursor: (cartTotal < DEL.minOrder || hasOutOfStockItem) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                        {hasOutOfStockItem ? (
+                          "Remove Out of Stock Items"
+                        ) : (
+                          <>
+                            {/* Email Icon */}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="18"
+                              height="18"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2
+        2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0
         4-8 5-8-5V6l8 5 8-5v2z" />
-                          </svg>
+                            </svg>
 
-                          Email Order →
-                        </>
-                      ) : (
-                        `Min ₹${DEL.minOrder} (add ₹${DEL.minOrder - cartTotal} more)`
-                      )}
-                    </button>
-                    <a href={hasOutOfStockItem ? undefined : waOrderUrl} target={hasOutOfStockItem ? undefined : "_blank"} rel="noreferrer"
-                      onClick={e => { if (hasOutOfStockItem) e.preventDefault(); }}
-                      aria-disabled={hasOutOfStockItem}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", padding: "11px", background: hasOutOfStockItem ? "#e5e7eb" : "#25d366", color: hasOutOfStockItem ? "#9ca3af" : "#fff", borderRadius: "10px", fontWeight: 700, fontSize: "13.5px", textDecoration: "none", cursor: hasOutOfStockItem ? "not-allowed" : "pointer" }}>
-                      <WhatsAppIcon size={16} /> WhatsApp Order
-                    </a>
+                            Email Order →
+                          </>
+                        )}
+                      </button>
+                      <button type="button" disabled={cartTotal < DEL.minOrder || hasOutOfStockItem || waLoading} onClick={placeWhatsAppOrder} className="sn-cart-order-btn"
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: hasOutOfStockItem ? "#e5e7eb" : cartTotal < DEL.minOrder ? "#e0e0e0" : "#25D366", color: hasOutOfStockItem ? "#9ca3af" : cartTotal < DEL.minOrder ? "#999" : "#fff", border: "none", fontWeight: 700, fontFamily: "inherit", cursor: (cartTotal < DEL.minOrder || hasOutOfStockItem) ? "not-allowed" : "pointer" }}>
+                        <WhatsAppIcon size={16} /> WhatsApp Order
+                      </button>
+                    </div>
+                    {cartTotal < DEL.minOrder && (
+                      <p style={{ textAlign: "center", fontSize: "12px", color: "#dc2626", marginTop: "8px", marginBottom: 0 }}>
+                        Add ₹{DEL.minOrder - cartTotal} more to place an order.
+                      </p>
+                    )}
                   </div>
                 )}
               </>
@@ -762,10 +835,10 @@ export default function SiteNav({ activePage }: Props) {
                       </button>
                       <p style={{ textAlign: "center", fontSize: "11px", color: "#9ca3af", margin: "0" }}>Pay on delivery · No advance required</p>
                       <div style={{ textAlign: "center", paddingTop: "8px", borderTop: "1px solid #f3f4f6" }}>
-                        <a href={waOrderUrl} target="_blank" rel="noreferrer"
-                          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#25d366", color: "#fff", padding: "10px 18px", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "13px" }}>
+                        <button type="button" disabled={waLoading} onClick={placeWhatsAppOrder}
+                          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#25d366", color: "#fff", padding: "10px 18px", border: "none", borderRadius: "8px", fontWeight: 700, fontSize: "13px", fontFamily: "inherit", cursor: waLoading ? "not-allowed" : "pointer" }}>
                           <WhatsAppIcon size={15} /> Order via WhatsApp instead
-                        </a>
+                        </button>
                       </div>
                     </div>
                   );
@@ -928,6 +1001,55 @@ export default function SiteNav({ activePage }: Props) {
                 </div>
               </>
             )}
+          </div>
+        </>
+      )}
+
+      {/* ── WhatsApp Order popup — collects name/phone/address, then logs the order and redirects ── */}
+      {waPopupOpen && (
+        <>
+          <div onClick={() => !waLoading && setWaPopupOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, backdropFilter: "blur(3px)" }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", maxHeight: "92vh", overflowY: "auto", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
+              <button onClick={() => !waLoading && setWaPopupOpen(false)} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
+              <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                <WhatsAppIcon size={24} />
+              </div>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 4px" }}>WhatsApp Order</h2>
+              <p style={{ fontSize: "12.5px", color: "#6b7280", margin: 0 }}>Just need a few details to send your order</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Full Name <span style={{ color: "#ef4444" }}>*</span></label>
+                <input type="text" placeholder="Your name" value={waName} onChange={e => setWaName(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Mobile Number <span style={{ color: "#ef4444" }}>*</span></label>
+                <input type="tel" placeholder="e.g. 9876543210" value={waPhone} onChange={e => setWaPhone(e.target.value)}
+                  style={{ ...inputStyle, borderColor: waPhone && !waPhoneValid ? "#ef4444" : "#e5e7eb" }}
+                  onFocus={e => (e.target.style.borderColor = waPhone && !waPhoneValid ? "#ef4444" : "#2d8a4e")} onBlur={e => (e.target.style.borderColor = waPhone && !waPhoneValid ? "#ef4444" : "#e5e7eb")} />
+                {waPhone && !waPhoneValid && <p style={{ color: "#ef4444", fontSize: "11px", margin: "3px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Address <span style={{ color: "#ef4444" }}>*</span></label>
+                <input type="text" placeholder="Flat, Street, Area" value={waAddress} onChange={e => setWaAddress(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>City</label>
+                <input type="text" placeholder="Pune / Mumbai" value={waCity} onChange={e => setWaCity(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+              </div>
+              {waError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626" }}>{waError}</div>}
+              <button disabled={!waCanSubmit || waLoading} onClick={submitWaPopup}
+                style={{ width: "100%", marginTop: "6px", padding: "12px", fontSize: "14px", background: (!waCanSubmit || waLoading) ? "#e5e7eb" : "#25d366", color: (!waCanSubmit || waLoading) ? "#9ca3af" : "#fff", border: "none", borderRadius: "9px", cursor: (!waCanSubmit || waLoading) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                {waLoading ? "Placing Order…" : <><WhatsAppIcon size={16} /> Continue to WhatsApp</>}
+              </button>
+            </div>
           </div>
         </>
       )}

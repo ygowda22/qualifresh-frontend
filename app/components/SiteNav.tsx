@@ -258,11 +258,30 @@ export default function SiteNav({ activePage }: Props) {
     setCartStep(2);
   }
 
-  function getIdFromToken(token: string): string | undefined {
+  // Always re-fetches the current identity from the server right before an order is placed —
+  // never trusts cached name/email/phone/address from localStorage, React state, or the
+  // checkout form, so switching between guest and a logged-in user (or between accounts)
+  // can never leak the previous identity into a new order. Returns null if the token is no
+  // longer valid (e.g. expired session), in which case the caller must treat this as a guest.
+  async function fetchFreshIdentity(token: string): Promise<{ id: string; name: string; email: string; phone: string; address: string; city: string } | null> {
     try {
-      const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
-      return JSON.parse(atob(b64))?.id;
-    } catch { return undefined; }
+      const rp = await fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${token}` } });
+      if (!rp.ok) return null;
+      const dp = await rp.json();
+      if (!dp?.user?.id) return null;
+
+      let address = "", city = "Pune";
+      try {
+        const ra = await fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${token}` } });
+        if (ra.ok) {
+          const da = await ra.json();
+          const addresses: { line1: string; city: string }[] = Array.isArray(da?.addresses) ? da.addresses : [];
+          if (addresses.length > 0) { address = addresses[0].line1; if (addresses[0].city) city = addresses[0].city; }
+        }
+      } catch { /* no saved address on file — caller/popup handles the empty case */ }
+
+      return { id: dp.user.id, name: dp.user.name, email: dp.user.email, phone: dp.user.phone || "", address, city };
+    } catch { return null; }
   }
 
   async function placeOrder() {
@@ -270,15 +289,22 @@ export default function SiteNav({ activePage }: Props) {
     if (hasOutOfStockItem) { setCkError("Remove out-of-stock items from your cart to proceed."); return; }
     setCkError(""); setCkLoading(true);
     try {
-      const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
-      // Logged-in orders use the account's own identity (name/email), never the editable
-      // guest-style form fields, so the confirmation email always goes to the right address.
-      const identityName  = user ? user.name  : ckName;
-      const identityEmail = user ? user.email : ckEmail;
+
+      // Always re-fetch the current identity from the server right before building the
+      // payload — never use cached user/ckName/ckEmail/ckPhone/ckAddress — so a stale
+      // previous identity can never leak into a new order after switching accounts.
+      const fresh = user ? await fetchFreshIdentity(user.token) : null;
+      const userId          = fresh ? fresh.id : undefined;
+      const identityName    = fresh ? fresh.name    : ckName;
+      const identityEmail   = fresh ? fresh.email   : ckEmail;
+      const identityPhone   = fresh ? fresh.phone   : ckPhone;
+      const identityAddress = fresh ? fresh.address : ckAddress;
+      const identityCity    = fresh ? fresh.city    : ckCity;
+
       const r = await fetch("/backend/api/orders", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: ckAddress, city: ckCity, deliverySlot: ckSlot, notes: ckNotes, guestName: identityName, guestEmail: identityEmail, guestPhone: ckPhone, userId }),
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: identityAddress, city: identityCity, deliverySlot: ckSlot, notes: ckNotes, guestName: identityName, guestEmail: identityEmail, guestPhone: identityPhone, userId }),
       });
       const d = await r.json();
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
@@ -293,16 +319,15 @@ export default function SiteNav({ activePage }: Props) {
   // Saves a WhatsApp-sourced order via the dedicated /api/whatsapp-order endpoint, then opens
   // WhatsApp using the URL the backend returns — never redirects before that response lands.
   // Fully separate from placeOrder()/the email flow: own loading/error state, own route.
-  async function saveWhatsAppOrderAndRedirect(vals: { name: string; email: string; phone: string; address: string; city: string }) {
+  async function saveWhatsAppOrderAndRedirect(vals: { name: string; email: string; phone: string; address: string; city: string; userId?: string }) {
     if (waLoading) return;
     if (hasOutOfStockItem) { setWaError("Remove out-of-stock items from your cart to proceed."); return; }
     setWaError(""); setWaLoading(true);
     try {
-      const userId = user ? (user.id || getIdFromToken(user.token)) : undefined;
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       const r = await fetch("/backend/api/whatsapp-order", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: ckSlot, name: vals.name, email: vals.email, phone: vals.phone, userId }),
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: ckSlot, name: vals.name, email: vals.email, phone: vals.phone, userId: vals.userId }),
       });
       const d = await r.json();
       if (!r.ok) { setWaError(d.message || "Order failed. Please try again."); return; }
@@ -320,24 +345,18 @@ export default function SiteNav({ activePage }: Props) {
   async function placeWhatsAppOrder() {
     if (waLoading) return;
     if (user) {
-      let name = user.name, email = user.email, phone = "", address = "", city = "Pune";
-      try {
-        const rp = await fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${user.token}` } });
-        const dp = rp.ok ? await rp.json() : null;
-        if (dp?.user?.phone) phone = dp.user.phone;
-        const ra = await fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${user.token}` } });
-        const da = ra.ok ? await ra.json() : null;
-        const addresses: { line1: string; city: string }[] = Array.isArray(da?.addresses) ? da.addresses : [];
-        if (addresses.length > 0) { address = addresses[0].line1; if (addresses[0].city) city = addresses[0].city; }
-      } catch { /* fall through to the popup below */ }
+      // Always re-fetch — never use the cached user/ckName/ckEmail state — so a stale
+      // previous identity can never leak into a new WhatsApp order.
+      const fresh = await fetchFreshIdentity(user.token);
+      const name = fresh?.name || "", email = fresh?.email || "", phone = fresh?.phone || "", address = fresh?.address || "", city = fresh?.city || "Pune";
 
       const phoneClean = phone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
       const phoneValid = /^[6-9]\d{9}$/.test(phoneClean);
-      if (name && phone && phoneValid && address) {
-        await saveWhatsAppOrderAndRedirect({ name, email, phone, address, city });
+      if (fresh && name && phone && phoneValid && address) {
+        await saveWhatsAppOrderAndRedirect({ name, email, phone, address, city, userId: fresh.id });
         return;
       }
-      setWaName(name || ""); setWaPhone(phone); setWaAddress(address); setWaCity(city);
+      setWaName(name); setWaPhone(phone); setWaAddress(address); setWaCity(city);
       setWaError(""); setWaPopupOpen(true);
       return;
     }
@@ -351,7 +370,9 @@ export default function SiteNav({ activePage }: Props) {
 
   async function submitWaPopup() {
     if (!waCanSubmit) return;
-    await saveWhatsAppOrderAndRedirect({ name: waName, email: user?.email || "", phone: waPhone, address: waAddress, city: waCity });
+    // Reached only when identity wasn't freshly verified (guest, or an expired session) —
+    // never attribute this order to a cached/stale account id.
+    await saveWhatsAppOrderAndRedirect({ name: waName, email: user?.email || "", phone: waPhone, address: waAddress, city: waCity, userId: undefined });
   }
 
   // ── Search suggestions ───────────────────────────────────────────────────────

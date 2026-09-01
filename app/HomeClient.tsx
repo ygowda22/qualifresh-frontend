@@ -214,6 +214,11 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
       if (!r.ok) { setAuthError(d.message || "Login failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
+      // Notify other already-mounted components in this same tab immediately — native
+      // "storage" events only fire in OTHER tabs, so without this, a page that was already
+      // open before this login (e.g. Products) would keep showing stale wishlist/user data
+      // until manually refreshed.
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: JSON.stringify(u) }));
       // Merge current guest cart with user's saved backend cart
       const merged = await fetchAndMergeCart(d.token, cart);
       setCart(merged);
@@ -237,6 +242,11 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
       if (!r.ok) { setAuthError(d.message || "Registration failed"); return; }
       const u = { name: d.user.name, email: d.user.email, token: d.token };
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
+      // Notify other already-mounted components in this same tab immediately — native
+      // "storage" events only fire in OTHER tabs, so without this, a page that was already
+      // open before this login (e.g. Products) would keep showing stale wishlist/user data
+      // until manually refreshed.
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: JSON.stringify(u) }));
       // New account — save whatever guest cart items were present
       const merged = await fetchAndMergeCart(d.token, cart);
       setCart(merged);
@@ -274,6 +284,9 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
     localStorage.removeItem("qf_addresses");
+    // Notify other already-mounted components in this same tab immediately (see login above).
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: null }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_wishlist", newValue: null }));
     sessionStorage.clear();
   }
 

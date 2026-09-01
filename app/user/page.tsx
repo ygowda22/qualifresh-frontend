@@ -150,6 +150,11 @@ export default function UserPage() {
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
     localStorage.removeItem("qf_addresses");
+    // Notify other already-mounted components in this same tab immediately — native
+    // "storage" events only fire in OTHER tabs, so without this a page that was already
+    // open before this logout would keep showing stale wishlist/user data until refreshed.
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: null }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_wishlist", newValue: null }));
     sessionStorage.clear();
     router.push("/");
   }

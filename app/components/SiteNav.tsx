@@ -352,7 +352,7 @@ export default function SiteNav({ activePage }: Props) {
 
       const phoneClean = phone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
       const phoneValid = /^[6-9]\d{9}$/.test(phoneClean);
-      if (fresh && name && phone && phoneValid && address) {
+      if (fresh && name && phone && phoneValid && city) {
         await saveWhatsAppOrderAndRedirect({ name, email, phone, address, city, userId: fresh.id });
         return;
       }
@@ -366,7 +366,7 @@ export default function SiteNav({ activePage }: Props) {
 
   const waPhoneClean = waPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const waPhoneValid = /^[6-9]\d{9}$/.test(waPhoneClean);
-  const waCanSubmit = waName.trim() !== "" && waPhone.trim() !== "" && waPhoneValid && waAddress.trim() !== "";
+  const waCanSubmit = waName.trim() !== "" && waPhone.trim() !== "" && waPhoneValid && waCity.trim() !== "";
 
   async function submitWaPopup() {
     if (!waCanSubmit) return;
@@ -409,6 +409,11 @@ export default function SiteNav({ activePage }: Props) {
       const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
       localStorage.removeItem("qf_addresses"); // don't carry over a previous account's saved addresses
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
+      // Notify other already-mounted components in this same tab immediately — native
+      // "storage" events only fire in OTHER tabs, so without this, a page that was already
+      // open before this login (e.g. Products) would keep showing stale wishlist/user data
+      // until manually refreshed.
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: JSON.stringify(u) }));
       // Merge guest cart with user's saved backend cart
       const guestCart = cart; // current state before merging
       const merged = await fetchAndMergeCart(d.token, guestCart);
@@ -437,6 +442,11 @@ export default function SiteNav({ activePage }: Props) {
       const u = { id: d.user.id, name: d.user.name, email: d.user.email, token: d.token, phone: d.user.phone };
       localStorage.removeItem("qf_addresses"); // don't carry over a previous account's saved addresses
       setUser(u); localStorage.setItem("qf_user", JSON.stringify(u));
+      // Notify other already-mounted components in this same tab immediately — native
+      // "storage" events only fire in OTHER tabs, so without this, a page that was already
+      // open before this login (e.g. Products) would keep showing stale wishlist/user data
+      // until manually refreshed.
+      window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: JSON.stringify(u) }));
       // New accounts start with whatever guest cart items they had
       const guestCart = cart;
       const merged = await fetchAndMergeCart(d.token, guestCart);
@@ -455,6 +465,9 @@ export default function SiteNav({ activePage }: Props) {
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
     localStorage.removeItem("qf_addresses");
+    // Notify other already-mounted components in this same tab immediately (see login above).
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_user", newValue: null }));
+    window.dispatchEvent(new StorageEvent("storage", { key: "qf_wishlist", newValue: null }));
     sessionStorage.clear();
     router.push("/");
   }
@@ -748,8 +761,8 @@ export default function SiteNav({ activePage }: Props) {
                       </div>
                     )}
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <button onClick={openCheckout} disabled={cartTotal < DEL.minOrder || hasOutOfStockItem} className="sn-cart-order-btn"
-                        style={{ background: hasOutOfStockItem ? "#e5e7eb" : cartTotal < DEL.minOrder ? "#e0e0e0" : "#28a745", color: hasOutOfStockItem ? "#9ca3af" : cartTotal < DEL.minOrder ? "#999" : "#fff", border: "none", cursor: (cartTotal < DEL.minOrder || hasOutOfStockItem) ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      <button onClick={openCheckout} disabled={hasOutOfStockItem} className="sn-cart-order-btn"
+                        style={{ background: hasOutOfStockItem ? "#e5e7eb" : "#28a745", color: hasOutOfStockItem ? "#9ca3af" : "#fff", border: "none", cursor: hasOutOfStockItem ? "not-allowed" : "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
                         {hasOutOfStockItem ? (
                           "Remove Out of Stock Items"
                         ) : (
@@ -771,16 +784,11 @@ export default function SiteNav({ activePage }: Props) {
                           </>
                         )}
                       </button>
-                      <button type="button" disabled={cartTotal < DEL.minOrder || hasOutOfStockItem || waLoading} onClick={placeWhatsAppOrder} className="sn-cart-order-btn"
-                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: hasOutOfStockItem ? "#e5e7eb" : cartTotal < DEL.minOrder ? "#e0e0e0" : "#25D366", color: hasOutOfStockItem ? "#9ca3af" : cartTotal < DEL.minOrder ? "#999" : "#fff", border: "none", fontWeight: 700, fontFamily: "inherit", cursor: (cartTotal < DEL.minOrder || hasOutOfStockItem) ? "not-allowed" : "pointer" }}>
+                      <button type="button" disabled={hasOutOfStockItem || waLoading} onClick={placeWhatsAppOrder} className="sn-cart-order-btn"
+                        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", background: hasOutOfStockItem ? "#e5e7eb" : "#25D366", color: hasOutOfStockItem ? "#9ca3af" : "#fff", border: "none", fontWeight: 700, fontFamily: "inherit", cursor: hasOutOfStockItem ? "not-allowed" : "pointer" }}>
                         <WhatsAppIcon size={16} /> WhatsApp Order
                       </button>
                     </div>
-                    {cartTotal < DEL.minOrder && (
-                      <p style={{ textAlign: "center", fontSize: "12px", color: "#dc2626", marginTop: "8px", marginBottom: 0 }}>
-                        Add ₹{DEL.minOrder - cartTotal} more to place an order.
-                      </p>
-                    )}
                   </div>
                 )}
               </>
@@ -1054,13 +1062,13 @@ export default function SiteNav({ activePage }: Props) {
                 {waPhone && !waPhoneValid && <p style={{ color: "#ef4444", fontSize: "11px", margin: "3px 0 0" }}>Enter a valid 10-digit Indian mobile number</p>}
               </div>
               <div>
-                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Address <span style={{ color: "#ef4444" }}>*</span></label>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Address <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional)</span></label>
                 <input type="text" placeholder="Flat, Street, Area" value={waAddress} onChange={e => setWaAddress(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
               </div>
               <div>
-                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>City</label>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>City <span style={{ color: "#ef4444" }}>*</span></label>
                 <input type="text" placeholder="Pune / Mumbai" value={waCity} onChange={e => setWaCity(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />

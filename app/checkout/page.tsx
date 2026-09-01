@@ -335,11 +335,6 @@ export default function CheckoutPage() {
                         🚚 Add ₹{DEL.freeDeliveryAbove - cartTotal} more for <strong>free delivery!</strong>
                       </div>
                     )}
-                    {cartTotal < DEL.minOrder && cartTotal > 0 && (
-                      <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: "7px", padding: "7px 10px", fontSize: "11.5px", color: "#9a3412", marginTop: "8px" }}>
-                        ⚠️ Min order ₹{DEL.minOrder} — add ₹{DEL.minOrder - cartTotal} more
-                      </div>
-                    )}
                   </div>
                 </>
               )}

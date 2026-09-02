@@ -222,6 +222,37 @@ export default function SiteNav({ activePage }: Props) {
     setCart(updated);
   }
 
+  // ── Guest details (localStorage only) ─────────────────────────────────────
+  // Persists across sessions for guests ONLY, shared by the email checkout form and the
+  // WhatsApp popup. Never read/written while logged in, and never cleared on logout.
+  interface GuestDetails { fullName: string; mobileNumber: string; address: string; city: string }
+  const GUEST_DETAILS_KEY = "qf_guest_details";
+  function loadGuestDetails(): GuestDetails {
+    try {
+      const raw = localStorage.getItem(GUEST_DETAILS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* fall through to defaults */ }
+    return { fullName: "", mobileNumber: "", address: "", city: "Pune" };
+  }
+  function saveGuestDetails(d: GuestDetails) {
+    try { localStorage.setItem(GUEST_DETAILS_KEY, JSON.stringify(d)); } catch { /* ignore */ }
+  }
+
+  // Persist guest edits back to localStorage as they type — only while logged out. Skips the
+  // untouched/default state so a fresh mount never overwrites previously saved guest details
+  // with blanks before the form has had a chance to load them.
+  useEffect(() => {
+    if (user) return;
+    if (!ckName && !ckPhone && !ckAddress && ckCity === "Pune") return;
+    saveGuestDetails({ fullName: ckName, mobileNumber: ckPhone, address: ckAddress, city: ckCity });
+  }, [ckName, ckPhone, ckAddress, ckCity, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (user) return;
+    if (!waName && !waPhone && !waAddress && waCity === "Pune") return;
+    saveGuestDetails({ fullName: waName, mobileNumber: waPhone, address: waAddress, city: waCity });
+  }, [waName, waPhone, waAddress, waCity, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const ckPhoneClean = ckPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const ckPhoneValid = /^[6-9]\d{9}$/.test(ckPhoneClean);
   const ckCanSubmit = ckName.trim() !== "" && ckPhone.trim() !== "" && ckPhoneValid && ckAddress.trim() !== "";
@@ -230,30 +261,35 @@ export default function SiteNav({ activePage }: Props) {
   function openCheckout() {
     refreshProducts();
     if (user) {
-      if (!ckName) setCkName(user.name);
-      if (!ckEmail) setCkEmail(user.email);
+      // Logged in — always override with the account's own data, ignoring whatever is
+      // currently in these fields (e.g. leftover guest details), never localStorage.
+      setCkName(user.name);
+      setCkEmail(user.email);
 
-      // Autofill mobile number from the profile API
-      if (!ckPhone) {
-        fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${user.token}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => { if (d?.user?.phone) setCkPhone(d.user.phone); })
-          .catch(() => {});
-      }
+      fetch("/backend/api/users/profile", { headers: { Authorization: `Bearer ${user.token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d?.user?.phone) setCkPhone(d.user.phone); })
+        .catch(() => {});
 
-      // Autofill delivery address from the first saved address (backend)
-      if (!ckAddress) {
-        fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${user.token}` } })
-          .then(r => r.ok ? r.json() : null)
-          .then(d => {
-            const addresses: { line1: string; city: string }[] = Array.isArray(d?.addresses) ? d.addresses : [];
-            if (addresses.length > 0) {
-              setCkAddress(addresses[0].line1);
-              if (!ckCity) setCkCity(addresses[0].city);
-            }
-          })
-          .catch(() => {});
-      }
+      fetch("/backend/api/users/addresses", { headers: { Authorization: `Bearer ${user.token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          const addresses: { line1: string; city: string }[] = Array.isArray(d?.addresses) ? d.addresses : [];
+          if (addresses.length > 0) {
+            setCkAddress(addresses[0].line1);
+            setCkCity(addresses[0].city);
+          }
+        })
+        .catch(() => {});
+    } else {
+      // Guest — always override with saved guest details, ignoring whatever is currently in
+      // these fields (e.g. leftover profile data from before a logout), never the backend.
+      const g = loadGuestDetails();
+      setCkName(g.fullName);
+      setCkEmail(""); // not part of saved guest details — never carry over a previous account's email
+      setCkPhone(g.mobileNumber);
+      setCkAddress(g.address);
+      setCkCity(g.city);
     }
     setCartStep(2);
   }
@@ -360,7 +396,9 @@ export default function SiteNav({ activePage }: Props) {
       setWaError(""); setWaPopupOpen(true);
       return;
     }
-    setWaName(""); setWaPhone(""); setWaAddress(""); setWaCity("Pune");
+    // Guest — auto-fill from previously saved guest details (never touched while logged in)
+    const g = loadGuestDetails();
+    setWaName(g.fullName); setWaPhone(g.mobileNumber); setWaAddress(g.address); setWaCity(g.city);
     setWaError(""); setWaPopupOpen(true);
   }
 
@@ -462,6 +500,12 @@ export default function SiteNav({ activePage }: Props) {
     if (token) await saveAndClearCart(token, cart);
     setCart({});
     setUser(null);
+    // Clear the account's data out of the checkout/WhatsApp form state too — otherwise the
+    // guest-details persist effect (which runs again the instant `user` goes null) would see
+    // these still holding the previous account's values and save them over the real guest
+    // details in localStorage before the guest auto-fill ever gets a chance to run.
+    setCkName(""); setCkEmail(""); setCkPhone(""); setCkAddress(""); setCkCity("Pune");
+    setWaName(""); setWaPhone(""); setWaAddress(""); setWaCity("Pune");
     localStorage.removeItem("qf_user");
     localStorage.removeItem("qf_wishlist");
     localStorage.removeItem("qf_addresses");

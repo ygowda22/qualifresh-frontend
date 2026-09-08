@@ -47,6 +47,13 @@ function WhatsAppIcon({ size = 17 }: { size?: number }) {
     </svg>
   );
 }
+function LinkedInGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.554V9h3.565v11.452z"/>
+    </svg>
+  );
+}
 
 // ── Logo ──────────────────────────────────────────────────────────────────────
 function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
@@ -1083,7 +1090,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           {/* Bottom 3 compact cards */}
           <div className="why-grid-bottom" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1.2rem" }}>
             {([
-              { icon: "🧑‍🌾", bg: "#fff", border: "#bbf7d0", iconBg: "#f0fdf4", iconColor: "#16a34a", title: "Local Farmers",   desc: "Partnered with 20+ trusted farms in Pune & surrounding districts, ensuring traceability." },
+              { icon: "🧑‍🌾", bg: "#fff", border: "#bbf7d0", iconBg: "#f0fdf4", iconColor: "#16a34a", title: "Local Farmers",   desc: "Everything comes directly from our farms or partner farms we manage — no middlemen, no markets." },
               { icon: "🔬", bg: "#fff", border: "#bfdbfe", iconBg: "#eff6ff", iconColor: "#1d4ed8", title: "Quality Tested",   desc: "Every batch undergoes freshness inspection before dispatch. No compromises, ever." },
               { icon: "🌍", bg: "#fff", border: "#ddd6fe", iconBg: "#f5f3ff", iconColor: "#7c3aed", title: "Eco Packaging",    desc: "Breathable, sustainable packaging extends shelf life and reduces plastic waste." },
             ]).map(card => (
@@ -1165,7 +1172,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
               <span style={{ display: "inline-block", background: "rgba(163,230,53,0.15)", border: "1px solid rgba(163,230,53,0.3)", borderRadius: "20px", padding: "5px 18px", fontSize: "11px", fontWeight: 700, color: "#d9f99d", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "16px" }}>Our Story</span>
               <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.8rem)", fontWeight: 800, color: "#fff", margin: "0 0 14px", lineHeight: 1.15 }}>Bringing <span style={{ color: "#a3e635" }}>Restaurant-Grade</span><br />Freshness to Your Home</h2>
               <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "15px", maxWidth: "620px", margin: "0 auto", lineHeight: 1.8 }}>
-                QualiFresh was born from a simple belief — that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. We source directly from trusted farms in Pune and deliver twice a week so freshness is never a compromise.
+                QualiFresh was born from a simple belief — that every home deserves the same exotic, farm-fresh produce that top restaurants enjoy. Everything comes directly from our farms or partner farms we manage — no middlemen, no markets. We deliver twice a week so freshness is never a compromise.
               </p>
             </div>
             {/* Key Stats */}
@@ -1481,6 +1488,10 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                          style={{ width: "36px", height: "36px", background: "#25d366", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
                          <WhatsAppIcon size={18} />
                        </a>
+                       <a href="https://www.linkedin.com/in/rohit-gowda-3977411b2/" target="_blank" rel="noreferrer" aria-label="LinkedIn"
+                         style={{ width: "36px", height: "36px", background: "#0A66C2", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                         <LinkedInGlyph size={18} />
+                       </a>
                      </div>
                    </div>
                    <div>
@@ -1521,11 +1532,16 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                    </div>
                  </div>
                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-                   <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
+                   <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>
                      © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}{" "}
-                     <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{siteConfig.footer.developerName}</a>
+                     <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                       {siteConfig.footer.developerName}
+                       <span style={{ width: "13px", height: "13px", background: "#0A66C2", borderRadius: "3px", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                         <LinkedInGlyph size={8} />
+                       </span>
+                     </a>
                    </p>
-                   <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
+                   <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>
                      {siteConfig.footer.tagline}
                    </p>
                  </div>

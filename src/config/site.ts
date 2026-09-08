@@ -59,7 +59,7 @@ export const siteConfig = {
     line1:       "Fresh Korean, Exotic &",
     lineAccent:  "Thai Vegetables",
     line2:       "at Your Door",
-    subtext:     "Hand-picked specialty vegetables delivered twice a week to Mumbai & Pune. Order on WhatsApp - pay only after delivery. Not satisfied? Free replacement, no questions.",
+    subtext:     "Hand-picked specialty vegetables delivered twice a week to Mumbai & Pune. Order on WhatsApp or Email — pay only after delivery. Not satisfied? Free replacement, no questions.",
     // Right-side hero image (replace with your own CDN URL or /images/hero.jpg)
     image:       "https://images.pexels.com/photos/11631746/pexels-photo-11631746.jpeg?auto=compress&cs=tinysrgb&w=900",
   },
@@ -151,7 +151,7 @@ export const siteConfig = {
   footer: {
   about: "Premium exotic vegetables grown on our Pune farms. Freshly delivered across Pune & Mumbai twice a week",
   developer: "Web Development By",
-  developerName: "Yogeshwari",
+  developerName: "Yogeshwari Gowda",
   developerUrl: "https://www.linkedin.com/in/yogeshwari/",
   tagline: "Designed with ❤️ for fresh farming · Pune, India",
 },

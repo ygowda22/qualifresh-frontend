@@ -20,6 +20,7 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
+function fmtTime(d: string) { return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }); }
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b", confirmed: "#3b82f6", out_for_delivery: "#8b5cf6",
@@ -812,6 +813,27 @@ export default function AdminPage() {
   const totalOrderPages  = Math.ceil(filteredOrders.length / ORDER_PER_PAGE);
   const pagedOrders      = filteredOrders.slice(orderPage * ORDER_PER_PAGE, (orderPage + 1) * ORDER_PER_PAGE);
 
+  // Product Sales Breakdown — aggregated from `orders[].items[]` (name, quantity, price)
+  const productSalesBreakdown = (() => {
+    const map = new Map<string, { name: string; qty: number; orderIds: Set<string>; revenue: number }>();
+    for (const o of orders) {
+      if (!Array.isArray(o.items)) continue;
+      for (const it of o.items) {
+        const name = it.name || "Unknown";
+        const qty = Number(it.quantity) || 0;
+        const price = Number(it.price) || 0;
+        const entry = map.get(name) || { name, qty: 0, orderIds: new Set<string>(), revenue: 0 };
+        entry.qty += qty;
+        entry.revenue += qty * price;
+        if (o._id) entry.orderIds.add(o._id);
+        map.set(name, entry);
+      }
+    }
+    return Array.from(map.values())
+      .map(e => ({ name: e.name, qty: e.qty, orders: e.orderIds.size, revenue: e.revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+  })();
+
   const PROD_PER_PAGE = 10;
   const filteredProducts = products.filter(p => !prodSearch || p.name?.toLowerCase().includes(prodSearch.toLowerCase()) || p.slug?.toLowerCase().includes(prodSearch.toLowerCase()) || p.category?.toLowerCase().includes(prodSearch.toLowerCase()));
   const totalProdPages = Math.ceil(filteredProducts.length / PROD_PER_PAGE);
@@ -870,6 +892,7 @@ export default function AdminPage() {
           .admin-main{padding:1rem}
           .admin-charts-row{grid-template-columns:1fr!important}
           .admin-recent-row{grid-template-columns:1fr!important}
+          .admin-stat-cards{grid-template-columns:1fr!important}
         }
         @media(max-width:480px){
           .admin-mobile-nav-btn{padding:8px 10px;font-size:10px}
@@ -936,7 +959,7 @@ export default function AdminPage() {
             </div>
 
             {/* Stats cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div className="admin-stat-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
               <StatCard label="Total Orders"       value={stats?.totalOrders ?? "—"}              icon="📦" color="#2d8a4e" sub={`₹${(stats?.totalRevenue || 0).toLocaleString("en-IN")} revenue`} />
               <StatCard label="Total Customers"    value={stats?.totalUsers ?? "—"}               icon="👥" color="#3b82f6" sub={`${stats?.newUsersThisMonth ?? 0} this month`} />
               <StatCard label="Repeat Customers"   value={stats?.repeatCustomers ?? "—"}          icon="🔄" color="#7c3aed" />
@@ -975,7 +998,8 @@ export default function AdminPage() {
             {/* Top products + Recent orders */}
             <div className="admin-recent-row">
               {/* Top products */}
-              <div style={{ background: "#fff", borderRadius: "14px", padding: "1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
+              <div>
+              <div style={{ background: "#fff", borderRadius: "14px", padding: "1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.05)", marginBottom: "1rem" }}>
                 <h3 style={{ margin: "0 0 1rem", fontSize: "14px", fontWeight: 700, color: "#111827" }}>Top Selling Products</h3>
                 {stats?.topProducts?.length > 0 ? stats.topProducts.map((p: any, i: number) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
@@ -984,6 +1008,25 @@ export default function AdminPage() {
                     <span style={{ fontWeight: 700, fontSize: "12px", color: "#6b7280" }}>{p.count} sold</span>
                   </div>
                 )) : <p style={{ color: "#9ca3af", fontSize: "13px" }}>No sales data yet</p>}
+              </div>
+
+              {/* Product Sales Breakdown */}
+              <div style={{ background: "#fff", borderRadius: "14px", padding: "1.5rem", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
+                <h3 style={{ margin: "0 0 1rem", fontSize: "14px", fontWeight: 700, color: "#111827" }}>Product Sales Breakdown</h3>
+                {productSalesBreakdown.length > 0 ? (
+                  <div style={{ maxHeight: "260px", overflowY: "auto" }}>
+                    {productSalesBreakdown.map((p, i) => (
+                      <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", paddingBottom: "10px", borderBottom: i < productSalesBreakdown.length - 1 ? "1px dashed #f1f5f9" : "none" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "13px", color: "#374151", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.name}</div>
+                          <div style={{ fontSize: "11px", color: "#9ca3af", marginTop: "2px" }}>{p.qty} units sold · {p.orders} orders</div>
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: "13px", color: "#111827", whiteSpace: "nowrap" }}>₹{p.revenue.toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p style={{ color: "#9ca3af", fontSize: "13px" }}>No sales data yet</p>}
+              </div>
               </div>
 
               {/* Recent orders */}
@@ -1074,7 +1117,10 @@ export default function AdminPage() {
                       </td>
                       <td style={{ padding: "12px 14px", fontWeight: 700, color: "#111827" }}>₹{o.total}</td>
                       <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>{o.deliverySlot}</td>
-                      <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>{fmtDate(o.createdAt)}</td>
+                      <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>
+                        {fmtDate(o.createdAt)}
+                        {o.createdAt && <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: "2px" }}>{fmtTime(o.createdAt)}</div>}
+                      </td>
                       <td style={{ padding: "12px 14px" }}>
                         <span style={{ background: STATUS_COLORS[o.status] + "20", color: STATUS_COLORS[o.status], fontSize: "11px", padding: "3px 9px", borderRadius: "6px", fontWeight: 700 }}>{STATUS_LABELS[o.status]}</span>
                       </td>

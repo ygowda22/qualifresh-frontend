@@ -62,6 +62,7 @@ export default function SiteNav({ activePage }: Props) {
   const [waPhone, setWaPhone] = useState("");
   const [waAddress, setWaAddress] = useState("");
   const [waCity, setWaCity] = useState("Pune");
+  const [waSlot, setWaSlot] = useState("");
   const [waLoading, setWaLoading] = useState(false);
   const [waError, setWaError] = useState("");
 
@@ -355,7 +356,7 @@ export default function SiteNav({ activePage }: Props) {
   // Saves a WhatsApp-sourced order via the dedicated /api/whatsapp-order endpoint, then opens
   // WhatsApp using the URL the backend returns — never redirects before that response lands.
   // Fully separate from placeOrder()/the email flow: own loading/error state, own route.
-  async function saveWhatsAppOrderAndRedirect(vals: { name: string; email: string; phone: string; address: string; city: string; userId?: string }) {
+  async function saveWhatsAppOrderAndRedirect(vals: { name: string; email: string; phone: string; address: string; city: string; deliverySlot: string; userId?: string }) {
     if (waLoading) return;
     if (hasOutOfStockItem) { setWaError("Remove out-of-stock items from your cart to proceed."); return; }
     setWaError(""); setWaLoading(true);
@@ -363,7 +364,7 @@ export default function SiteNav({ activePage }: Props) {
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       const r = await fetch("/backend/api/whatsapp-order", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: ckSlot, name: vals.name, email: vals.email, phone: vals.phone, userId: vals.userId }),
+        body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: vals.deliverySlot, name: vals.name, email: vals.email, phone: vals.phone, userId: vals.userId }),
       });
       const d = await r.json();
       if (!r.ok) { setWaError(d.message || "Order failed. Please try again."); return; }
@@ -375,42 +376,46 @@ export default function SiteNav({ activePage }: Props) {
     finally { setWaLoading(false); }
   }
 
-  // Entry point for the WhatsApp-order button. Logged-in users with a saved phone + address on
-  // file go straight through — no intermediate step. Guests, and logged-in users missing saved
-  // info, get a small popup asking for name/phone/address (never the multi-step email form).
+  // Entry point for the WhatsApp-order button. Always opens the small popup (never the
+  // multi-step email form) — pre-filled from the account profile when logged in, or from
+  // saved guest details otherwise — since a delivery slot must always be actively chosen.
   async function placeWhatsAppOrder() {
     if (waLoading) return;
+    // A delivery slot must always be actively chosen (never auto-assigned), so the popup
+    // now always opens — even for a logged-in user whose identity is fully known — since
+    // slot selection has no other place to happen.
     if (user) {
       // Always re-fetch — never use the cached user/ckName/ckEmail state — so a stale
       // previous identity can never leak into a new WhatsApp order.
       const fresh = await fetchFreshIdentity(user.token);
-      const name = fresh?.name || "", email = fresh?.email || "", phone = fresh?.phone || "", address = fresh?.address || "", city = fresh?.city || "Pune";
-
-      const phoneClean = phone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
-      const phoneValid = /^[6-9]\d{9}$/.test(phoneClean);
-      if (fresh && name && phone && phoneValid && city) {
-        await saveWhatsAppOrderAndRedirect({ name, email, phone, address, city, userId: fresh.id });
-        return;
-      }
-      setWaName(name); setWaPhone(phone); setWaAddress(address); setWaCity(city);
+      const name = fresh?.name || "", phone = fresh?.phone || "", address = fresh?.address || "", city = fresh?.city || "Pune";
+      setWaName(name); setWaPhone(phone); setWaAddress(address); setWaCity(city); setWaSlot("");
       setWaError(""); setWaPopupOpen(true);
       return;
     }
     // Guest — auto-fill from previously saved guest details (never touched while logged in)
     const g = loadGuestDetails();
-    setWaName(g.fullName); setWaPhone(g.mobileNumber); setWaAddress(g.address); setWaCity(g.city);
+    setWaName(g.fullName); setWaPhone(g.mobileNumber); setWaAddress(g.address); setWaCity(g.city); setWaSlot("");
     setWaError(""); setWaPopupOpen(true);
   }
 
   const waPhoneClean = waPhone.replace(/\s+/g, "").replace(/^(\+91|91)/, "");
   const waPhoneValid = /^[6-9]\d{9}$/.test(waPhoneClean);
-  const waCanSubmit = waName.trim() !== "" && waPhone.trim() !== "" && waPhoneValid && waCity.trim() !== "";
+  const waCanSubmit = waName.trim() !== "" && waPhone.trim() !== "" && waPhoneValid && waCity.trim() !== "" && waSlot.trim() !== "";
 
   async function submitWaPopup() {
     if (!waCanSubmit) return;
-    // Reached only when identity wasn't freshly verified (guest, or an expired session) —
-    // never attribute this order to a cached/stale account id.
-    await saveWhatsAppOrderAndRedirect({ name: waName, email: user?.email || "", phone: waPhone, address: waAddress, city: waCity, userId: undefined });
+    // Always re-fetch identity right here at submit time — never trust what was resolved
+    // when the popup opened — consistent with the same rule applied to the email flow.
+    // For a logged-in user, name/email come from the verified account (never the editable
+    // popup fields); phone/address/city/slot stay as entered in the popup either way.
+    const fresh = user ? await fetchFreshIdentity(user.token) : null;
+    await saveWhatsAppOrderAndRedirect({
+      name: fresh ? fresh.name : waName,
+      email: fresh ? fresh.email : "",
+      phone: waPhone, address: waAddress, city: waCity, deliverySlot: waSlot,
+      userId: fresh ? fresh.id : undefined,
+    });
   }
 
   // ── Search suggestions ───────────────────────────────────────────────────────
@@ -1116,6 +1121,15 @@ export default function SiteNav({ activePage }: Props) {
                 <input type="text" placeholder="Pune / Mumbai" value={waCity} onChange={e => setWaCity(e.target.value)}
                   style={inputStyle}
                   onFocus={e => (e.target.style.borderColor = "#2d8a4e")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} />
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#374151", display: "block", marginBottom: "4px" }}>Delivery Slot <span style={{ color: "#ef4444" }}>*</span></label>
+                <select value={waSlot} onChange={e => setWaSlot(e.target.value)} style={{ ...inputStyle, cursor: "pointer", background: "#fff" }}>
+                  <option value="">Select delivery slot</option>
+                  <option>Wednesday</option>
+                  <option>Saturday</option>
+                </select>
+                {!waSlot && <p style={{ color: "#ef4444", fontSize: "11px", margin: "3px 0 0" }}>Please select delivery slot.</p>}
               </div>
               {waError && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "9px 12px", fontSize: "12.5px", color: "#dc2626" }}>{waError}</div>}
               <button disabled={!waCanSubmit || waLoading} onClick={submitWaPopup}

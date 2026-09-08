@@ -24,6 +24,15 @@ function WhatsAppIcon({ size = 17 }: { size?: number }) {
     </svg>
   );
 }
+// Official LinkedIn "in" glyph — used for both the owner's social-row icon and the
+// developer credit's inline icon, always on the brand blue (#0A66C2) background.
+function LinkedInGlyph({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.554V9h3.565v11.452z"/>
+    </svg>
+  );
+}
 
 export default function GlobalFooter() {
   return (
@@ -64,6 +73,10 @@ export default function GlobalFooter() {
                 style={{ width: "36px", height: "36px", background: "#25d366", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
                 <WhatsAppIcon size={18} />
               </a>
+              <a href="https://www.linkedin.com/in/rohit-gowda-3977411b2/" target="_blank" rel="noreferrer" aria-label="LinkedIn"
+                style={{ width: "36px", height: "36px", background: "#0A66C2", borderRadius: "9px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", textDecoration: "none" }}>
+                <LinkedInGlyph size={18} />
+              </a>
             </div>
           </div>
           <div>
@@ -99,11 +112,16 @@ export default function GlobalFooter() {
           </div>
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: "1.2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>
             © {new Date().getFullYear()} {siteConfig.name} — {siteConfig.tagline}. All rights reserved. &nbsp;|&nbsp; {siteConfig.footer.developer}{" "}
-            <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{siteConfig.footer.developerName}</a>
+            <a href={siteConfig.footer.developerUrl} target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              {siteConfig.footer.developerName}
+              <span style={{ width: "13px", height: "13px", background: "#0A66C2", borderRadius: "3px", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <LinkedInGlyph size={8} />
+              </span>
+            </a>
           </p>
-          <p style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.22)" }}>
+          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.6)" }}>
             {siteConfig.footer.tagline}
           </p>
         </div>

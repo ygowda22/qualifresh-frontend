@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
+      // Google Cloud Storage bucket (image migration from Cloudinary)
+      { protocol: "https", hostname: "storage.googleapis.com", pathname: "/**" },
     ],
   },
   // Proxy /backend/* → backend server (runs server-side, so localhost works from mobile too)

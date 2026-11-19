@@ -341,7 +341,7 @@ export default function OurFarmsClient({ initialFarmPhotos }: OurFarmsClientProp
           <div className="footer-grid-f" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}>
-                <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
               </div>
               <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

@@ -1,18 +1,29 @@
 /**
- * Serve Cloudinary images resized and in WebP/AVIF instead of the original PNG.
+ * Pick the right-sized version of a product/category/farm/testimonial image.
  *
- * Before: .../image/upload/v123/qualifresh-products/bok-choy.png        (~600 KB PNG)
- * After:  .../image/upload/f_auto,q_auto,w_480/v123/qualifresh-products/bok-choy.png  (~30-50 KB WebP)
+ * Cloudinary (current):
+ *   .../image/upload/v123/qualifresh-products/bok-choy.png                        (~600 KB PNG)
+ *   → .../image/upload/f_auto,q_auto,w_480/v123/qualifresh-products/bok-choy.png  (~30-50 KB WebP)
  *
- * - Non-Cloudinary URLs (local /public files, other hosts) are returned unchanged,
- *   so it is safe to wrap any image src with it.
- * - URLs that already contain a transformation are returned unchanged.
- * - Pass `h` to crop to an exact box (c_fill, auto gravity).
+ * Google Cloud Storage (after migration — backend stores <name>-1200.webp and <name>-400.webp):
+ *   https://storage.googleapis.com/<bucket>/.../bok-choy-1200.webp
+ *   → ...-400.webp when a small image (w <= 480) is enough
+ *
+ * Any other URL (local /public files, other hosts) is returned unchanged,
+ * so it is safe to wrap any image src with it.
+ * Pass `h` to crop Cloudinary images to an exact box (c_fill, auto gravity);
+ * GCS images are cropped by CSS object-fit instead.
  */
 const CLD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/;
+const GCS_LARGE = /^(https:\/\/storage\.googleapis\.com\/.+)-1200\.webp(\?.*)?$/;
+const SMALL_MAX = 480;
 
 export function cldImg(url: string | undefined | null, w: number, h?: number): string {
   if (!url) return "";
+
+  const g = url.match(GCS_LARGE);
+  if (g) return w <= SMALL_MAX ? `${g[1]}-400.webp${g[2] ?? ""}` : url;
+
   const m = url.match(CLD);
   if (!m) return url;
   const rest = m[2];

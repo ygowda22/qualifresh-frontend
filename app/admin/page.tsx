@@ -901,7 +901,7 @@ export default function AdminPage() {
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a1f12,#1a4a2e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ background: "#fff", borderRadius: "20px", padding: "2.5rem 2rem", width: "clamp(300px,90vw,380px)", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", margin: "0 auto 10px", display: "block", objectFit: "contain" }} />
+            <img src="/logo.webp" alt="QualiFresh" style={{ height: "80px", width: "auto", margin: "0 auto 10px", display: "block", objectFit: "contain" }} />
             <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a3c2e", margin: "0 0 4px" }}>Admin Panel</h1>
             <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0 }}>Sign in to manage your store</p>
           </div>
@@ -965,7 +965,7 @@ export default function AdminPage() {
       <aside className="admin-sidebar">
         <div style={{ padding: "0 1.2rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
+            <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
             <div>
               <div style={{ color: "#d9f99d", fontWeight: 700, fontSize: "14px" }}>QualiFresh</div>
               <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>Admin Panel</div>

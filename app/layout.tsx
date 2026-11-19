@@ -46,9 +46,9 @@ export const metadata: Metadata = {
   
   // Icons configuration
   icons: {
-    icon: [{ url: "/logo.png", type: "image/png", sizes: "any" }],
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: [{ url: "/icon-192.png", type: "image/png", sizes: "any" }],
+    shortcut: "/icon-192.png",
+    apple: "/icon-192.png",
   },
 
   // OpenGraph for Facebook/Instagram/WhatsApp/etc.
@@ -97,8 +97,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet" />
         {/* Favicon without preload hint — avoids "preloaded but not used" browser warning */}
-        <link rel="icon" href="/logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="icon" href="/icon-192.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         {/* Inline critical background — prevents white flash before CSS loads on all devices */}
         <style dangerouslySetInnerHTML={{ __html: `html,body{background-color:#f4f6f0!important;margin:0;padding:0}` }} />
         <meta name="theme-color" content="#f4f6f0" /> 

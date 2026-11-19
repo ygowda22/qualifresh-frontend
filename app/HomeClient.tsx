@@ -60,7 +60,7 @@ function LinkedInGlyph({ size }: { size: number }) {
 function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo.webp"
       alt="QualiFresh"
       style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }}
     />
@@ -141,7 +141,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
   // returns non-Cloudinary URLs (or empty) unchanged. Uses face-aware
   // gravity for square avatar crops, auto gravity for food-photo tiles.
   function cloudinaryThumb2(url: string, w: number, h: number): string {
-    if (!url || !url.includes("/upload/")) return url;
+    if (!url || !url.includes("/upload/")) return cldImg(url, w);
     const gravity = w === h ? "g_face" : "g_auto";
     return url.replace("/upload/", `/upload/c_fill,${gravity},w_${w},h_${h},q_auto,f_auto/`);
   }
@@ -858,7 +858,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
             {/* Glow halo behind basket */}
             <div style={{ position: "absolute", top: "10%", left: "15%", right: "15%", bottom: "10%", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.28) 0%,rgba(163,230,53,0.08) 50%,transparent 75%)", filter: "blur(28px)", pointerEvents: "none", zIndex: 0 }} />
             <img
-              src="/basket%20of%20exotic%20veg.png"
+              src="/basket-of-exotic-veg.webp"
               alt="Fresh Exotic Vegetables"
               style={{
                 width: "100%", height: "auto", display: "block", position: "relative", zIndex: 1,
@@ -1313,7 +1313,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-              <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+              <img src="/logo.webp" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {/* Tabs */}
@@ -1469,7 +1469,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                  <div className="footer-grid-f" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
                    <div>
                      <div style={{ marginBottom: "14px" }}>
-                       <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                       <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
                      </div>
                      <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
                      <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

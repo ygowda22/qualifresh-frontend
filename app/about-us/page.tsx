@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { siteConfig, getDynamicStats } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
-import { cld } from "../lib/cldUrl";
+import { cldImg } from "../lib/img";
 
 const { delivery: DEL } = siteConfig;
 
@@ -263,7 +263,7 @@ export default function AboutPage() {
             </div>
             {storyImg && (
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src={cld(storyImg, "f_auto,q_auto,c_limit,w_1200")} alt="Fresh farm produce" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={cldImg(storyImg, 900)} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             )}
           </div>
@@ -285,7 +285,7 @@ export default function AboutPage() {
             ].map((card, i) => (
               <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={card.img} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(card.img, 800)} loading="lazy" alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{card.icon}</span>
@@ -322,7 +322,7 @@ export default function AboutPage() {
             ].map((s, i) => (
               <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={s.img} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(s.img, 800)} loading="lazy" alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{s.icon}</span>
@@ -356,7 +356,7 @@ export default function AboutPage() {
             ].map((g, i) => (
               <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={g.img} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(g.img, 800)} loading="lazy" alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{g.icon}</span>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { siteConfig } from "../../src/config/site";
-import { cld } from "../lib/cldUrl";
+import { cldImg } from "../lib/img";
 
 const API = "/backend";
 
@@ -1262,7 +1262,7 @@ export default function AdminPage() {
                     <tr key={p._id} style={{ borderTop: "1px solid #f1f5f9", opacity: p.isActive ? 1 : 0.55, background: p.isActive ? undefined : "#fffbeb" }}>
                       <td style={{ padding: "10px 14px" }}>
                         {p.imageUrl ? (
-                          <img key={imgKey + "-" + p._id} src={cld(p.imageUrl, "f_auto,q_auto,c_fill,w_100")} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
+                          <img key={imgKey + "-" + p._id} src={cldImg(p.imageUrl, 100)} alt="" loading="lazy" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
                         ) : (
                           <div style={{ width: "44px", height: "44px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>🥬</div>
                         )}
@@ -1434,7 +1434,7 @@ export default function AdminPage() {
                   {farmPhotos.map(photo => (
                     <div key={photo.id} style={{ borderRadius: "12px", overflow: "hidden", border: "1.5px solid #e9ede4", background: "#f9fafb", position: "relative" }}>
                       <div style={{ height: "130px", overflow: "hidden", position: "relative" }}>
-                        <img src={cld(photo.imageUrl, "f_auto,q_auto,c_fill,w_300")} alt={photo.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        <img src={cldImg(photo.imageUrl, 400)} alt={photo.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 50%)" }} />
                         <div style={{ position: "absolute", bottom: "8px", left: "10px", right: "10px" }}>
@@ -1482,7 +1482,7 @@ export default function AdminPage() {
                       <div key={c.key} style={{ borderRadius: "10px", overflow: "hidden", border: `2px solid ${color}22`, background: "#f9fafb" }}>
                         <div style={{ height: "80px", overflow: "hidden", position: "relative", background: image ? undefined : `${color}18` }}>
                           {image ? (
-                            <img src={cld(image, "f_auto,q_auto,c_fill,w_300")} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <img src={cldImg(image, 300)} alt={label} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "32px" }}>{icon}</div>
                           )}
@@ -1510,7 +1510,7 @@ export default function AdminPage() {
                     <div key={cat.id} style={{ borderRadius: "12px", overflow: "hidden", border: `2px solid ${cat.color}22`, background: "#f9fafb", position: "relative" }}>
                       <div style={{ height: "110px", overflow: "hidden", position: "relative", background: cat.image ? undefined : `${cat.color}18` }}>
                         {cat.image ? (
-                          <img src={cld(cat.image, "f_auto,q_auto,c_fill,w_300")} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          <img src={cldImg(cat.image, 300)} alt={cat.label} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "40px" }}>{cat.icon}</div>
@@ -1558,14 +1558,14 @@ export default function AdminPage() {
                     <div key={t.id} style={{ borderRadius: "12px", border: "1.5px solid #e9ede4", background: "#f9fafb", padding: "12px", opacity: t.isActive ? 1 : 0.5 }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
                         {t.avatarUrl ? (
-                          <img src={cld(t.avatarUrl, "f_auto,q_auto,c_fill,w_100")} alt={t.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                          <img src={cldImg(t.avatarUrl, 80, 80)} alt={t.name} loading="lazy" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
                           <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#dbeafe", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#1d4ed8" }}>{(t.name || "?")[0]}</div>
                         )}
                         {t.images && t.images.length > 0 && (
                           <div style={{ position: "relative", width: "36px", height: "36px", borderRadius: "8px", overflow: "hidden", flexShrink: 0 }}>
-                            <img src={cld(t.images[0].url, "f_auto,q_auto,c_fill,w_300")} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            <img src={cldImg(t.images[0].url, 150)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                             {t.images.length > 1 && (
                               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+{t.images.length - 1}</div>
@@ -1612,7 +1612,7 @@ export default function AdminPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "8px" }}>Product Image</label>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
               {prodForm.imageUrl && (
-                <img src={cld(prodForm.imageUrl, "f_auto,q_auto,c_fill,w_150")} alt=""
+                <img src={cldImg(prodForm.imageUrl, 150)} alt=""
                   style={{ width: "70px", height: "70px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
@@ -1698,7 +1698,7 @@ export default function AdminPage() {
           {/* Photo preview */}
           {farmForm.imageUrl && (
             <div style={{ height: "160px", borderRadius: "10px", overflow: "hidden", marginBottom: "14px", background: "#f1f5f9" }}>
-              <img src={cld(farmForm.imageUrl, "f_auto,q_auto,c_fill,w_300")} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              <img src={cldImg(farmForm.imageUrl, 300)} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
           )}
@@ -1750,7 +1750,7 @@ export default function AdminPage() {
           {testiForm.avatarUrl && (
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <div style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
-                <img src={cld(testiForm.avatarUrl, "f_auto,q_auto,c_fill,w_150")} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                <img src={cldImg(testiForm.avatarUrl, 150)} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               </div>
               <button onClick={() => setTestiForm(f => ({ ...f, avatarUrl: "" }))}
@@ -1783,7 +1783,7 @@ export default function AdminPage() {
               {testiForm.images.map((im, i) => (
                 <div key={i} style={{ width: "88px" }}>
                   <div style={{ width: "88px", height: "88px", borderRadius: "8px", overflow: "hidden", background: "#f1f5f9", position: "relative" }}>
-                    <img src={cld(im.url, "f_auto,q_auto,c_fill,w_300")} alt={im.alt || "Food photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    <img src={cldImg(im.url, 300)} alt={im.alt || "Food photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                     <button onClick={() => removeTestiFoodPhoto(i)} title="Remove"
                       style={{ position: "absolute", top: "3px", right: "3px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: "12px", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
@@ -1873,7 +1873,7 @@ export default function AdminPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Category Image <span style={{ color: "#9ca3af", fontWeight: 400 }}>(saved to /public/category)</span></label>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
               {catForm.image && (
-                <img src={cld(catForm.image, "f_auto,q_auto,c_fill,w_150")} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
+                <img src={cldImg(catForm.image, 150)} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>

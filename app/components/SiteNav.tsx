@@ -5,7 +5,7 @@ import Link from "next/link";
 import { siteConfig } from "../../src/config/site";
 import { fetchAndMergeCart, saveAndClearCart, saveCartToBackend } from "../lib/cartSync";
 import { useCart } from "../context/CartContext";
-import { cld } from "../lib/cldUrl";
+import { cldImg } from "../lib/img";
 
 interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"; }
 interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; stock?: number; }
@@ -761,7 +761,7 @@ export default function SiteNav({ activePage }: Props) {
                     <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px", flexWrap: "wrap" }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
                         {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                          <img src={cld(p.imageUrl, "f_auto,q_auto,c_fill,w_100")} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                          <img src={cldImg(p.imageUrl, 100)} alt={p.name} loading="lazy" style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>
                         )}

@@ -117,7 +117,7 @@ export default function TestimonialLightbox({ images, startIndex, name, onClose 
           {!loaded && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.6)", fontSize: "13px" }}>Loading…</div>
           )}
-          <Image
+          <Image unoptimized
             key={current.url}
             src={lightboxUrl(current.url)}
             alt={current.alt || `Photo from ${name}`}

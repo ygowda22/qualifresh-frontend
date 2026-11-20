@@ -11,14 +11,15 @@
  *
  * Any other URL (local /public files, other hosts) is returned unchanged,
  * so it is safe to wrap any image src with it.
- * Pass `h` to crop Cloudinary images to an exact box (c_fill, auto gravity);
+ * Pass `h` to crop Cloudinary images to an exact box (c_fill; gravity "auto",
+ * or "face" for avatars);
  * GCS images are cropped by CSS object-fit instead.
  */
 const CLD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/;
 const GCS_LARGE = /^(https:\/\/storage\.googleapis\.com\/.+)-1200\.webp(\?.*)?$/;
 const SMALL_MAX = 480;
 
-export function cldImg(url: string | undefined | null, w: number, h?: number): string {
+export function cldImg(url: string | undefined | null, w: number, h?: number, gravity: "auto" | "face" = "auto"): string {
   if (!url) return "";
 
   const g = url.match(GCS_LARGE);
@@ -29,6 +30,6 @@ export function cldImg(url: string | undefined | null, w: number, h?: number): s
   const rest = m[2];
   // already transformed, e.g. "c_fill,w_400/..." or "f_auto/..."
   if (/^[a-z]{1,3}_[^/]*\//.test(rest)) return url;
-  const t = h ? `c_fill,g_auto,w_${w},h_${h},f_auto,q_auto` : `f_auto,q_auto,w_${w}`;
+  const t = h ? `c_fill,g_${gravity},w_${w},h_${h},f_auto,q_auto` : `f_auto,q_auto,w_${w}`;
   return `${m[1]}${t}/${rest}`;
 }

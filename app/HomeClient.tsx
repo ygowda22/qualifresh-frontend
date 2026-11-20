@@ -137,14 +137,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
     return first ? first.imageUrl : "";
   }
 
-  // Applies a Cloudinary crop transform for consistent thumbnails;
-  // returns non-Cloudinary URLs (or empty) unchanged. Uses face-aware
-  // gravity for square avatar crops, auto gravity for food-photo tiles.
-  function cloudinaryThumb2(url: string, w: number, h: number): string {
-    if (!url || !url.includes("/upload/")) return cldImg(url, w);
-    const gravity = w === h ? "g_face" : "g_auto";
-    return url.replace("/upload/", `/upload/c_fill,${gravity},w_${w},h_${h},q_auto,f_auto/`);
-  }
   function deriveCategoryData(data: any[]) {
     const overrides: Record<string, { label?: string; image?: string; color?: string; icon?: string }> = {};
     const customs: { key: string; label: string; image: string; color: string; icon: string }[] = [];
@@ -483,7 +475,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           aria-label={`View photo ${(overlayCount ? visible.length : idx) + 1} of ${images.length} from ${t.name}`}
           className="testi-photo-tile"
           style={{ gridArea, position: "relative", border: "none", padding: 0, margin: 0, cursor: "pointer", overflow: "hidden", background: "#e5e7eb" }}>
-          <Image unoptimized src={cloudinaryThumb2(img.url, 400, 260)} alt={img.alt || ""} fill sizes="200px" style={{ objectFit: "cover" }} loading="lazy" />
+          <Image unoptimized src={cldImg(img.url, 400, 260)} alt={img.alt || ""} fill sizes="200px" style={{ objectFit: "cover" }} loading="lazy" />
           {overlayCount ? (
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", color: "#fff", fontWeight: 700, fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>+{overlayCount}</div>
           ) : null}
@@ -528,7 +520,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "auto" }}>
             {t.avatarUrl ? (
-              <Image unoptimized src={cloudinaryThumb2(t.avatarUrl, 150, 150)} alt={t.name} width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              <Image unoptimized src={cldImg(t.avatarUrl, 150, 150, "face")} alt={t.name} width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
               <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#3b6d11", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "14px", color: "#fff", flexShrink: 0 }}>{(t.name || "?")[0].toUpperCase()}</div>

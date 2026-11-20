@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
+import { cld } from "../lib/cldUrl";
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
@@ -457,7 +458,8 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="p-card-img-wrap">
                       {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                        <img src={p.imageUrl} alt={p.name} className="p-card-img"
+                        <img src={cld(p.imageUrl, "f_auto,q_auto,c_fill,w_600")} alt={p.name} className="p-card-img"
+                          loading={i % perPage < 4 ? undefined : "lazy"}
                           style={{ transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (
                         <div className="p-card-img" style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>

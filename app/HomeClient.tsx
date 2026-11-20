@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { siteConfig, getDynamicStats } from "../src/config/site";
 import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
+import { cld } from "./lib/cldUrl";
 import { useCart } from "./context/CartContext";
 import TestimonialLightbox from "./components/TestimonialLightbox";
 
@@ -905,7 +906,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                 <div key={key} className="lift" onClick={() => { setCat(key); scrollToProducts(); }}
                   style={{ borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `2px solid ${active ? allCatColor[key] : "transparent"}`, boxShadow: active ? `0 0 0 3px ${allCatColor[key]}22, 0 4px 16px rgba(0,0,0,.1)` : "0 2px 10px rgba(0,0,0,.07)", background: "#fff", transition: "all .25s cubic-bezier(.4,0,.2,1)" }}>
                   <div className="cat-card-img" style={{ height: "88px", overflow: "hidden" }}>
-                    <img src={allCatImg[key]} alt={label}
+                    <img src={cld(allCatImg[key], "f_auto,q_auto,c_fill,w_600,h_600")} alt={label}
                       style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s cubic-bezier(.4,0,.2,1)" }}
                       onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
                       onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
@@ -967,7 +968,8 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="prod-img" style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative", flexShrink: 0 }}>
                       {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                        <img src={p.imageUrl} alt={p.name}
+                        <img src={cld(p.imageUrl, "f_auto,q_auto,c_fill,w_600")} alt={p.name}
+                          loading={i % PER_PAGE < 4 ? undefined : "lazy"}
                           style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
@@ -1215,7 +1217,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
               </div>
               {storyImg && (
                 <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                  <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cld(storyImg, "f_auto,q_auto,c_limit,w_1200")} alt="Fresh farm produce" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               )}
             </div>

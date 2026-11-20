@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { siteConfig, getDynamicStats } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
+import { cld } from "../lib/cldUrl";
 
 const { delivery: DEL } = siteConfig;
 
@@ -262,7 +263,7 @@ export default function AboutPage() {
             </div>
             {storyImg && (
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={cld(storyImg, "f_auto,q_auto,c_limit,w_1200")} alt="Fresh farm produce" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             )}
           </div>

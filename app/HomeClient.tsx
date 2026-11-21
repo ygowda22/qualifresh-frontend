@@ -7,6 +7,7 @@ import { siteConfig, getDynamicStats } from "../src/config/site";
 import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
 import { useCart } from "./context/CartContext";
 import TestimonialLightbox from "./components/TestimonialLightbox";
+import { cldImg } from "./lib/img";
 
 const { delivery: DEL } = siteConfig;
 
@@ -59,7 +60,7 @@ function LinkedInGlyph({ size }: { size: number }) {
 function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
   return (
     <img
-      src="/logo.png"
+      src="/logo.webp"
       alt="QualiFresh"
       style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }}
     />
@@ -136,14 +137,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
     return first ? first.imageUrl : "";
   }
 
-  // Applies a Cloudinary crop transform for consistent thumbnails;
-  // returns non-Cloudinary URLs (or empty) unchanged. Uses face-aware
-  // gravity for square avatar crops, auto gravity for food-photo tiles.
-  function cloudinaryThumb2(url: string, w: number, h: number): string {
-    if (!url || !url.includes("/upload/")) return url;
-    const gravity = w === h ? "g_face" : "g_auto";
-    return url.replace("/upload/", `/upload/c_fill,${gravity},w_${w},h_${h},q_auto,f_auto/`);
-  }
   function deriveCategoryData(data: any[]) {
     const overrides: Record<string, { label?: string; image?: string; color?: string; icon?: string }> = {};
     const customs: { key: string; label: string; image: string; color: string; icon: string }[] = [];
@@ -482,7 +475,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           aria-label={`View photo ${(overlayCount ? visible.length : idx) + 1} of ${images.length} from ${t.name}`}
           className="testi-photo-tile"
           style={{ gridArea, position: "relative", border: "none", padding: 0, margin: 0, cursor: "pointer", overflow: "hidden", background: "#e5e7eb" }}>
-          <Image src={cloudinaryThumb2(img.url, 400, 260)} alt={img.alt || ""} fill sizes="200px" style={{ objectFit: "cover" }} loading="lazy" />
+          <Image unoptimized src={cldImg(img.url, 400, 260)} alt={img.alt || ""} fill sizes="200px" style={{ objectFit: "cover" }} loading="lazy" />
           {overlayCount ? (
             <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", color: "#fff", fontWeight: 700, fontSize: "16px", display: "flex", alignItems: "center", justifyContent: "center" }}>+{overlayCount}</div>
           ) : null}
@@ -527,7 +520,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "auto" }}>
             {t.avatarUrl ? (
-              <Image src={cloudinaryThumb2(t.avatarUrl, 150, 150)} alt={t.name} width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              <Image unoptimized src={cldImg(t.avatarUrl, 150, 150, "face")} alt={t.name} width={36} height={36} style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             ) : (
               <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#3b6d11", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "14px", color: "#fff", flexShrink: 0 }}>{(t.name || "?")[0].toUpperCase()}</div>
@@ -721,10 +714,16 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
         .filter-wrap{position:relative;min-width:0;flex:1 1 auto}
         .filter-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:28px;height:28px;border-radius:50%;border:1.5px solid #d1d5db;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#374151;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:background .15s}
         .filter-arrow:hover{background:#f0fdf4;border-color:#2d8a4e;color:#2d8a4e}
-        .cat-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;text-align:center}
+        /* Category row: padding so lifted cards + shadows are never clipped; soft edge fade only on the side(s) that can still scroll */
         .cat-slider-wrap{position:relative}
+        .cat-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;text-align:center;padding:8px 14px 16px;scroll-padding-inline:14px;scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+        .cat-scroll-wrap.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent)}
+        .cat-scroll-wrap.fade-l:not(.fade-r){-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px);mask-image:linear-gradient(90deg,transparent,#000 32px)}
+        .cat-scroll-wrap.fade-r:not(.fade-l){-webkit-mask-image:linear-gradient(270deg,transparent,#000 32px);mask-image:linear-gradient(270deg,transparent,#000 32px)}
         @media(min-width:1024px){
+          .cat-slider-wrap{padding:0 40px}
           .cat-scroll-wrap{overflow-x:hidden;scroll-behavior:smooth}
+          .cat-slider-wrap .cat-arrow{top:68px}
         }
         @media(max-width:1023px){
           .cat-slider-wrap .cat-arrow{display:none!important}
@@ -739,9 +738,28 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
         .testi-photo-tile{transition:filter .15s,transform .15s}
         .testi-photo-tile:hover{filter:brightness(1.05)}
         .testi-photo-tile:focus-visible{outline:2px solid #2d8a4e;outline-offset:-2px}
-        .cat-grid{display:inline-flex!important;flex-wrap:nowrap!important;gap:14px!important;text-align:left}
-        .cat-grid>div{width:120px!important;flex-shrink:0!important}
-        .cat-card-img{height:88px}
+        .cat-grid{display:inline-flex!important;flex-wrap:nowrap!important;gap:14px!important;text-align:left;vertical-align:top}
+        .cat-grid>.cat-card{width:120px;flex-shrink:0;display:flex;flex-direction:column;scroll-snap-align:start}
+        .cat-card-img{aspect-ratio:1/1;overflow:hidden;background:#f3f4f6}
+        .cat-card-img img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+        .cat-card:hover .cat-card-img img{transform:scale(1.05)}
+        .cat-card.lift:hover{box-shadow:0 8px 16px rgba(0,0,0,.12)!important}
+        .cat-card-label{flex:1;padding:8px 6px;text-align:center}
+        .cat-card-name-box{min-height:2.4em;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1.2}
+        .cat-card-name{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word}
+        .cat-card-count{font-size:9.5px;margin-top:2px}
+        @media(max-width:1023px){
+          .cat-scroll-wrap{margin:0 -1rem;padding:8px 1rem 16px;scroll-padding-inline:1rem}
+          .cat-grid>.cat-card{width:96px}
+          .cat-card-label{padding:6px 4px}
+          .cat-card-name-box{font-size:10.5px}
+          .cat-card-count{font-size:9px}
+        }
+        @media(max-width:767px){
+          .cat-grid{gap:12px!important}
+          .cat-grid>.cat-card{width:84px}
+          .cat-card-name-box{font-size:10px}
+        }
 
         /* Responsive */
         @media(max-width:1024px){
@@ -765,10 +783,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           .hero-btn{padding:10px 16px!important;font-size:13px!important}
           .hero-stats{gap:1.2rem!important;padding-top:1.2rem!important;margin-top:1.5rem!important}
           .cat-section{padding:2rem 1rem!important}
-          .cat-scroll-wrap{margin:0 -1rem;padding-left:1rem;padding-right:1rem}
-          .cat-grid>div{width:82px!important}
-          .cat-card-img{height:65px!important}
-          .cat-card-label{font-size:9.5px!important;padding:5px 3px!important}
           .prod-section{padding:1.5rem 1rem 4rem!important}
           .why-section{padding:2rem 1rem!important}
           .why-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
@@ -791,7 +805,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           .fade-up{max-width:100%!important;width:100%!important;}
         }
         @media(max-width:767px){
-          .cat-grid>div{width:70px!important}
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
@@ -857,7 +870,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
             {/* Glow halo behind basket */}
             <div style={{ position: "absolute", top: "10%", left: "15%", right: "15%", bottom: "10%", borderRadius: "50%", background: "radial-gradient(circle,rgba(45,138,78,0.28) 0%,rgba(163,230,53,0.08) 50%,transparent 75%)", filter: "blur(28px)", pointerEvents: "none", zIndex: 0 }} />
             <img
-              src="/basket%20of%20exotic%20veg.png"
+              src="/basket-of-exotic-veg.webp"
               alt="Fresh Exotic Vegetables"
               style={{
                 width: "100%", height: "auto", display: "block", position: "relative", zIndex: 1,
@@ -896,30 +909,30 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
             <div style={{ width: "48px", height: "3px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", borderRadius: "2px", margin: "12px auto 0" }} />
           </div>
           <div className="cat-slider-wrap">
-          <button className="filter-arrow cat-arrow" style={{ left: 0, display: showCatLeftArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: -(catScrollRef.current.clientWidth * 0.8), behavior: "smooth" })}>‹</button>
-          <div ref={catScrollRef} className="cat-scroll-wrap">
+          <button className="filter-arrow cat-arrow" aria-label="Scroll categories left" style={{ left: 0, display: showCatLeftArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: -(catScrollRef.current.clientWidth * 0.8), behavior: "smooth" })}>‹</button>
+          <div ref={catScrollRef} className={`cat-scroll-wrap${showCatLeftArrow ? " fade-l" : ""}${showCatRightArrow ? " fade-r" : ""}`}>
           <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: "14px" }}>
             {Object.entries(allCatLabel).map(([key, label]) => {
               const active = cat === key;
               return (
-                <div key={key} className="lift" onClick={() => { setCat(key); scrollToProducts(); }}
+                <div key={key} className="lift cat-card" onClick={() => { setCat(key); scrollToProducts(); }}
                   style={{ borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `2px solid ${active ? allCatColor[key] : "transparent"}`, boxShadow: active ? `0 0 0 3px ${allCatColor[key]}22, 0 4px 16px rgba(0,0,0,.1)` : "0 2px 10px rgba(0,0,0,.07)", background: "#fff", transition: "all .25s cubic-bezier(.4,0,.2,1)" }}>
-                  <div className="cat-card-img" style={{ height: "88px", overflow: "hidden" }}>
-                    <img src={allCatImg[key]} alt={label}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s cubic-bezier(.4,0,.2,1)" }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-                      onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
+                  <div className="cat-card-img">
+                    {/* Square, subject-aware crop on Cloudinary (c_fill,g_auto); other hosts fall back to CSS object-fit: cover */}
+                    <img src={cldImg(allCatImg[key], 240, 240)} alt={label} loading="lazy" width={120} height={120} />
                   </div>
-                  <div className="cat-card-label" style={{ padding: "8px 5px", textAlign: "center", background: active ? allCatColor[key] : "#fff", transition: "background .25s" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: active ? "#fff" : allCatColor[key], lineHeight: 1.2 }}>{label}</div>
-                    <div style={{ fontSize: "9.5px", color: active ? "rgba(255,255,255,0.7)" : "#9ca3af", marginTop: "1px" }}>{catCounts[key] || 0} items</div>
+                  <div className="cat-card-label" style={{ background: active ? allCatColor[key] : "#fff", transition: "background .25s" }}>
+                    <div className="cat-card-name-box">
+                      <span className="cat-card-name" title={label} style={{ color: active ? "#fff" : allCatColor[key] }}>{label}</span>
+                    </div>
+                    <div className="cat-card-count" style={{ color: active ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>{catCounts[key] || 0} items</div>
                   </div>
                 </div>
               );
             })}
           </div>
           </div>
-          <button className="filter-arrow cat-arrow" style={{ right: 0, display: showCatRightArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: catScrollRef.current.clientWidth * 0.8, behavior: "smooth" })}>›</button>
+          <button className="filter-arrow cat-arrow" aria-label="Scroll categories right" style={{ right: 0, display: showCatRightArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: catScrollRef.current.clientWidth * 0.8, behavior: "smooth" })}>›</button>
           </div>
         </div>
       </div>
@@ -967,7 +980,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="prod-img" style={{ aspectRatio: "4/3", overflow: "hidden", position: "relative", flexShrink: 0 }}>
                       {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                        <img src={p.imageUrl} alt={p.name}
+                        <img src={cldImg(p.imageUrl, 480)} alt={p.name} loading={i % PER_PAGE < 4 ? undefined : "lazy"}
                           style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s", transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (
                         <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,#f0fdf4,#dcfce7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
@@ -1215,7 +1228,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
               </div>
               {storyImg && (
                 <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                  <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(storyImg, 900)} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
               )}
             </div>
@@ -1312,7 +1325,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={() => { setShowLogin(false); setAuthError(""); }} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-              <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+              <img src="/logo.webp" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {/* Tabs */}
@@ -1468,7 +1481,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
                  <div className="footer-grid-f" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
                    <div>
                      <div style={{ marginBottom: "14px" }}>
-                       <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                       <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
                      </div>
                      <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
                      <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

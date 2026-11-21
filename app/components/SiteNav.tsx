@@ -5,6 +5,7 @@ import Link from "next/link";
 import { siteConfig } from "../../src/config/site";
 import { fetchAndMergeCart, saveAndClearCart, saveCartToBackend } from "../lib/cartSync";
 import { useCart } from "../context/CartContext";
+import { cldImg } from "../lib/img";
 
 interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"; }
 interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; stock?: number; }
@@ -617,7 +618,7 @@ export default function SiteNav({ activePage }: Props) {
       {/* ── Navbar ── */}
       <nav ref={navRef} className="sn-nav">
         <Link href="/" style={{ lineHeight: 0, flexShrink: 0 }} onClick={() => { if (pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-          <img src="/logo.png" alt="QualiFresh" style={{ height: "60px", width: "auto", display: "block", objectFit: "contain" }} />
+          <img src="/logo.webp" alt="QualiFresh" style={{ height: "60px", width: "auto", display: "block", objectFit: "contain" }} />
         </Link>
 
         {/* Desktop nav links */}
@@ -734,7 +735,7 @@ export default function SiteNav({ activePage }: Props) {
                 {(cartStep === 2 || cartStep === 3) && (
                   <button onClick={() => setCartStep(cartStep === 3 ? 2 : 1)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#6b7280", padding: "0 4px 0 0", lineHeight: 1 }}>←</button>
                 )}
-                <img src="/logo.png" alt="QualiFresh" style={{ height: "30px", objectFit: "contain" }} />
+                <img src="/logo.webp" alt="QualiFresh" style={{ height: "30px", objectFit: "contain" }} />
                 <span style={{ fontWeight: 700, color: "#166534", fontSize: "14.5px" }}>
                   {cartStep === 4 ? "Order Confirmed 🎉" : cartStep === 3 ? "Payment" : cartStep === 2 ? "Checkout" : `Cart (${cartCount})`}
                 </span>
@@ -760,7 +761,7 @@ export default function SiteNav({ activePage }: Props) {
                     <div key={p._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid #f3f4f6", gap: "8px", flexWrap: "wrap" }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", flex: 1, minWidth: 0 }}>
                         {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                          <img src={p.imageUrl} alt={p.name} style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
+                          <img src={cldImg(p.imageUrl, 100)} alt={p.name} loading="lazy" style={{ width: "46px", height: "46px", borderRadius: "8px", objectFit: "cover", flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: "46px", height: "46px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", flexShrink: 0 }}>🥬</div>
                         )}
@@ -1022,7 +1023,7 @@ export default function SiteNav({ activePage }: Props) {
               <>
                 <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
                   <button onClick={closeContactModal} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-                  <img src="/logo.png" alt="QualiFresh" style={{ height: "56px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+                  <img src="/logo.webp" alt="QualiFresh" style={{ height: "56px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 4px" }}>Contact Support</h2>
                   <a href={`tel:${siteConfig.phone}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none" }}>📞 {siteConfig.phoneDisplay}</a>
                 </div>
@@ -1269,7 +1270,7 @@ export default function SiteNav({ activePage }: Props) {
             <>
               {/* Guest header */}
               <div style={{ padding: "1.2rem 1.4rem 1rem", background: "linear-gradient(135deg,#1a3c2e 0%,#2d8a4e 100%)", flexShrink: 0, display: "flex", alignItems: "center", gap: "12px" }}>
-                <img src="/logo.png" alt="QualiFresh" style={{ height: "40px", objectFit: "contain" }} />
+                <img src="/logo.webp" alt="QualiFresh" style={{ height: "40px", objectFit: "contain" }} />
                 <span style={{ fontWeight: 800, fontSize: "16px", color: "#fff" }}>QualiFresh</span>
                 <button onClick={() => setShowAccountMenu(false)} style={{ marginLeft: "auto", background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: "32px", height: "32px", cursor: "pointer", fontSize: "18px", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
               </div>
@@ -1301,7 +1302,7 @@ export default function SiteNav({ activePage }: Props) {
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "#fff", borderRadius: "18px", padding: "2rem", width: "clamp(300px,90vw,420px)", zIndex: 600, boxShadow: "0 24px 60px rgba(0,0,0,0.2)", maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: "1.4rem", position: "relative" }}>
               <button onClick={closeLogin} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-              <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+              <img src="/logo.webp" alt="QualiFresh" style={{ height: "80px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
               <p style={{ fontSize: "13px", color: "#6b7280", margin: 0 }}>Fresh Exotic Vegetables, Delivered</p>
             </div>
             {authTab !== "forgot" && (

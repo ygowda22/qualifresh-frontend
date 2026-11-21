@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { siteConfig, getDynamicStats } from "../../src/config/site";
+import { cldImg } from "../lib/img";
 
 const { delivery: DEL } = siteConfig;
 
@@ -42,7 +43,7 @@ function MailSvg({ size = 20, color = "#2d8a4e" }: { size?: number; color?: stri
   );
 }
 function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
-  return <img src="/logo.png" alt="QualiFresh" style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }} />;
+  return <img src="/logo.webp" alt="QualiFresh" style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }} />;
 }
 
 const TICKER_ITEMS = [
@@ -284,7 +285,7 @@ export default function AboutPage() {
             </div>
             {storyImg && (
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={cldImg(storyImg, 900)} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             )}
           </div>
@@ -482,7 +483,7 @@ export default function AboutPage() {
               <>
                 <div style={{ textAlign: "center", marginBottom: "1.3rem", position: "relative" }}>
                   <button onClick={closeModal} style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#6b7280" }}>✕</button>
-                  <img src="/logo.png" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
+                  <img src="/logo.webp" alt="QualiFresh" style={{ height: "64px", width: "auto", display: "block", margin: "0 auto 8px", objectFit: "contain" }} />
                   <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0f1a0f", margin: "0 0 8px" }}>Contact Support</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
                     <a href={`mailto:${siteConfig.email}`} style={{ fontSize: "12.5px", color: "#2d8a4e", textDecoration: "none", display: "flex", alignItems: "center", gap: "5px" }}>

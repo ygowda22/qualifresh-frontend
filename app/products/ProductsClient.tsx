@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
+import { cldImg } from "../lib/img";
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
@@ -457,7 +458,7 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
                     onMouseEnter={() => setHov(p._id)} onMouseLeave={() => setHov(null)}>
                     <div className="p-card-img-wrap">
                       {p.imageUrl && p.imageUrl.startsWith("http") ? (
-                        <img src={p.imageUrl} alt={p.name} className="p-card-img"
+                        <img src={cldImg(p.imageUrl, 480)} alt={p.name} loading={i % perPage < 4 ? undefined : "lazy"} className="p-card-img"
                           style={{ transform: hov === p._id ? "scale(1.08)" : "scale(1)" }} />
                       ) : (
                         <div className="p-card-img" style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: "52px" }}>🥬</div>
@@ -547,7 +548,7 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
           <div className="pf-footer-grid" style={{ marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}>
-                <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
               </div>
               <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

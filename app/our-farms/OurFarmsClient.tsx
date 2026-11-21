@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { siteConfig } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
+import { cldImg } from "../lib/img";
 
 interface FarmPhoto { id: string; title: string; description: string; imageUrl: string; }
 
@@ -244,7 +245,7 @@ export default function OurFarmsClient({ initialFarmPhotos }: OurFarmsClientProp
             {photos.filter(p => p.imageUrl && p.imageUrl.startsWith("http")).map((photo, idx) => (
               <div key={photo.id} className="farm-photo-f lift"
                 onClick={() => openLightbox(photo.imageUrl)}>
-                <img src={photo.imageUrl} alt={photo.title || "Farm"}
+                <img src={cldImg(photo.imageUrl, 800)} alt={photo.title || "Farm"} loading={idx < 4 ? undefined : "lazy"}
                   style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .5s cubic-bezier(.4,0,.2,1)", display: "block" }}
                   onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.06)")}
                   onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
@@ -277,7 +278,7 @@ export default function OurFarmsClient({ initialFarmPhotos }: OurFarmsClientProp
           <div onClick={closeLightbox}
             className={`farm-lb-overlay${lbClosing ? " closing" : ""}`}
             style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", cursor: "zoom-out" }}>
-            <img src={lightboxImg} alt="Farm" className="farm-lb-img"
+            <img src={cldImg(lightboxImg, 1600)} alt="Farm" className="farm-lb-img"
               onClick={e => e.stopPropagation()} />
             <button onClick={closeLightbox}
               style={{ position: "fixed", top: "18px", right: "22px", background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", borderRadius: "50%", width: "46px", height: "46px", color: "#fff", fontSize: "24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, fontFamily: "inherit" }}>
@@ -340,7 +341,7 @@ export default function OurFarmsClient({ initialFarmPhotos }: OurFarmsClientProp
           <div className="footer-grid-f" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr 1fr", gap: "2rem", marginBottom: "2.5rem" }}>
             <div>
               <div style={{ marginBottom: "14px" }}>
-                <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
+                <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", display: "block" }} />
               </div>
               <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
               <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import Pagination from "./Pagination";
 import { siteConfig } from "../../src/config/site";
+import { cldImg } from "../lib/img";
 
 const API = "/backend";
 
@@ -19,8 +21,25 @@ interface Testimonial { id: string; name: string; role: string; message: string;
 const DEFAULT_TESTIMONIALS: Testimonial[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+// Every admin image upload is converted to WebP by the backend; it only accepts these.
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+/** Backend/proxy error message for a failed upload response (e.g. 400 "Please upload a JPG, PNG or WebP image"). */
+async function uploadErrorMessage(r: Response): Promise<string> {
+  const d = await r.json().catch(() => ({}));
+  return d?.message || d?.error || `Upload failed (${r.status})`;
+}
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
 function fmtTime(d: string) { return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }); }
+
+// Some historical orders have a delivery slot stored in a non-English locale
+// (captured verbatim from whatever the customer's device sent at checkout).
+// This is an app-generated label — not customer-entered free text — so it's
+// safe to normalize for display without touching the stored value or any
+// real customer data (names, addresses, notes).
+const NON_ENGLISH_SLOT_LABELS: Record<string, string> = {
+  "수요일": "Wednesday", "토요일": "Saturday",
+};
+function slotLabel(slot: string) { return NON_ENGLISH_SLOT_LABELS[slot?.trim()] ?? slot; }
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "#f59e0b", confirmed: "#3b82f6", out_for_delivery: "#8b5cf6",
@@ -57,6 +76,44 @@ function MiniBarChart({ data, color = "#2d8a4e" }: { data: { label: string; valu
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── Order items list (table cell + expanded card) ────────────────────────────
+function OrderItems({ items }: { items: any[] | undefined }) {
+  if (!Array.isArray(items) || items.length === 0) return <span style={{ fontSize: "12px", color: "#9ca3af" }}>—</span>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+      {items.map((i: any, idx: number) => (
+        <div key={idx} style={{ fontSize: "12px", color: "#374151", display: "grid", gridTemplateColumns: "minmax(0,1fr) auto auto", gap: "8px", alignItems: "baseline", paddingBottom: idx < items.length - 1 ? "3px" : 0, borderBottom: idx < items.length - 1 ? "1px dashed #f1f5f9" : "none" }}>
+          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
+            {i.name}{i.variant ? <span style={{ color: "#9ca3af", fontSize: "11px" }}> ({i.variant})</span> : ""}
+            <span style={{ color: "#6b7280" }}> ×{i.quantity}</span>
+          </span>
+          <span className="qf-item-ea" style={{ color: "#9ca3af", fontSize: "11px", whiteSpace: "nowrap" }}>₹{i.price}/ea</span>
+          <span style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{(i.price * i.quantity).toFixed(0)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProductThumb({ url }: { url?: string }) {
+  return url ? (
+    <img src={cldImg(url, 100)} alt="" loading="lazy" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover", flexShrink: 0, display: "block" }} />
+  ) : (
+    <div style={{ width: "44px", height: "44px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>🥬</div>
+  );
+}
+
+function ProductStatus({ active }: { active: boolean }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "3px", alignItems: "flex-start" }}>
+      <span style={{ background: active ? "#f0fdf4" : "#fef2f2", color: active ? "#16a34a" : "#ef4444", fontSize: "11.5px", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, whiteSpace: "nowrap" }}>
+        {active ? "Active" : "Inactive"}
+      </span>
+      {!active && <span style={{ fontSize: "10px", color: "#92400e", whiteSpace: "nowrap" }}>Hidden from users</span>}
     </div>
   );
 }
@@ -100,10 +157,18 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13.5px", boxSizing: "border-box", background: "#fff", color: "#111827" };
 
+const ADMIN_TABS = ["dashboard", "orders", "products", "users", "settings"] as const;
+type AdminTab = typeof ADMIN_TABS[number];
+
+/** Keep the first visible row in view when the page size changes. */
+function pageForNewSize(page: number, oldSize: number, newSize: number) {
+  return Math.floor((page * oldSize) / newSize);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AdminPage() {
   const [token, setToken]       = useState<string | null>(null);
-  const [tab, setTab]           = useState<"dashboard"|"orders"|"products"|"users"|"settings">("dashboard");
+  const [tab, setTab]           = useState<AdminTab>("dashboard");
   const [loginEmail, setLE]     = useState("");
   const [loginPass, setLP]      = useState("");
   const [loginErr, setLoginErr] = useState("");
@@ -176,12 +241,59 @@ export default function AdminPage() {
   const [editProd, setEditProd]           = useState<any>(null);
   const [prodForm, setProdForm]           = useState<any>({});
   const [uploading, setUploading]         = useState(false);
+  const [savingProd, setSavingProd]       = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Order filter + pagination
   const [orderFilter, setOrderFilter] = useState("all");
   const [orderSearch, setOrderSearch] = useState("");
   const [orderPage, setOrderPage]     = useState(0);
+  const [orderPageSize, setOrderPageSize] = useState(10);
+  const [prodPageSize, setProdPageSize]   = useState(10);
+  const [userPage, setUserPage]       = useState(0);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(() => new Set());
+  const ordersTopRef   = useRef<HTMLDivElement>(null);
+  const productsTopRef = useRef<HTMLDivElement>(null);
+  const usersTopRef    = useRef<HTMLDivElement>(null);
+
+  // ── Tab + list page live in the URL (?tab=orders&page=7) ──────────────────
+  // Read with window.location (not useSearchParams, which would need a Suspense
+  // boundary around this whole client page) and written with history.pushState,
+  // which Next.js integrates with its router. popstate restores tab/page on Back.
+  const [urlReady, setUrlReady] = useState(false);
+  useEffect(() => {
+    function readUrl() {
+      const q = new URLSearchParams(window.location.search);
+      const t = q.get("tab");
+      const nextTab: AdminTab = t && (ADMIN_TABS as readonly string[]).includes(t) ? (t as AdminTab) : "dashboard";
+      const p = Math.max(0, (parseInt(q.get("page") || "1", 10) || 1) - 1);
+      setTab(nextTab);
+      if (nextTab === "orders") setOrderPage(p);
+      else if (nextTab === "products") setProdPage(p);
+      else if (nextTab === "users") setUserPage(p);
+    }
+    readUrl();
+    setUrlReady(true);
+    window.addEventListener("popstate", readUrl);
+    return () => window.removeEventListener("popstate", readUrl);
+  }, []);
+  const urlPage = tab === "orders" ? orderPage : tab === "products" ? prodPage : tab === "users" ? userPage : 0;
+  useEffect(() => {
+    if (!urlReady) return;
+    const q = new URLSearchParams(window.location.search);
+    if (tab === "dashboard") q.delete("tab"); else q.set("tab", tab);
+    if (urlPage > 0) q.set("page", String(urlPage + 1)); else q.delete("page");
+    const qs = q.toString() ? `?${q.toString()}` : "";
+    if (qs !== window.location.search) window.history.pushState(null, "", `${window.location.pathname}${qs}`);
+  }, [urlReady, tab, urlPage]);
+
+  function toggleOrderItems(id: string) {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   useEffect(() => {
     document.title = "Admin Panel — QualiFresh";
@@ -343,6 +455,9 @@ export default function AdminPage() {
   async function deleteUser(id: string) {
     if (!confirm("Delete this user? This cannot be undone.")) return;
     await fetch(`${API}/api/admin/users/${id}`, { method: "DELETE", headers: authHeaders() });
+    const remaining = users.length - 1;
+    const newTotalPages = Math.max(1, Math.ceil(remaining / USER_PER_PAGE));
+    setUserPage(p => Math.min(p, newTotalPages - 1));
     loadUsers();
   }
 
@@ -387,7 +502,7 @@ export default function AdminPage() {
     loadProducts();
   }
 
-  async function uploadImage(file: File): Promise<string> {
+  async function uploadImage(file: File): Promise<{ url: string; publicId: string }> {
     const fd = new FormData();
     fd.append("image", file);
     if (prodForm.slug) fd.append("slug", prodForm.slug);
@@ -396,12 +511,9 @@ export default function AdminPage() {
       headers: { Authorization: `Bearer ${token}` },
       body:    fd,
     });
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      throw new Error(d.message || "Upload failed");
-    }
+    if (!r.ok) throw new Error(await uploadErrorMessage(r));
     const d = await r.json();
-    return d.url;
+    return { url: d.url, publicId: d.filename };
   }
 
   function openAddProduct() {
@@ -420,32 +532,38 @@ export default function AdminPage() {
 
   async function saveProd() {
     if (uploading) { showToast("Wait for the image upload to finish first", false); return; }
+    if (savingProd) return; // guard against double-submit firing two create/update requests
     if (!prodForm.name || !prodForm.slug || !prodForm.price) {
       showToast("Name, slug, and price are required", false); return;
     }
     if (!prodForm.quantityLabel || !prodForm.quantityLabel.trim()) {
       showToast("Quantity Label is required", false); return;
     }
-    // Strip cache-bust timestamp before storing in DB — only the clean Supabase public URL should be persisted
-    const cleanImageUrl = prodForm.imageUrl ? prodForm.imageUrl.split("?")[0] : "";
-    const body = { ...prodForm, imageUrl: cleanImageUrl, price: Number(prodForm.price), stock: Number(prodForm.stock) };
-    const r = editProd
-      ? await fetch(`${API}/api/products/${editProd._id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) })
-      : await fetch(`${API}/api/products`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      showToast(d.error || d.message || "Failed to save product", false);
-      return;
+    setSavingProd(true);
+    try {
+      // Strip cache-bust timestamp before storing in DB — only the clean Supabase public URL should be persisted
+      const cleanImageUrl = prodForm.imageUrl ? prodForm.imageUrl.split("?")[0] : "";
+      const body = { ...prodForm, imageUrl: cleanImageUrl, price: Number(prodForm.price), stock: Number(prodForm.stock) };
+      const r = editProd
+        ? await fetch(`${API}/api/products/${editProd._id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) })
+        : await fetch(`${API}/api/products`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        showToast(d.error || d.message || "Failed to save product", false);
+        return;
+      }
+      localStorage.setItem("qf_products_updated", Date.now().toString());
+      await loadProducts(); // load fresh data BEFORE closing so list is ready instantly
+      setImgKey(k => k + 1); // force all product images to re-fetch from server
+      setShowProdModal(false);
+      showToast(editProd ? "✓ Product updated — list refreshed!" : "✓ Product added — list refreshed!");
+    } finally {
+      setSavingProd(false);
     }
-    localStorage.setItem("qf_products_updated", Date.now().toString());
-    await loadProducts(); // load fresh data BEFORE closing so list is ready instantly
-    setImgKey(k => k + 1); // force all product images to re-fetch from server
-    setShowProdModal(false);
-    showToast(editProd ? "✓ Product updated — list refreshed!" : "✓ Product added — list refreshed!");
   }
 
-  const ALLOWED_MIME = ["image/jpeg","image/png","image/webp","image/gif","image/avif"];
-  const ALLOWED_EXT  = [".jpg",".jpeg",".png",".webp",".gif",".avif"];
+  const ALLOWED_MIME = ["image/jpeg","image/png","image/webp"];
+  const ALLOWED_EXT  = [".jpg",".jpeg",".png",".webp"];
   const TESTI_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
   const TESTI_ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp"];
 
@@ -471,16 +589,16 @@ export default function AdminPage() {
 
     setUploading(true);
     try {
-      const url = await uploadImage(file);
+      const { url, publicId } = await uploadImage(file);
       // Append cache-bust so the browser fetches the new image immediately in the product list
       const cacheBustedUrl = `${url}?t=${Date.now()}`;
-      setProdForm((f: any) => ({ ...f, imageUrl: cacheBustedUrl }));
+      setProdForm((f: any) => ({ ...f, imageUrl: cacheBustedUrl, imagePublicId: publicId }));
       // If editing an existing product, persist imageUrl to DB immediately so the list refreshes correctly
       if (editProd?._id) {
         await fetch(`${API}/api/products/${editProd._id}`, {
           method: "PUT",
           headers: authHeaders(),
-          body: JSON.stringify({ ...prodForm, imageUrl: url, price: Number(prodForm.price), stock: Number(prodForm.stock) }),
+          body: JSON.stringify({ ...prodForm, imageUrl: url, imagePublicId: publicId, price: Number(prodForm.price), stock: Number(prodForm.stock) }),
         });
       }
       localStorage.setItem("qf_products_updated", Date.now().toString());
@@ -567,7 +685,7 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const doc = await r.json();
       const saved: FarmPhoto = { id: doc._id, title: doc.title, description: doc.description, imageUrl: doc.imageUrl };
       setFarmForm(f => ({ ...f, imageUrl: doc.imageUrl }));
@@ -634,7 +752,7 @@ export default function AdminPage() {
       fd.append("image", file);
       fd.append("bucket", "testimonial-avatars");
       const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const d = await r.json();
       setTestiForm(f => ({ ...f, avatarUrl: d.url }));
     } catch (err: any) { setTestiUploadError(err.message || "Upload failed"); }
@@ -658,7 +776,7 @@ export default function AdminPage() {
         fd.append("image", file);
         fd.append("bucket", "testimonial-photos");
         const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-        if (!r.ok) throw new Error("Upload failed");
+        if (!r.ok) throw new Error(await uploadErrorMessage(r));
         const d = await r.json();
         setTestiForm(f => ({ ...f, images: [...f.images, { url: d.url, alt: "" }] }));
       } catch (err: any) {
@@ -787,7 +905,7 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const doc = await r.json();
       setCatForm(f => ({ ...f, image: doc.imageUrl }));
     } catch (err: any) { setCatUploadError(err.message || "Upload failed"); }
@@ -809,9 +927,12 @@ export default function AdminPage() {
       o.user?.name?.toLowerCase().includes(orderSearch.toLowerCase());
     return matchStatus && matchSearch;
   });
-  const ORDER_PER_PAGE   = 10;
-  const totalOrderPages  = Math.ceil(filteredOrders.length / ORDER_PER_PAGE);
-  const pagedOrders      = filteredOrders.slice(orderPage * ORDER_PER_PAGE, (orderPage + 1) * ORDER_PER_PAGE);
+  const totalOrderPages  = Math.ceil(filteredOrders.length / orderPageSize);
+  const pagedOrders      = filteredOrders.slice(orderPage * orderPageSize, (orderPage + 1) * orderPageSize);
+
+  const USER_PER_PAGE  = 10;
+  const totalUserPages = Math.max(1, Math.ceil(users.length / USER_PER_PAGE));
+  const pagedUsers     = users.slice(userPage * USER_PER_PAGE, (userPage + 1) * USER_PER_PAGE);
 
   // Product Sales Breakdown — aggregated from `orders[].items[]` (name, quantity, price)
   const productSalesBreakdown = (() => {
@@ -834,10 +955,9 @@ export default function AdminPage() {
       .sort((a, b) => b.revenue - a.revenue);
   })();
 
-  const PROD_PER_PAGE = 10;
   const filteredProducts = products.filter(p => !prodSearch || p.name?.toLowerCase().includes(prodSearch.toLowerCase()) || p.slug?.toLowerCase().includes(prodSearch.toLowerCase()) || p.category?.toLowerCase().includes(prodSearch.toLowerCase()));
-  const totalProdPages = Math.ceil(filteredProducts.length / PROD_PER_PAGE);
-  const pagedProducts = filteredProducts.slice(prodPage * PROD_PER_PAGE, (prodPage + 1) * PROD_PER_PAGE);
+  const totalProdPages = Math.ceil(filteredProducts.length / prodPageSize);
+  const pagedProducts = filteredProducts.slice(prodPage * prodPageSize, (prodPage + 1) * prodPageSize);
 
   // ── Login screen ──────────────────────────────────────────────────────────
   if (!token) {
@@ -845,7 +965,7 @@ export default function AdminPage() {
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a1f12,#1a4a2e)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ background: "#fff", borderRadius: "20px", padding: "2.5rem 2rem", width: "clamp(300px,90vw,380px)", boxShadow: "0 24px 60px rgba(0,0,0,0.3)" }}>
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <img src="/logo.png" alt="QualiFresh" style={{ height: "80px", width: "auto", margin: "0 auto 10px", display: "block", objectFit: "contain" }} />
+            <img src="/logo.webp" alt="QualiFresh" style={{ height: "80px", width: "auto", margin: "0 auto 10px", display: "block", objectFit: "contain" }} />
             <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "#1a3c2e", margin: "0 0 4px" }}>Admin Panel</h1>
             <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0 }}>Sign in to manage your store</p>
           </div>
@@ -876,7 +996,23 @@ export default function AdminPage() {
         .admin-sidebar-logo{display:block}
         .admin-sidebar-nav{flex:1;padding:1rem 0.8rem}
         .admin-mobile-nav{display:none}
-        .admin-main{flex:1;overflow:auto;padding:2rem}
+        .admin-main{flex:1;min-width:0;overflow:auto;padding:2rem}
+        .admin-section{scroll-margin-top:72px}
+        .admin-list-table{display:block}
+        .admin-list-cards{display:none;list-style:none;margin:0;padding:0;flex-direction:column;gap:10px}
+        .admin-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.05);padding:14px;min-width:0}
+        .qf-col-order{width:128px}.qf-col-cust{width:18%}.qf-col-total{width:84px}.qf-col-status{width:132px}.qf-col-del{width:56px}
+        .qf-del-txt{display:none}
+        .admin-list-table .qf-item-ea{display:none}
+        @media(min-width:1280px){
+          .qf-col-cust{width:22%}.qf-col-total{width:96px}.qf-col-status{width:150px}.qf-col-del{width:96px}
+          .qf-del-txt{display:inline}
+          .admin-list-table .qf-item-ea{display:inline}
+        }
+        @media(max-width:1023px){
+          .admin-list-table{display:none}
+          .admin-list-cards{display:flex}
+        }
         .admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
         .order-type-badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;color:#fff;margin-top:4px}
         .order-type-badge.whatsapp{background-color:#25D366}
@@ -909,7 +1045,7 @@ export default function AdminPage() {
       <aside className="admin-sidebar">
         <div style={{ padding: "0 1.2rem 1.5rem", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
+            <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", objectFit: "contain", borderRadius: "8px", background: "#fff", padding: "2px" }} />
             <div>
               <div style={{ color: "#d9f99d", fontWeight: 700, fontSize: "14px" }}>QualiFresh</div>
               <div style={{ color: "rgba(255,255,255,0.4)", fontSize: "10px" }}>Admin Panel</div>
@@ -918,7 +1054,7 @@ export default function AdminPage() {
         </div>
         <nav className="admin-sidebar-nav">
           {navItems.map(item => (
-            <button key={item.id} onClick={() => setTab(item.id as any)}
+            <button key={item.id} onClick={() => setTab(item.id as AdminTab)}
               style={{ width: "100%", display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "10px", border: "none", background: tab === item.id ? "rgba(163,230,53,0.15)" : "transparent", color: tab === item.id ? "#a3e635" : "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: "13.5px", fontWeight: tab === item.id ? 700 : 400, marginBottom: "4px", textAlign: "left" }}>
               <span style={{ fontSize: "17px" }}>{item.icon}</span> {item.label}
             </button>
@@ -935,7 +1071,7 @@ export default function AdminPage() {
       <div className="admin-mobile-nav">
         {navItems.map(item => (
           <button key={item.id} className="admin-mobile-nav-btn"
-            onClick={() => setTab(item.id as any)}
+            onClick={() => setTab(item.id as AdminTab)}
             style={{ color: tab === item.id ? "#a3e635" : "rgba(255,255,255,0.55)", borderBottomColor: tab === item.id ? "#a3e635" : "transparent" }}>
             <span style={{ fontSize: "18px" }}>{item.icon}</span>
             {item.label}
@@ -1056,7 +1192,7 @@ export default function AdminPage() {
 
         {/* ── ORDERS ── */}
         {tab === "orders" && (
-          <div>
+          <div ref={ordersTopRef} className="admin-section">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "10px" }}>
               <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Orders</h1>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -1073,23 +1209,36 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "700px" }}>
+            {/* Desktop (≥1024px): fixed-layout table that always fits its container */}
+            <div className="admin-list-table" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", tableLayout: "fixed" }}>
+                <colgroup>
+                  <col className="qf-col-order" />
+                  <col className="qf-col-cust" />
+                  <col />
+                  <col className="qf-col-total" />
+                  <col className="qf-col-status" />
+                  <col className="qf-col-del" />
+                </colgroup>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
-                    {["Order #", "Customer", "Items", "Total", "Slot", "Date", "Status", "Update", ""].map(h => (
-                      <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                    {["Order", "Customer", "Items", "Total", "Status", ""].map((h, i) => (
+                      <th key={i} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {pagedOrders.length === 0 && (
-                    <tr><td colSpan={9} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No orders found</td></tr>
+                    <tr><td colSpan={6} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No orders found</td></tr>
                   )}
                   {pagedOrders.map(o => (
-                    <tr key={o._id} style={{ borderTop: "1px solid #f1f5f9" }}>
-                      <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d8a4e" }}>{o.orderNumber}</td>
+                    <tr key={o._id} style={{ borderTop: "1px solid #f1f5f9", verticalAlign: "top" }}>
                       <td style={{ padding: "12px 14px" }}>
+                        <div style={{ fontWeight: 700, color: "#2d8a4e", overflowWrap: "anywhere" }}>{o.orderNumber}</div>
+                        <div style={{ color: "#6b7280", fontSize: "12px", marginTop: "4px" }}>{fmtDate(o.createdAt)}</div>
+                        {o.createdAt && <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: "2px" }}>{fmtTime(o.createdAt)}</div>}
+                      </td>
+                      <td style={{ padding: "12px 14px", overflowWrap: "anywhere" }}>
                         <div className="customer-info">
                           <div style={{ fontWeight: 600, color: "#111827" }}>{o.guestName || o.user?.name || "Guest"}</div>
                           <div style={{ fontSize: "11px", color: "#9ca3af" }}>Phone: {o.guestPhone || o.user?.phone || ""}</div>
@@ -1102,38 +1251,23 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: "220px" }}>
-                          {o.items?.length > 0 ? o.items.map((i: any, idx: number) => (
-                            <div key={idx} style={{ fontSize: "12px", color: "#374151", display: "grid", gridTemplateColumns: "1fr auto auto", gap: "8px", alignItems: "baseline", paddingBottom: idx < o.items.length - 1 ? "3px" : 0, borderBottom: idx < o.items.length - 1 ? "1px dashed #f1f5f9" : "none" }}>
-                              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {i.name}{i.variant ? <span style={{ color: "#9ca3af", fontSize: "11px" }}> ({i.variant})</span> : ""}
-                                <span style={{ color: "#6b7280" }}> ×{i.quantity}</span>
-                              </span>
-                              <span style={{ color: "#9ca3af", fontSize: "11px", whiteSpace: "nowrap" }}>₹{i.price}/ea</span>
-                              <span style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{(i.price * i.quantity).toFixed(0)}</span>
-                            </div>
-                          )) : <span style={{ fontSize: "12px", color: "#9ca3af" }}>—</span>}
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 700, color: "#111827" }}>₹{o.total}</td>
-                      <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>{o.deliverySlot}</td>
-                      <td style={{ padding: "12px 14px", color: "#6b7280", fontSize: "12px" }}>
-                        {fmtDate(o.createdAt)}
-                        {o.createdAt && <div style={{ fontSize: "10.5px", color: "#9ca3af", marginTop: "2px" }}>{fmtTime(o.createdAt)}</div>}
+                        <OrderItems items={o.items} />
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <span style={{ background: STATUS_COLORS[o.status] + "20", color: STATUS_COLORS[o.status], fontSize: "11px", padding: "3px 9px", borderRadius: "6px", fontWeight: 700 }}>{STATUS_LABELS[o.status]}</span>
+                        <div style={{ fontWeight: 700, color: "#111827" }}>₹{o.total}</div>
+                        <div style={{ color: "#6b7280", fontSize: "12px", marginTop: "4px" }}>{slotLabel(o.deliverySlot)}</div>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <select value={o.status} onChange={e => updateOrderStatus(o._id, e.target.value)}
-                          style={{ padding: "5px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", cursor: "pointer", background: "#fff", color: "#111827" }}>
+                        <span style={{ display: "inline-block", background: STATUS_COLORS[o.status] + "20", color: STATUS_COLORS[o.status], fontSize: "11px", padding: "3px 9px", borderRadius: "6px", fontWeight: 700, marginBottom: "8px" }}>{STATUS_LABELS[o.status]}</span>
+                        <select value={o.status} onChange={e => updateOrderStatus(o._id, e.target.value)} aria-label={`Update status of order ${o.orderNumber}`}
+                          style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #e5e7eb", fontSize: "12px", cursor: "pointer", background: "#fff", color: "#111827" }}>
                           {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                         </select>
                       </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)}
-                          style={{ padding: "5px 10px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          🗑 Delete
+                      <td style={{ padding: "12px 10px" }}>
+                        <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} title="Delete order"
+                          style={{ padding: "5px 8px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          🗑<span className="qf-del-txt"> Delete</span>
                         </button>
                       </td>
                     </tr>
@@ -1141,35 +1275,70 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-            {totalOrderPages > 1 && (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "1rem", flexWrap: "wrap", gap: "8px" }}>
-                <span style={{ fontSize: "12.5px", color: "#6b7280" }}>
-                  Showing {orderPage * ORDER_PER_PAGE + 1}–{Math.min((orderPage + 1) * ORDER_PER_PAGE, filteredOrders.length)} of {filteredOrders.length} orders
-                </span>
-                <div style={{ display: "flex", gap: "6px" }}>
-                  <button onClick={() => setOrderPage(p => Math.max(0, p - 1))} disabled={orderPage === 0}
-                    style={{ padding: "7px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: orderPage === 0 ? "#f9fafb" : "#fff", color: orderPage === 0 ? "#9ca3af" : "#374151", cursor: orderPage === 0 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
-                    ← Prev
-                  </button>
-                  {Array.from({ length: totalOrderPages }, (_, i) => i).map(i => (
-                    <button key={i} onClick={() => setOrderPage(i)}
-                      style={{ width: "34px", height: "34px", borderRadius: "8px", border: orderPage === i ? "2px solid #2d8a4e" : "1.5px solid #e5e7eb", background: orderPage === i ? "#2d8a4e" : "#fff", color: orderPage === i ? "#fff" : "#374151", cursor: "pointer", fontWeight: orderPage === i ? 700 : 400, fontSize: "13px" }}>
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button onClick={() => setOrderPage(p => Math.min(totalOrderPages - 1, p + 1))} disabled={orderPage === totalOrderPages - 1}
-                    style={{ padding: "7px 14px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: orderPage === totalOrderPages - 1 ? "#f9fafb" : "#fff", color: orderPage === totalOrderPages - 1 ? "#9ca3af" : "#374151", cursor: orderPage === totalOrderPages - 1 ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "13px" }}>
-                    Next →
-                  </button>
-                </div>
-              </div>
-            )}
+
+            {/* Tablet / mobile (<1024px): one card per order */}
+            <ul className="admin-list-cards">
+              {pagedOrders.length === 0 && <li className="admin-card" style={{ textAlign: "center", color: "#9ca3af", padding: "2.5rem 1rem" }}>No orders found</li>}
+              {pagedOrders.map(o => {
+                const count = Array.isArray(o.items) ? o.items.length : 0;
+                const open  = expandedOrders.has(o._id);
+                return (
+                  <li key={o._id} className="admin-card">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: "#2d8a4e", fontSize: "14px", overflowWrap: "anywhere" }}>{o.orderNumber}</div>
+                        <div style={{ fontSize: "11.5px", color: "#9ca3af", marginTop: "2px" }}>{fmtDate(o.createdAt)}{o.createdAt ? ` · ${fmtTime(o.createdAt)}` : ""}</div>
+                      </div>
+                      <div style={{ fontWeight: 800, color: "#111827", fontSize: "16px", whiteSpace: "nowrap" }}>₹{o.total}</div>
+                    </div>
+
+                    <div style={{ marginTop: "10px", fontSize: "12.5px", overflowWrap: "anywhere" }}>
+                      <div style={{ fontWeight: 600, color: "#111827" }}>{o.guestName || o.user?.name || "Guest"}</div>
+                      <div style={{ color: "#6b7280" }}>{[o.guestPhone || o.user?.phone, o.city].filter(Boolean).join(" · ")}</div>
+                      {o.deliveryAddress && <div style={{ color: "#9ca3af", fontSize: "11.5px", marginTop: "2px" }}>{o.deliveryAddress}</div>}
+                      <span className={`order-type-badge ${o.source === "whatsapp" ? "whatsapp" : "email"}`}>
+                        {o.source === "whatsapp" ? "WhatsApp" : "Email"}
+                      </span>
+                    </div>
+
+                    {count > 0 && (
+                      <div style={{ marginTop: "10px", borderTop: "1px solid #f1f5f9", paddingTop: "8px" }}>
+                        <button type="button" onClick={() => toggleOrderItems(o._id)} aria-expanded={open} aria-controls={`order-items-${o._id}`}
+                          style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", color: "#374151", fontSize: "12.5px", fontWeight: 600, fontFamily: "inherit" }}>
+                          {count} {count === 1 ? "item" : "items"} <span aria-hidden="true">{open ? "▴" : "▾"}</span>
+                        </button>
+                        {open && <div id={`order-items-${o._id}`} style={{ marginTop: "6px" }}><OrderItems items={o.items} /></div>}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginTop: "10px", fontSize: "12px", color: "#6b7280" }}>
+                      <span>Delivery: <strong style={{ color: "#374151" }}>{slotLabel(o.deliverySlot) || "—"}</strong></span>
+                      <span style={{ background: STATUS_COLORS[o.status] + "20", color: STATUS_COLORS[o.status], fontSize: "11px", padding: "3px 9px", borderRadius: "6px", fontWeight: 700 }}>{STATUS_LABELS[o.status]}</span>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
+                      <select value={o.status} onChange={e => updateOrderStatus(o._id, e.target.value)} aria-label={`Update status of order ${o.orderNumber}`}
+                        style={{ flex: 1, minWidth: 0, padding: "8px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13px", cursor: "pointer", background: "#fff", color: "#111827" }}>
+                        {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
+                      <button onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`}
+                        style={{ padding: "8px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        🗑 Delete
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <Pagination page={orderPage} totalPages={totalOrderPages} totalItems={filteredOrders.length} pageSize={orderPageSize}
+              onPageChange={setOrderPage} itemLabel="orders" scrollTargetRef={ordersTopRef}
+              onPageSizeChange={n => { setOrderPage(p => pageForNewSize(p, orderPageSize, n)); setOrderPageSize(n); }} />
           </div>
         )}
 
         {/* ── PRODUCTS ── */}
         {tab === "products" && (
-          <div>
+          <div ref={productsTopRef} className="admin-section">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "10px" }}>
               <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Products <span style={{ fontSize: "14px", color: "#9ca3af", fontWeight: 400 }}>({filteredProducts.length})</span></h1>
               <div className="admin-header-toolbar" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -1197,87 +1366,101 @@ export default function AdminPage() {
               </div>
             )}
 
-            <div className="admin-table-wrap" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "650px" }}>
-                <thead>
-                  <tr style={{ background: "#f8fafc" }}>
-                    {["Image", "Name", "Category", "Price", "Stock", "Status", "Actions"].map(h => (
-                      <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {prodLoading && (
-                    <tr><td colSpan={7} style={{ padding: "3rem", textAlign: "center", color: "#6b7280" }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
-                        <div style={{ fontSize: "28px", animation: "spin 1s linear infinite" }}>⏳</div>
-                        <span style={{ fontSize: "13px" }}>Loading products…</span>
-                      </div>
-                    </td></tr>
-                  )}
-                  {!prodLoading && pagedProducts.length === 0 && (
-                    <tr><td colSpan={7} style={{ padding: "3rem", textAlign: "center" }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", color: "#9ca3af" }}>
-                        <span style={{ fontSize: "36px" }}>🥬</span>
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>{prodSearch ? "No products match your search" : "No products yet"}</span>
-                        {!prodSearch && <button onClick={openAddProduct} style={{ padding: "8px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 700 }}>+ Add First Product</button>}
-                      </div>
-                    </td></tr>
-                  )}
-                  {pagedProducts.map(p => (
-                    <tr key={p._id} style={{ borderTop: "1px solid #f1f5f9", opacity: p.isActive ? 1 : 0.55, background: p.isActive ? undefined : "#fffbeb" }}>
-                      <td style={{ padding: "10px 14px" }}>
-                        {p.imageUrl ? (
-                          <img key={imgKey + "-" + p._id} src={p.imageUrl} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
-                        ) : (
-                          <div style={{ width: "44px", height: "44px", borderRadius: "8px", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>🥬</div>
-                        )}
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <div style={{ fontWeight: 600, color: "#111827" }}>{p.name}</div>
-                        <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.slug}</div>
-                      </td>
-                      <td style={{ padding: "10px 14px", color: "#6b7280", textTransform: "capitalize" }}>{p.category}</td>
-                      <td style={{ padding: "10px 14px", fontWeight: 700, color: "#111827" }}>₹{p.price}</td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <span style={{ color: p.stock > 10 ? "#16a34a" : p.stock > 0 ? "#f59e0b" : "#ef4444", fontWeight: 700 }}>{p.stock}</span>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "3px", alignItems: "flex-start" }}>
-                          <span style={{ background: p.isActive ? "#f0fdf4" : "#fef2f2", color: p.isActive ? "#16a34a" : "#ef4444", fontSize: "11.5px", padding: "3px 9px", borderRadius: "6px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                            {p.isActive ? "Active" : "Inactive"}
-                          </span>
-                          {!p.isActive && <span style={{ fontSize: "10px", color: "#92400e", whiteSpace: "nowrap" }}>Hidden from users</span>}
-                        </div>
-                      </td>
-                      <td style={{ padding: "10px 14px" }}>
-                        <div className="admin-prod-actions" style={{ display: "flex", gap: "6px" }}>
-                          <button onClick={() => openEditProduct(p)} style={{ padding: "5px 12px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                          <button onClick={() => deleteProduct(p._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {totalProdPages > 1 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderTop: "1px solid #f1f5f9" }}>
-                  <span style={{ fontSize: "12px", color: "#6b7280" }}>Page {prodPage + 1} of {totalProdPages} · {filteredProducts.length} products</span>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button onClick={() => setProdPage(p => Math.max(0, p - 1))} disabled={prodPage === 0}
-                      style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #e5e7eb", background: prodPage === 0 ? "#f9fafb" : "#fff", color: prodPage === 0 ? "#d1d5db" : "#374151", cursor: prodPage === 0 ? "default" : "pointer", fontSize: "12px", fontWeight: 600 }}>← Prev</button>
-                    <button onClick={() => setProdPage(p => Math.min(totalProdPages - 1, p + 1))} disabled={prodPage >= totalProdPages - 1}
-                      style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #e5e7eb", background: prodPage >= totalProdPages - 1 ? "#f9fafb" : "#fff", color: prodPage >= totalProdPages - 1 ? "#d1d5db" : "#374151", cursor: prodPage >= totalProdPages - 1 ? "default" : "pointer", fontSize: "12px", fontWeight: 600 }}>Next →</button>
+            {/* Loading / empty states — shared by table and cards */}
+            {(prodLoading || pagedProducts.length === 0) && (
+              <div style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", padding: "3rem 1rem", textAlign: "center" }}>
+                {prodLoading ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", color: "#6b7280" }}>
+                    <div style={{ fontSize: "28px", animation: "spin 1s linear infinite" }}>⏳</div>
+                    <span style={{ fontSize: "13px" }}>Loading products…</span>
                   </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", color: "#9ca3af" }}>
+                    <span style={{ fontSize: "36px" }}>🥬</span>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "#374151" }}>{prodSearch ? "No products match your search" : "No products yet"}</span>
+                    {!prodSearch && <button onClick={openAddProduct} style={{ padding: "8px 18px", background: "#2d8a4e", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 700 }}>+ Add First Product</button>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!prodLoading && pagedProducts.length > 0 && (
+              <>
+                {/* Desktop (≥1024px) */}
+                <div className="admin-list-table" style={{ background: "#fff", borderRadius: "14px", boxShadow: "0 2px 12px rgba(0,0,0,.05)", overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                    <thead>
+                      <tr style={{ background: "#f8fafc" }}>
+                        {["Image", "Name", "Category", "Price", "Stock", "Status", "Actions"].map(h => (
+                          <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedProducts.map(p => (
+                        <tr key={p._id} style={{ borderTop: "1px solid #f1f5f9", opacity: p.isActive ? 1 : 0.55, background: p.isActive ? undefined : "#fffbeb" }}>
+                          <td style={{ padding: "10px 14px" }}><ProductThumb key={imgKey + "-" + p._id} url={p.imageUrl} /></td>
+                          <td style={{ padding: "10px 14px", overflowWrap: "anywhere" }}>
+                            <div style={{ fontWeight: 600, color: "#111827" }}>{p.name}</div>
+                            <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.slug}</div>
+                          </td>
+                          <td style={{ padding: "10px 14px", color: "#6b7280", textTransform: "capitalize", overflowWrap: "anywhere" }}>{p.category}</td>
+                          <td style={{ padding: "10px 14px", fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{p.price}</td>
+                          <td style={{ padding: "10px 14px" }}>
+                            <span style={{ color: p.stock > 10 ? "#16a34a" : p.stock > 0 ? "#f59e0b" : "#ef4444", fontWeight: 700 }}>{p.stock}</span>
+                          </td>
+                          <td style={{ padding: "10px 14px" }}><ProductStatus active={p.isActive} /></td>
+                          <td style={{ padding: "10px 14px" }}>
+                            <div className="admin-prod-actions" style={{ display: "flex", gap: "6px" }}>
+                              <button onClick={() => openEditProduct(p)} style={{ padding: "5px 12px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                              <button onClick={() => deleteProduct(p._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-            </div>
+
+                {/* Tablet / mobile (<1024px) */}
+                <ul className="admin-list-cards">
+                  {pagedProducts.map(p => (
+                    <li key={p._id} className="admin-card" style={{ opacity: p.isActive ? 1 : 0.7, background: p.isActive ? "#fff" : "#fffbeb" }}>
+                      <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                        <ProductThumb key={imgKey + "-" + p._id} url={p.imageUrl} />
+                        <div style={{ flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+                          <div style={{ fontWeight: 600, color: "#111827", fontSize: "13.5px" }}>{p.name}</div>
+                          <div style={{ fontSize: "11px", color: "#9ca3af" }}>{p.slug}</div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", marginTop: "6px", fontSize: "12.5px", color: "#6b7280" }}>
+                            <span style={{ textTransform: "capitalize" }}>{p.category}</span>
+                            <strong style={{ color: "#111827" }}>₹{p.price}</strong>
+                            <span>Stock <strong style={{ color: p.stock > 10 ? "#16a34a" : p.stock > 0 ? "#f59e0b" : "#ef4444" }}>{p.stock}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                        <ProductStatus active={p.isActive} />
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button onClick={() => openEditProduct(p)} style={{ padding: "7px 14px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600 }}>Edit</button>
+                          <button onClick={() => deleteProduct(p._id)} style={{ padding: "7px 14px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600 }}>Delete</button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {!prodLoading && (
+              <Pagination page={prodPage} totalPages={totalProdPages} totalItems={filteredProducts.length} pageSize={prodPageSize}
+                onPageChange={setProdPage} itemLabel="products" scrollTargetRef={productsTopRef}
+                onPageSizeChange={n => { setProdPage(p => pageForNewSize(p, prodPageSize, n)); setProdPageSize(n); }} />
+            )}
           </div>
         )}
 
         {/* ── USERS ── */}
         {tab === "users" && (
-          <div>
+          <div ref={usersTopRef} className="admin-section">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "12px" }}>
               <h1 style={{ fontSize: "1.6rem", fontWeight: 800, color: "#111827", margin: 0 }}>Customers <span style={{ fontSize: "14px", color: "#9ca3af", fontWeight: 400 }}>({users.length})</span></h1>
               <button onClick={openAddUser} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#2d8a4e,#1f6b3a)", color: "#fff", border: "none", borderRadius: "9px", cursor: "pointer", fontSize: "13px", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px", boxShadow: "0 2px 8px rgba(45,138,78,.25)" }}>
@@ -1295,7 +1478,7 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {users.length === 0 && <tr><td colSpan={6} style={{ padding: "3rem", textAlign: "center", color: "#9ca3af" }}>No customers yet</td></tr>}
-                  {users.map(u => (
+                  {pagedUsers.map(u => (
                     <tr key={u._id} style={{ borderTop: "1px solid #f1f5f9" }}>
                       <td style={{ padding: "12px 14px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1322,6 +1505,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination page={userPage} totalPages={totalUserPages} totalItems={users.length} pageSize={USER_PER_PAGE} itemLabel="customers" onPageChange={setUserPage} scrollTargetRef={usersTopRef} />
           </div>
         )}
 
@@ -1399,7 +1583,7 @@ export default function AdminPage() {
                   {farmPhotos.map(photo => (
                     <div key={photo.id} style={{ borderRadius: "12px", overflow: "hidden", border: "1.5px solid #e9ede4", background: "#f9fafb", position: "relative" }}>
                       <div style={{ height: "130px", overflow: "hidden", position: "relative" }}>
-                        <img src={photo.imageUrl} alt={photo.title} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        <img src={cldImg(photo.imageUrl, 400)} alt={photo.title} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                           onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 50%)" }} />
                         <div style={{ position: "absolute", bottom: "8px", left: "10px", right: "10px" }}>
@@ -1447,7 +1631,7 @@ export default function AdminPage() {
                       <div key={c.key} style={{ borderRadius: "10px", overflow: "hidden", border: `2px solid ${color}22`, background: "#f9fafb" }}>
                         <div style={{ height: "80px", overflow: "hidden", position: "relative", background: image ? undefined : `${color}18` }}>
                           {image ? (
-                            <img src={image} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <img src={cldImg(image, 300)} alt={label} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "32px" }}>{icon}</div>
                           )}
@@ -1475,7 +1659,7 @@ export default function AdminPage() {
                     <div key={cat.id} style={{ borderRadius: "12px", overflow: "hidden", border: `2px solid ${cat.color}22`, background: "#f9fafb", position: "relative" }}>
                       <div style={{ height: "110px", overflow: "hidden", position: "relative", background: cat.image ? undefined : `${cat.color}18` }}>
                         {cat.image ? (
-                          <img src={cat.image} alt={cat.label} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          <img src={cldImg(cat.image, 300)} alt={cat.label} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "40px" }}>{cat.icon}</div>
@@ -1523,14 +1707,14 @@ export default function AdminPage() {
                     <div key={t.id} style={{ borderRadius: "12px", border: "1.5px solid #e9ede4", background: "#f9fafb", padding: "12px", opacity: t.isActive ? 1 : 0.5 }}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}>
                         {t.avatarUrl ? (
-                          <img src={t.avatarUrl} alt={t.name} style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                          <img src={cldImg(t.avatarUrl, 80, 80)} alt={t.name} loading="lazy" style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         ) : (
                           <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#dbeafe", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#1d4ed8" }}>{(t.name || "?")[0]}</div>
                         )}
                         {t.images && t.images.length > 0 && (
                           <div style={{ position: "relative", width: "36px", height: "36px", borderRadius: "8px", overflow: "hidden", flexShrink: 0 }}>
-                            <img src={t.images[0].url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            <img src={cldImg(t.images[0].url, 150)} alt="" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                             {t.images.length > 1 && (
                               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", color: "#fff", fontSize: "10px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>+{t.images.length - 1}</div>
@@ -1577,12 +1761,12 @@ export default function AdminPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "8px" }}>Product Image</label>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
               {prodForm.imageUrl && (
-                <img src={prodForm.imageUrl} alt=""
+                <img src={cldImg(prodForm.imageUrl, 150)} alt=""
                   style={{ width: "70px", height: "70px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <input ref={fileRef} type="file" accept={ALLOWED_EXT.join(",")} onChange={handleImageUpload} style={{ display: "none" }} />
+                <input ref={fileRef} type="file" accept={IMAGE_ACCEPT} onChange={handleImageUpload} style={{ display: "none" }} />
                 <button onClick={() => { setUploadError(null); fileRef.current?.click(); }} disabled={uploading}
                   style={{ padding: "9px 16px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: uploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                   {uploading ? "⏳ Uploading…" : "📁 Upload Image"}
@@ -1644,9 +1828,9 @@ export default function AdminPage() {
           </div>
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
             <button onClick={() => setShowProdModal(false)} style={{ padding: "10px 20px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: "9px", cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-            <button onClick={saveProd} disabled={uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()}
-              style={{ padding: "10px 24px", background: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "not-allowed" : "pointer", fontWeight: 700, opacity: (uploading || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? 0.6 : 1 }}>
-              {editProd ? "Save Changes" : "Add Product"}
+            <button onClick={saveProd} disabled={uploading || savingProd || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()}
+              style={{ padding: "10px 24px", background: (uploading || savingProd || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "#86efac" : "#2d8a4e", color: "#fff", border: "none", borderRadius: "9px", cursor: (uploading || savingProd || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? "not-allowed" : "pointer", fontWeight: 700, opacity: (uploading || savingProd || !prodForm.quantityLabel || !prodForm.quantityLabel.trim()) ? 0.6 : 1 }}>
+              {savingProd ? "Saving…" : (editProd ? "Save Changes" : "Add Product")}
             </button>
           </div>
         </Modal>
@@ -1663,7 +1847,7 @@ export default function AdminPage() {
           {/* Photo preview */}
           {farmForm.imageUrl && (
             <div style={{ height: "160px", borderRadius: "10px", overflow: "hidden", marginBottom: "14px", background: "#f1f5f9" }}>
-              <img src={farmForm.imageUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              <img src={cldImg(farmForm.imageUrl, 300)} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
             </div>
           )}
@@ -1672,7 +1856,7 @@ export default function AdminPage() {
           <div style={{ marginBottom: "14px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Photo</label>
             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <input ref={farmFileRef} type="file" accept={ALLOWED_EXT.join(",")} onChange={uploadFarmImage} style={{ display: "none" }} />
+              <input ref={farmFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadFarmImage} style={{ display: "none" }} />
               <button onClick={() => { setFarmUploadError(null); farmFileRef.current?.click(); }} disabled={farmUploading}
                 style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: farmUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                 {farmUploading ? "⏳ Uploading…" : "📁 Upload Photo"}
@@ -1715,7 +1899,7 @@ export default function AdminPage() {
           {testiForm.avatarUrl && (
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <div style={{ width: "72px", height: "72px", borderRadius: "50%", overflow: "hidden", background: "#f1f5f9", flexShrink: 0 }}>
-                <img src={testiForm.avatarUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                <img src={cldImg(testiForm.avatarUrl, 150)} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               </div>
               <button onClick={() => setTestiForm(f => ({ ...f, avatarUrl: "" }))}
@@ -1729,7 +1913,7 @@ export default function AdminPage() {
           <div style={{ marginBottom: "14px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Customer Photo <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional — JPG, PNG or WebP, max 5MB)</span></label>
             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <input ref={testiFileRef} type="file" accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestimonialAvatar} style={{ display: "none" }} />
+              <input ref={testiFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadTestimonialAvatar} style={{ display: "none" }} />
               <button onClick={() => { setTestiUploadError(null); testiFileRef.current?.click(); }} disabled={testiUploading}
                 style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                 {testiUploading ? "⏳ Uploading…" : testiForm.avatarUrl ? "📁 Replace Photo" : "📁 Upload Photo"}
@@ -1748,7 +1932,7 @@ export default function AdminPage() {
               {testiForm.images.map((im, i) => (
                 <div key={i} style={{ width: "88px" }}>
                   <div style={{ width: "88px", height: "88px", borderRadius: "8px", overflow: "hidden", background: "#f1f5f9", position: "relative" }}>
-                    <img src={im.url} alt={im.alt || "Food photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    <img src={cldImg(im.url, 300)} alt={im.alt || "Food photo"} style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                     <button onClick={() => removeTestiFoodPhoto(i)} title="Remove"
                       style={{ position: "absolute", top: "3px", right: "3px", width: "20px", height: "20px", borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", border: "none", cursor: "pointer", fontSize: "12px", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>✕</button>
@@ -1765,7 +1949,7 @@ export default function AdminPage() {
               ))}
               {testiForm.images.length < 4 && (
                 <div>
-                  <input ref={testiPhotosFileRef} type="file" multiple accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestiFoodPhotos} style={{ display: "none" }} />
+                  <input ref={testiPhotosFileRef} type="file" multiple accept={IMAGE_ACCEPT} onChange={uploadTestiFoodPhotos} style={{ display: "none" }} />
                   <button onClick={() => { setTestiUploadError(null); testiPhotosFileRef.current?.click(); }} disabled={testiPhotosUploading}
                     style={{ width: "88px", height: "88px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiPhotosUploading ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                     {testiPhotosUploading ? "⏳" : "+ Add Photo"}
@@ -1838,11 +2022,11 @@ export default function AdminPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Category Image <span style={{ color: "#9ca3af", fontWeight: 400 }}>(saved to /public/category)</span></label>
             <div style={{ display: "flex", gap: "12px", alignItems: "flex-start", flexWrap: "wrap" }}>
               {catForm.image && (
-                <img src={catForm.image} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
+                <img src={cldImg(catForm.image, 150)} alt="Preview" style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px", border: "2px solid #e5e7eb", flexShrink: 0 }}
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <input ref={catFileRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={uploadCatImage} style={{ display: "none" }} />
+                <input ref={catFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadCatImage} style={{ display: "none" }} />
                 <button onClick={() => { setCatUploadError(null); catFileRef.current?.click(); }} disabled={catUploading}
                   style={{ padding: "9px 16px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: catUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
                   {catUploading ? "⏳ Uploading…" : "📁 Upload Image"}

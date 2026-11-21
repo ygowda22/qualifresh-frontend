@@ -53,7 +53,7 @@ export default function GlobalFooter() {
         <div className="gf-grid">
           <div>
             <div style={{ marginBottom: "14px" }}>
-              <img src="/logo.png" alt="QualiFresh" style={{ height: "38px", width: "auto", display: "block", objectFit: "contain" }} />
+              <img src="/logo.webp" alt="QualiFresh" style={{ height: "38px", width: "auto", display: "block", objectFit: "contain" }} />
             </div>
             <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", lineHeight: 1.8, maxWidth: "230px" }}>{siteConfig.footer.about}</p>
             <div style={{ display: "flex", gap: "8px", marginTop: "16px" }}>

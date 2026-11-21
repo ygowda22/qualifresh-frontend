@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { cldImg } from "../lib/img";
 
 interface LightboxImage { url: string; alt: string; }
 
@@ -11,10 +12,7 @@ interface TestimonialLightboxProps {
   onClose: () => void;
 }
 
-function lightboxUrl(url: string): string {
-  if (!url || !url.includes("/upload/")) return url;
-  return url.replace("/upload/", "/upload/q_auto,f_auto,w_1200/");
-}
+const lightboxUrl = (url: string) => cldImg(url, 1200);
 
 export default function TestimonialLightbox({ images, startIndex, name, onClose }: TestimonialLightboxProps) {
   const [index, setIndex] = useState(startIndex);
@@ -117,7 +115,7 @@ export default function TestimonialLightbox({ images, startIndex, name, onClose 
           {!loaded && (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.6)", fontSize: "13px" }}>Loading…</div>
           )}
-          <Image
+          <Image unoptimized
             key={current.url}
             src={lightboxUrl(current.url)}
             alt={current.alt || `Photo from ${name}`}

@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
 import { saveAndClearCart } from "../lib/cartSync";
 import { useCart } from "../context/CartContext";
+import { cldImg } from "../lib/img";
 
 interface UserData { name: string; email: string; token: string; phone?: string; createdAt?: string; }
 interface OrderItem { name: string; quantity: number; price: number; }
@@ -692,7 +693,7 @@ export default function UserPage() {
                         <div key={p._id} className="up-wish-card">
                           <div style={{ height: "120px", overflow: "hidden", background: "#f0fdf4", position: "relative" }}>
                             {p.imageUrl && p.imageUrl.startsWith("http")
-                              ? <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ? <img src={cldImg(p.imageUrl, 400)} alt={p.name} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "40px" }}>🥬</div>
                             }
                             <div style={{ position: "absolute", bottom: "8px", right: "8px", background: p.stock === 0 ? "rgba(220,38,38,.9)" : "rgba(22,163,74,.9)", color: "#fff", fontSize: "10px", padding: "2px 8px", borderRadius: "8px", fontWeight: 600 }}>

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { siteConfig, getDynamicStats } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
+import { cldImg } from "../lib/img";
 
 const { delivery: DEL } = siteConfig;
 
@@ -43,7 +44,7 @@ function MailSvg({ size = 20, color = "#2d8a4e" }: { size?: number; color?: stri
   );
 }
 function QFLogo({ height = 44, dark }: { height?: number; dark?: boolean }) {
-  return <img src="/logo.png" alt="QualiFresh" style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }} />;
+  return <img src="/logo.webp" alt="QualiFresh" style={{ height: `${height}px`, width: "auto", display: "block", objectFit: "contain" }} />;
 }
 
 
@@ -262,7 +263,7 @@ export default function AboutPage() {
             </div>
             {storyImg && (
               <div className="about-story-img" style={{ borderRadius: "20px", overflow: "hidden", height: "420px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
-                <img src={storyImg} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src={cldImg(storyImg, 900)} alt="Fresh farm produce" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             )}
           </div>
@@ -284,7 +285,7 @@ export default function AboutPage() {
             ].map((card, i) => (
               <div key={card.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={card.img} alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(card.img, 800)} loading="lazy" alt={card.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{card.icon}</span>
@@ -317,11 +318,11 @@ export default function AboutPage() {
               { step: "01", icon: "🌾", img: "/products/farmsource.jpg", title: "Farm Sourced",    desc: "Vegetables are harvested from our farms in Pune — same morning, every order." },
               { step: "02", icon: "🔬", img: "/products/qualitycheck.jpg", title: "Quality Checked", desc: "Every batch is inspected for freshness and quality before it's packed." },
               { step: "03", icon: "❄️", img: "/products/coldpack.jpg", title: "Cold Packed",     desc: "Packed in temperature-controlled conditions (2–8°C) to preserve peak freshness and nutrition." },
-              { step: "04", icon: "🚚", img: "/products/delivery.png", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
+              { step: "04", icon: "🚚", img: "/products/delivery.webp", title: "Door Delivered",  desc: "Delivered to your door on your chosen day (Wed or Sat). Pay only after you receive." },
             ].map((s, i) => (
               <div key={s.step} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={s.img} alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(s.img, 800)} loading="lazy" alt={s.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{s.icon}</span>
@@ -349,13 +350,13 @@ export default function AboutPage() {
           <div className="about-stats-grid">
             {[
               { icon: "💳", img: "/products/noadvance.jpg", stat: "₹0",   statSub: "Upfront cost",   title: "No Advance Payment",  desc: "Order on WhatsApp, pay only after delivery. Zero financial risk — ever." },
-              { icon: "🔄", img: "/products/free.png", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
+              { icon: "🔄", img: "/products/free.webp", stat: "100%", statSub: "Satisfaction",    title: "Free Replacement",    desc: "Not happy with freshness? We replace it, no questions asked, same week." },
               { icon: "❄️", img: "/products/coldpack.jpg", stat: "2–8°C", statSub: "Preserved",     title: "Cold Chain Assured",  desc: "From 37°C farm to your door at 2–8°C. Nutrition and flavour fully preserved." },
               { icon: "🌱", img: "/products/sustainable.jpg", stat: "20+",  statSub: "Farm partners",  title: "Sustainably Sourced", desc: "Eco packaging, local farm partnerships, and minimum-waste operations." },
             ].map((g, i) => (
               <div key={g.title} className={`lift scroll-anim d${i + 1}`} style={{ borderRadius: "18px", overflow: "hidden", background: "#fff", border: "1.5px solid #e9ede4", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", cursor: "pointer" }}>
                 <div className="about-card-img" style={{ overflow: "hidden", position: "relative" }}>
-                  <img src={g.img} alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={cldImg(g.img, 800)} loading="lazy" alt={g.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg,rgba(0,0,0,0.28) 0%,transparent 55%)" }} />
                   <div style={{ position: "absolute", top: "14px", left: "16px", background: "rgba(255,255,255,0.92)", borderRadius: "50%", width: "40px", height: "40px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
                     <span style={{ fontSize: "22px" }}>{g.icon}</span>

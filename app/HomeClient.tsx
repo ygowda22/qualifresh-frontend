@@ -714,10 +714,16 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
         .filter-wrap{position:relative;min-width:0;flex:1 1 auto}
         .filter-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:28px;height:28px;border-radius:50%;border:1.5px solid #d1d5db;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#374151;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:background .15s}
         .filter-arrow:hover{background:#f0fdf4;border-color:#2d8a4e;color:#2d8a4e}
-        .cat-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;text-align:center}
+        /* Category row: padding so lifted cards + shadows are never clipped; soft edge fade only on the side(s) that can still scroll */
         .cat-slider-wrap{position:relative}
+        .cat-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;text-align:center;padding:8px 14px 16px;scroll-padding-inline:14px;scroll-snap-type:x proximity;overscroll-behavior-x:contain}
+        .cat-scroll-wrap.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent)}
+        .cat-scroll-wrap.fade-l:not(.fade-r){-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px);mask-image:linear-gradient(90deg,transparent,#000 32px)}
+        .cat-scroll-wrap.fade-r:not(.fade-l){-webkit-mask-image:linear-gradient(270deg,transparent,#000 32px);mask-image:linear-gradient(270deg,transparent,#000 32px)}
         @media(min-width:1024px){
+          .cat-slider-wrap{padding:0 40px}
           .cat-scroll-wrap{overflow-x:hidden;scroll-behavior:smooth}
+          .cat-slider-wrap .cat-arrow{top:68px}
         }
         @media(max-width:1023px){
           .cat-slider-wrap .cat-arrow{display:none!important}
@@ -732,9 +738,28 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
         .testi-photo-tile{transition:filter .15s,transform .15s}
         .testi-photo-tile:hover{filter:brightness(1.05)}
         .testi-photo-tile:focus-visible{outline:2px solid #2d8a4e;outline-offset:-2px}
-        .cat-grid{display:inline-flex!important;flex-wrap:nowrap!important;gap:14px!important;text-align:left}
-        .cat-grid>div{width:120px!important;flex-shrink:0!important}
-        .cat-card-img{height:88px}
+        .cat-grid{display:inline-flex!important;flex-wrap:nowrap!important;gap:14px!important;text-align:left;vertical-align:top}
+        .cat-grid>.cat-card{width:120px;flex-shrink:0;display:flex;flex-direction:column;scroll-snap-align:start}
+        .cat-card-img{aspect-ratio:1/1;overflow:hidden;background:#f3f4f6}
+        .cat-card-img img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+        .cat-card:hover .cat-card-img img{transform:scale(1.05)}
+        .cat-card.lift:hover{box-shadow:0 8px 16px rgba(0,0,0,.12)!important}
+        .cat-card-label{flex:1;padding:8px 6px;text-align:center}
+        .cat-card-name-box{min-height:2.4em;display:flex;align-items:center;justify-content:center;font-size:11px;line-height:1.2}
+        .cat-card-name{font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word}
+        .cat-card-count{font-size:9.5px;margin-top:2px}
+        @media(max-width:1023px){
+          .cat-scroll-wrap{margin:0 -1rem;padding:8px 1rem 16px;scroll-padding-inline:1rem}
+          .cat-grid>.cat-card{width:96px}
+          .cat-card-label{padding:6px 4px}
+          .cat-card-name-box{font-size:10.5px}
+          .cat-card-count{font-size:9px}
+        }
+        @media(max-width:767px){
+          .cat-grid{gap:12px!important}
+          .cat-grid>.cat-card{width:84px}
+          .cat-card-name-box{font-size:10px}
+        }
 
         /* Responsive */
         @media(max-width:1024px){
@@ -758,10 +783,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           .hero-btn{padding:10px 16px!important;font-size:13px!important}
           .hero-stats{gap:1.2rem!important;padding-top:1.2rem!important;margin-top:1.5rem!important}
           .cat-section{padding:2rem 1rem!important}
-          .cat-scroll-wrap{margin:0 -1rem;padding-left:1rem;padding-right:1rem}
-          .cat-grid>div{width:82px!important}
-          .cat-card-img{height:65px!important}
-          .cat-card-label{font-size:9.5px!important;padding:5px 3px!important}
           .prod-section{padding:1.5rem 1rem 4rem!important}
           .why-section{padding:2rem 1rem!important}
           .why-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
@@ -784,7 +805,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
           .fade-up{max-width:100%!important;width:100%!important;}
         }
         @media(max-width:767px){
-          .cat-grid>div{width:70px!important}
           .why-grid{grid-template-columns:1fr!important}
           .why-grid-top{grid-template-columns:1fr!important}
           .why-grid-bottom{grid-template-columns:1fr!important}
@@ -889,30 +909,30 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
             <div style={{ width: "48px", height: "3px", background: "linear-gradient(90deg,#2d8a4e,#a3e635)", borderRadius: "2px", margin: "12px auto 0" }} />
           </div>
           <div className="cat-slider-wrap">
-          <button className="filter-arrow cat-arrow" style={{ left: 0, display: showCatLeftArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: -(catScrollRef.current.clientWidth * 0.8), behavior: "smooth" })}>‹</button>
-          <div ref={catScrollRef} className="cat-scroll-wrap">
+          <button className="filter-arrow cat-arrow" aria-label="Scroll categories left" style={{ left: 0, display: showCatLeftArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: -(catScrollRef.current.clientWidth * 0.8), behavior: "smooth" })}>‹</button>
+          <div ref={catScrollRef} className={`cat-scroll-wrap${showCatLeftArrow ? " fade-l" : ""}${showCatRightArrow ? " fade-r" : ""}`}>
           <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(8,1fr)", gap: "14px" }}>
             {Object.entries(allCatLabel).map(([key, label]) => {
               const active = cat === key;
               return (
-                <div key={key} className="lift" onClick={() => { setCat(key); scrollToProducts(); }}
+                <div key={key} className="lift cat-card" onClick={() => { setCat(key); scrollToProducts(); }}
                   style={{ borderRadius: "14px", overflow: "hidden", cursor: "pointer", border: `2px solid ${active ? allCatColor[key] : "transparent"}`, boxShadow: active ? `0 0 0 3px ${allCatColor[key]}22, 0 4px 16px rgba(0,0,0,.1)` : "0 2px 10px rgba(0,0,0,.07)", background: "#fff", transition: "all .25s cubic-bezier(.4,0,.2,1)" }}>
-                  <div className="cat-card-img" style={{ height: "88px", overflow: "hidden" }}>
-                    <img src={cldImg(allCatImg[key], 300)} alt={label} loading="lazy"
-                      style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform .45s cubic-bezier(.4,0,.2,1)" }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.12)")}
-                      onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")} />
+                  <div className="cat-card-img">
+                    {/* Square, subject-aware crop on Cloudinary (c_fill,g_auto); other hosts fall back to CSS object-fit: cover */}
+                    <img src={cldImg(allCatImg[key], 240, 240)} alt={label} loading="lazy" width={120} height={120} />
                   </div>
-                  <div className="cat-card-label" style={{ padding: "8px 5px", textAlign: "center", background: active ? allCatColor[key] : "#fff", transition: "background .25s" }}>
-                    <div style={{ fontSize: "11px", fontWeight: 700, color: active ? "#fff" : allCatColor[key], lineHeight: 1.2 }}>{label}</div>
-                    <div style={{ fontSize: "9.5px", color: active ? "rgba(255,255,255,0.7)" : "#9ca3af", marginTop: "1px" }}>{catCounts[key] || 0} items</div>
+                  <div className="cat-card-label" style={{ background: active ? allCatColor[key] : "#fff", transition: "background .25s" }}>
+                    <div className="cat-card-name-box">
+                      <span className="cat-card-name" title={label} style={{ color: active ? "#fff" : allCatColor[key] }}>{label}</span>
+                    </div>
+                    <div className="cat-card-count" style={{ color: active ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>{catCounts[key] || 0} items</div>
                   </div>
                 </div>
               );
             })}
           </div>
           </div>
-          <button className="filter-arrow cat-arrow" style={{ right: 0, display: showCatRightArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: catScrollRef.current.clientWidth * 0.8, behavior: "smooth" })}>›</button>
+          <button className="filter-arrow cat-arrow" aria-label="Scroll categories right" style={{ right: 0, display: showCatRightArrow ? "flex" : "none" }} onClick={() => catScrollRef.current?.scrollBy({ left: catScrollRef.current.clientWidth * 0.8, behavior: "smooth" })}>›</button>
           </div>
         </div>
       </div>

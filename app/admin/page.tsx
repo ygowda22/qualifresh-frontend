@@ -20,6 +20,13 @@ interface Testimonial { id: string; name: string; role: string; message: string;
 const DEFAULT_TESTIMONIALS: Testimonial[] = [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+// Every admin image upload is converted to WebP by the backend; it only accepts these.
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+/** Backend/proxy error message for a failed upload response (e.g. 400 "Please upload a JPG, PNG or WebP image"). */
+async function uploadErrorMessage(r: Response): Promise<string> {
+  const d = await r.json().catch(() => ({}));
+  return d?.message || d?.error || `Upload failed (${r.status})`;
+}
 function fmtDate(d: string) { return new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
 function fmtTime(d: string) { return new Date(d).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false }); }
 
@@ -442,10 +449,7 @@ export default function AdminPage() {
       headers: { Authorization: `Bearer ${token}` },
       body:    fd,
     });
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      throw new Error(d.message || "Upload failed");
-    }
+    if (!r.ok) throw new Error(await uploadErrorMessage(r));
     const d = await r.json();
     return { url: d.url, publicId: d.filename };
   }
@@ -496,8 +500,8 @@ export default function AdminPage() {
     }
   }
 
-  const ALLOWED_MIME = ["image/jpeg","image/png","image/webp","image/gif","image/avif"];
-  const ALLOWED_EXT  = [".jpg",".jpeg",".png",".webp",".gif",".avif"];
+  const ALLOWED_MIME = ["image/jpeg","image/png","image/webp"];
+  const ALLOWED_EXT  = [".jpg",".jpeg",".png",".webp"];
   const TESTI_ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
   const TESTI_ALLOWED_EXT  = [".jpg", ".jpeg", ".png", ".webp"];
 
@@ -619,7 +623,7 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const doc = await r.json();
       const saved: FarmPhoto = { id: doc._id, title: doc.title, description: doc.description, imageUrl: doc.imageUrl };
       setFarmForm(f => ({ ...f, imageUrl: doc.imageUrl }));
@@ -686,7 +690,7 @@ export default function AdminPage() {
       fd.append("image", file);
       fd.append("bucket", "testimonial-avatars");
       const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const d = await r.json();
       setTestiForm(f => ({ ...f, avatarUrl: d.url }));
     } catch (err: any) { setTestiUploadError(err.message || "Upload failed"); }
@@ -710,7 +714,7 @@ export default function AdminPage() {
         fd.append("image", file);
         fd.append("bucket", "testimonial-photos");
         const r = await fetch(`/api/upload`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-        if (!r.ok) throw new Error("Upload failed");
+        if (!r.ok) throw new Error(await uploadErrorMessage(r));
         const d = await r.json();
         setTestiForm(f => ({ ...f, images: [...f.images, { url: d.url, alt: "" }] }));
       } catch (err: any) {
@@ -839,7 +843,7 @@ export default function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
         body:    fd,
       });
-      if (!r.ok) throw new Error("Upload failed");
+      if (!r.ok) throw new Error(await uploadErrorMessage(r));
       const doc = await r.json();
       setCatForm(f => ({ ...f, image: doc.imageUrl }));
     } catch (err: any) { setCatUploadError(err.message || "Upload failed"); }
@@ -1617,7 +1621,7 @@ export default function AdminPage() {
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <input ref={fileRef} type="file" accept={ALLOWED_EXT.join(",")} onChange={handleImageUpload} style={{ display: "none" }} />
+                <input ref={fileRef} type="file" accept={IMAGE_ACCEPT} onChange={handleImageUpload} style={{ display: "none" }} />
                 <button onClick={() => { setUploadError(null); fileRef.current?.click(); }} disabled={uploading}
                   style={{ padding: "9px 16px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: uploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                   {uploading ? "⏳ Uploading…" : "📁 Upload Image"}
@@ -1707,7 +1711,7 @@ export default function AdminPage() {
           <div style={{ marginBottom: "14px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Photo</label>
             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <input ref={farmFileRef} type="file" accept={ALLOWED_EXT.join(",")} onChange={uploadFarmImage} style={{ display: "none" }} />
+              <input ref={farmFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadFarmImage} style={{ display: "none" }} />
               <button onClick={() => { setFarmUploadError(null); farmFileRef.current?.click(); }} disabled={farmUploading}
                 style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: farmUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                 {farmUploading ? "⏳ Uploading…" : "📁 Upload Photo"}
@@ -1764,7 +1768,7 @@ export default function AdminPage() {
           <div style={{ marginBottom: "14px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#374151", marginBottom: "6px" }}>Customer Photo <span style={{ color: "#9ca3af", fontWeight: 400 }}>(optional — JPG, PNG or WebP, max 5MB)</span></label>
             <div style={{ display: "flex", gap: "8px", alignItems: "flex-start", flexWrap: "wrap" }}>
-              <input ref={testiFileRef} type="file" accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestimonialAvatar} style={{ display: "none" }} />
+              <input ref={testiFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadTestimonialAvatar} style={{ display: "none" }} />
               <button onClick={() => { setTestiUploadError(null); testiFileRef.current?.click(); }} disabled={testiUploading}
                 style={{ padding: "8px 14px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600 }}>
                 {testiUploading ? "⏳ Uploading…" : testiForm.avatarUrl ? "📁 Replace Photo" : "📁 Upload Photo"}
@@ -1800,7 +1804,7 @@ export default function AdminPage() {
               ))}
               {testiForm.images.length < 4 && (
                 <div>
-                  <input ref={testiPhotosFileRef} type="file" multiple accept={TESTI_ALLOWED_EXT.join(",")} onChange={uploadTestiFoodPhotos} style={{ display: "none" }} />
+                  <input ref={testiPhotosFileRef} type="file" multiple accept={IMAGE_ACCEPT} onChange={uploadTestiFoodPhotos} style={{ display: "none" }} />
                   <button onClick={() => { setTestiUploadError(null); testiPhotosFileRef.current?.click(); }} disabled={testiPhotosUploading}
                     style={{ width: "88px", height: "88px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: testiPhotosUploading ? "not-allowed" : "pointer", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
                     {testiPhotosUploading ? "⏳" : "+ Add Photo"}
@@ -1877,7 +1881,7 @@ export default function AdminPage() {
                   onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <input ref={catFileRef} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={uploadCatImage} style={{ display: "none" }} />
+                <input ref={catFileRef} type="file" accept={IMAGE_ACCEPT} onChange={uploadCatImage} style={{ display: "none" }} />
                 <button onClick={() => { setCatUploadError(null); catFileRef.current?.click(); }} disabled={catUploading}
                   style={{ padding: "9px 16px", background: "#f0fdf4", color: "#2d8a4e", border: "2px dashed #86efac", borderRadius: "8px", cursor: catUploading ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
                   {catUploading ? "⏳ Uploading…" : "📁 Upload Image"}

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { siteConfig } from "../../src/config/site";
 import { useCart } from "../context/CartContext";
 import { cldImg } from "../lib/img";
+import { usePerPage, useScrollToGridAfterPageChange } from "../lib/usePerPage";
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
@@ -33,13 +34,6 @@ function CartSvg() {
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
     </svg>
   );
-}
-
-function getPerPage(): number {
-  if (typeof window === "undefined") return 12;
-  if (window.innerWidth < 768)  return 20;  // 2 cols × 10 rows (unlimited scrolling on mobile)
-  if (window.innerWidth < 1024) return 12;  // 3 cols × 4 rows
-  return 12;                                 // 4 cols × 3 rows
 }
 
 function mergeCategoryData(data: any[]): { key: string; label: string; icon: string; color: string }[] {
@@ -77,7 +71,7 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
   const [search, setSearch]       = useState(searchParams.get("q") || "");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [page, setPage]           = useState(1);
-  const [perPage, setPerPage]     = useState(40);
+  const perPage                   = usePerPage();
   const [hov, setHov]             = useState<string | null>(null);
   const [wishlist, setWishlist]   = useState<string[]>([]);
   const [userToken, setUserToken] = useState<string | null>(null);
@@ -154,19 +148,8 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
     };
     window.addEventListener("storage", onStorage);
 
-    // Responsive per-page
-    setPerPage(getPerPage());
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const onResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => setPerPage(getPerPage()), 150);
-    };
-    window.addEventListener("resize", onResize);
-
     return () => {
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("resize", onResize);
-      clearTimeout(resizeTimer);
     };
   }, []);
 
@@ -200,22 +183,8 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
   // Reset to page 1 whenever filter/search/perPage changes
   useEffect(() => { setPage(1); }, [cat, search, perPage]);
 
-  // Scroll to the top of the product grid specifically (used on pagination clicks)
-  const scrollToProductGrid = () => {
-    const el = productGridRef.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
-
-  // ── Fixed visible rows per page, matching the grid's column breakpoints ──
-  // Mobile (2 cols): 20 rows = 40/page. Tablet (3 cols): 10 rows = 30/page. Desktop (4 cols): 10 rows = 40/page.
-  useEffect(() => {
-    const update = () => setPerPage(window.innerWidth <= 480 ? 40 : window.innerWidth <= 1023 ? 30 : 40);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
+  // Scroll to the top of the product grid after a pagination click, once the new page has rendered
+  const scrollToProductGrid = useScrollToGridAfterPageChange(productGridRef);
 
   // Category arrow visibility — recalculate whenever the category list changes or on resize/scroll
   useEffect(() => {
@@ -448,7 +417,7 @@ function ProductsContent({ initialProducts, initialCategories }: ProductsClientP
               {cat !== "all" ? ` in ${allCats.find(c => c.key === cat)?.label}` : ""}
               {search ? ` matching "${search}"` : ""}
             </p>
-            <div ref={productGridRef} className="p-grid">
+            <div ref={productGridRef} className="p-grid" key={`${safePage}|${cat}|${search}`}>
               {paginated.map((p, i) => {
                 const qty = cart[p._id] || 0;
                 const inStock = p.available !== false && p.stock !== 0;

@@ -88,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full" style={{ background: "#f4f6f0" }}>
+    <html lang="en" className="h-full" data-scroll-behavior="smooth" style={{ background: "#f4f6f0" }}>
       <head>
         {/* Viewport — MUST be first so mobile browsers render at correct scale */}
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"  />

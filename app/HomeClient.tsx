@@ -8,6 +8,7 @@ import { fetchAndMergeCart, saveAndClearCart } from "./lib/cartSync";
 import { useCart } from "./context/CartContext";
 import TestimonialLightbox from "./components/TestimonialLightbox";
 import { cldImg } from "./lib/img";
+import { usePerPage, useScrollToGridAfterPageChange } from "./lib/usePerPage";
 
 const { delivery: DEL } = siteConfig;
 
@@ -114,7 +115,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
   const whyRef                      = useRef<HTMLDivElement>(null);
   const filterRowRef                = useRef<HTMLDivElement>(null);
   const catScrollRef                = useRef<HTMLDivElement>(null);
-  const [perPage, setPerPage]       = useState(PER_PAGE);
+  const perPage                     = usePerPage(PER_PAGE);
   const [showLeftArrow, setShowLeftArrow]   = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [showCatLeftArrow, setShowCatLeftArrow]   = useState(false);
@@ -192,15 +193,6 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
         try { const wl = localStorage.getItem("qf_wishlist"); if (wl) setWishlist(JSON.parse(wl)); } catch {}
       });
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Fixed visible rows per page, matching the grid's column breakpoints ──
-  // Mobile (2 cols): 20 rows = 40/page. Tablet (3 cols): 10 rows = 30/page. Desktop (4 cols): 10 rows = 40/page.
-  useEffect(() => {
-    const update = () => setPerPage(window.innerWidth <= 480 ? 40 : window.innerWidth <= 1023 ? 30 : 40);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
 
   useEffect(() => { setPage(1); }, [perPage]);
 
@@ -659,13 +651,8 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
     window.scrollTo({ top, behavior: "smooth" });
   };
 
-  // Scroll to the top of the product grid specifically (used on pagination clicks)
-  const scrollToProductGrid = () => {
-    const el = productGridRef.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top, behavior: "smooth" });
-  };
+  // Scroll to the top of the product grid after a pagination click, once the new page has rendered
+  const scrollToProductGrid = useScrollToGridAfterPageChange(productGridRef);
 
 
   // Merge static config categories (with any admin overrides) + custom categories
@@ -971,7 +958,7 @@ export default function HomeClient({ initialProducts, initialFarmPhotos, initial
               <p style={{  }}>Loading fresh products…</p>
             </div>
           ) : (
-            <div ref={productGridRef} className="prod-grid" style={{ display: "grid" }}>
+            <div ref={productGridRef} className="prod-grid" key={`${page}|${cat}|${search}`} style={{ display: "grid" }}>
               {paginated.map((p, i) => {
                 const qty = cart[p._id] || 0;
                 return (

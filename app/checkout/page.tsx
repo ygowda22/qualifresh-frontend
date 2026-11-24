@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { siteConfig } from "../../src/config/site";
 
 const { delivery: DEL } = siteConfig;
+const PRICES_CHANGED_MSG = "Some prices have changed. Please review your cart.";
+
+// Logged-in customer's token (if any), so the order is linked to their account (My Orders).
+function authHeader(): Record<string, string> {
+  try { const t = JSON.parse(localStorage.getItem("qf_user") || "null")?.token; return t ? { Authorization: `Bearer ${t}` } : {}; } catch { return {}; }
+}
 
 interface Product {
   _id: string; name: string; price: number; slug: string;
@@ -57,6 +63,13 @@ export default function CheckoutPage() {
   const grandTotal   = cartTotal + deliveryCost;
   const hasOutOfStockItem = cartItems.some(p => p.stock === 0);
 
+  // The server rejected the order because prices changed (409 PRICES_CHANGED): show the current
+  // prices so the summary re-totals and the customer can review and send again.
+  function applyCurrentPrices(items: { productId: string; price: number }[] | undefined) {
+    if (!Array.isArray(items)) return;
+    setProducts(prev => prev.map(p => { const u = items.find(i => i.productId === p._id); return u ? { ...p, price: u.price } : p; }));
+  }
+
   function removeItemFromCart(id: string) {
     const updated = { ...cart };
     delete updated[id];
@@ -76,10 +89,11 @@ export default function CheckoutPage() {
     try {
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       const r = await fetch("/backend/api/orders", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: address, city, deliverySlot: slot, notes, guestName: name, guestEmail: email, guestPhone: phone }),
       });
       const d = await r.json();
+      if (r.status === 409 && d.code === "PRICES_CHANGED") { applyCurrentPrices(d.items); setApiError(PRICES_CHANGED_MSG); return; }
       if (!r.ok) { setApiError(d.message || "Order failed. Please try again."); return; }
       fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => {});
       setOrderNum(d.orderNumber);
@@ -100,10 +114,11 @@ export default function CheckoutPage() {
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       // Logs the order in the DB and gets back the WhatsApp URL — only redirect after this responds.
       const r = await fetch("/backend/api/whatsapp-order", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address, city, deliverySlot: slot, notes, name, email, phone }),
       });
       const d = await r.json();
+      if (r.status === 409 && d.code === "PRICES_CHANGED") { applyCurrentPrices(d.items); setApiError(PRICES_CHANGED_MSG); return; }
       if (!r.ok) { setApiError(d.message || "Order failed. Please try again."); return; }
       window.open(d.whatsappMessageUrl, "_blank");
       const empty = "{}";

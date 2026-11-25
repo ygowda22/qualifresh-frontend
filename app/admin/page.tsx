@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import Pagination from "./Pagination";
+import OrderEditPanel, { type EditableOrder } from "./OrderEditPanel";
 import { siteConfig } from "../../src/config/site";
 import { cldImg } from "../lib/img";
 
@@ -252,6 +253,9 @@ export default function AdminPage() {
   const [prodPageSize, setProdPageSize]   = useState(10);
   const [userPage, setUserPage]       = useState(0);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(() => new Set());
+  // Edit order panel (focus returns to the Edit button that opened it)
+  const [editingOrder, setEditingOrder] = useState<EditableOrder | null>(null);
+  const editReturnRef = useRef<HTMLElement | null>(null);
   const ordersTopRef   = useRef<HTMLDivElement>(null);
   const productsTopRef = useRef<HTMLDivElement>(null);
   const usersTopRef    = useRef<HTMLDivElement>(null);
@@ -433,6 +437,34 @@ export default function AdminPage() {
     }
     loadOrders();
     showToast(`✓ Order status updated to ${STATUS_LABELS[status] || status}`);
+  }
+
+  // ── Edit order items ──────────────────────────────────────────────────────
+  const EDITABLE_STATUSES = ["pending", "confirmed", "out_for_delivery"];
+  function notEditableMsg(status: string) { return `${status === "delivered" ? "Delivered" : "Cancelled"} orders can't be edited`; }
+  function openEditOrder(o: EditableOrder, e: React.MouseEvent<HTMLElement>) {
+    editReturnRef.current = e.currentTarget;
+    if (!EDITABLE_STATUSES.includes(o.status)) { showToast(notEditableMsg(o.status), false); return; }
+    setEditingOrder(o);
+  }
+  function closeEditOrder() {
+    setEditingOrder(null);
+    setTimeout(() => editReturnRef.current?.focus(), 0);
+  }
+  function onOrderEdited(updated: EditableOrder) {
+    setOrders(prev => prev.map(o => (o._id === updated._id ? updated : o))); // in place: page, filter, search and scroll stay
+    closeEditOrder();
+    showToast(`✓ Order ${updated.orderNumber} updated`);
+  }
+  async function reloadOrderForEdit(id: string) {
+    try {
+      const r = await fetch(`${API}/api/orders`, { headers: authHeaders() });
+      if (r.status === 401) { logout(); return null; }
+      if (!r.ok) return null;
+      const list: EditableOrder[] = await r.json();
+      setOrders(list);
+      return list.find(o => o._id === id) || null;
+    } catch { return null; }
   }
 
   async function deleteOrder(id: string, orderNumber: string) {
@@ -1001,7 +1033,7 @@ export default function AdminPage() {
         .admin-list-table{display:block}
         .admin-list-cards{display:none;list-style:none;margin:0;padding:0;flex-direction:column;gap:10px}
         .admin-card{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.05);padding:14px;min-width:0}
-        .qf-col-order{width:128px}.qf-col-cust{width:18%}.qf-col-total{width:84px}.qf-col-status{width:132px}.qf-col-del{width:56px}
+        .qf-col-order{width:128px}.qf-col-cust{width:18%}.qf-col-total{width:84px}.qf-col-status{width:132px}.qf-col-del{width:80px}
         .qf-del-txt{display:none}
         .admin-list-table .qf-item-ea{display:none}
         @media(min-width:1280px){
@@ -1222,8 +1254,8 @@ export default function AdminPage() {
                 </colgroup>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
-                    {["Order", "Customer", "Items", "Total", "Status", ""].map((h, i) => (
-                      <th key={i} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
+                    {["Order", "Customer", "Items", "Total", "Status", "Actions"].map((h, i) => (
+                      <th key={i} style={{ padding: i === 5 ? "12px 4px" : "12px 14px", textAlign: i === 5 ? "center" : "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1265,10 +1297,18 @@ export default function AdminPage() {
                         </select>
                       </td>
                       <td style={{ padding: "12px 10px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                        {(() => { const editable = EDITABLE_STATUSES.includes(o.status); return (
+                        <button className="admin-order-edit" onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
+                          aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)}
+                          style={{ padding: "5px 8px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "6px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          ✏️<span className="qf-del-txt"> Edit</span>
+                        </button>); })()}
                         <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} title="Delete order"
                           style={{ padding: "5px 8px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
                           🗑<span className="qf-del-txt"> Delete</span>
                         </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1321,8 +1361,16 @@ export default function AdminPage() {
                         style={{ flex: 1, minWidth: 0, padding: "8px", borderRadius: "8px", border: "1.5px solid #e5e7eb", fontSize: "13px", cursor: "pointer", background: "#fff", color: "#111827" }}>
                         {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                       </select>
+                    </div>
+                    <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+                      {(() => { const editable = EDITABLE_STATUSES.includes(o.status); return (
+                      <button onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
+                        aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)}
+                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "8px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        ✏️ Edit
+                      </button>); })()}
                       <button onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`}
-                        style={{ padding: "8px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
                         🗑 Delete
                       </button>
                     </div>
@@ -2108,6 +2156,12 @@ export default function AdminPage() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {/* ── Edit order panel ── */}
+      {editingOrder && token && (
+        <OrderEditPanel order={editingOrder} products={products} deliveryLabel={slotLabel(editingOrder.deliverySlot || "")} token={token}
+          onClose={closeEditOrder} onSaved={onOrderEdited} onReload={() => reloadOrderForEdit(editingOrder._id)} onUnauthorized={() => { setEditingOrder(null); logout(); }} />
       )}
 
       {/* ── Toast ── */}

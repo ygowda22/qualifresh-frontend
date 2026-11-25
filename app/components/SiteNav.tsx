@@ -11,6 +11,7 @@ interface Props { activePage?: "about-us" | "our-farms" | "products" | "contact"
 interface Product { _id: string; name: string; price: number; slug: string; imageUrl?: string; category: string; quantityLabel?: string; stock?: number; }
 
 const { delivery: DEL } = siteConfig;
+const PRICES_CHANGED_MSG = "Some prices have changed. Please review your cart.";
 
 function CartSvg() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>;
@@ -224,6 +225,13 @@ export default function SiteNav({ activePage }: Props) {
     setCart(updated);
   }
 
+  // The server rejected the order because prices changed (409 PRICES_CHANGED): show the current
+  // prices so the cart re-totals and the customer can review and send again.
+  function applyCurrentPrices(items: { productId: string; price: number }[] | undefined) {
+    if (!Array.isArray(items)) return;
+    setProducts(prev => prev.map(p => { const u = items.find(i => i.productId === p._id); return u ? { ...p, price: u.price } : p; }));
+  }
+
   // ── Guest details (localStorage only) ─────────────────────────────────────
   // Persists across sessions for guests ONLY, shared by the email checkout form and the
   // WhatsApp popup. Never read/written while logged in, and never cleared on logout.
@@ -341,10 +349,11 @@ export default function SiteNav({ activePage }: Props) {
       const identityCity    = fresh ? fresh.city    : ckCity;
 
       const r = await fetch("/backend/api/orders", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}) },
         body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, deliveryAddress: identityAddress, city: identityCity, deliverySlot: ckSlot, notes: ckNotes, guestName: identityName, guestEmail: identityEmail, guestPhone: identityPhone, userId }),
       });
       const d = await r.json();
+      if (r.status === 409 && d.code === "PRICES_CHANGED") { applyCurrentPrices(d.items); setCkError(PRICES_CHANGED_MSG); return; }
       if (!r.ok) { setCkError(d.message || "Order failed. Please try again."); return; }
       fetch(`/backend/api/orders/${d._id}/notify`, { method: "POST", headers: { "Content-Type": "application/json" } }).catch(() => { });
       setCkOrderNum(d.orderNumber);
@@ -364,10 +373,11 @@ export default function SiteNav({ activePage }: Props) {
     try {
       const items = cartItems.map(p => ({ productId: p._id, name: p.name, slug: p.slug, quantity: cart[p._id], price: p.price }));
       const r = await fetch("/backend/api/whatsapp-order", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}) },
         body: JSON.stringify({ items, subtotal: cartTotal, deliveryCharge: deliveryCost, total: grandTotal, address: vals.address, city: vals.city, deliverySlot: vals.deliverySlot, name: vals.name, email: vals.email, phone: vals.phone, userId: vals.userId }),
       });
       const d = await r.json();
+      if (r.status === 409 && d.code === "PRICES_CHANGED") { applyCurrentPrices(d.items); setWaError(PRICES_CHANGED_MSG); return; }
       if (!r.ok) { setWaError(d.message || "Order failed. Please try again."); return; }
       window.open(d.whatsappMessageUrl, "_blank");
       setCart({});

@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Pagination from "./Pagination";
 import OrderEditPanel, { type EditableOrder } from "./OrderEditPanel";
+import AdminActionButton from "./AdminActionButton";
 // Invoice preview + PDF/QR libraries load only when a PDF button is clicked
 const InvoicePreview = lazy(() => import("./invoice/InvoicePreview"));
 import { siteConfig } from "../../src/config/site";
@@ -1306,19 +1307,10 @@ export default function AdminPage() {
                       <td style={{ padding: "12px 10px" }}>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                         {(() => { const editable = EDITABLE_STATUSES.includes(o.status); return (
-                        <button className="admin-order-edit" onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
-                          aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)}
-                          style={{ padding: "5px 8px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "6px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          ✏️<span className="qf-del-txt"> Edit</span>
-                        </button>); })()}
-                        <button className="admin-order-pdf" onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`} title="Invoice PDF"
-                          style={{ padding: "5px 8px", background: "#fff", color: "#111827", border: "none", boxShadow: "inset 0 0 0 1px #d1d5db", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          📄<span className="qf-del-txt"> PDF</span>
-                        </button>
-                        <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} title="Delete order"
-                          style={{ padding: "5px 8px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          🗑<span className="qf-del-txt"> Delete</span>
-                        </button>
+                        <AdminActionButton variant="edit" icon="✏️" label="Edit" compact className="admin-order-edit" onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
+                          aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)} />); })()}
+                        <AdminActionButton variant="neutral" icon="📄" label="PDF" compact className="admin-order-pdf" onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`} title="Invoice PDF" />
+                        <AdminActionButton variant="danger" icon="🗑" label="Delete" compact className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} title="Delete order" />
                         </div>
                       </td>
                     </tr>
@@ -1375,19 +1367,10 @@ export default function AdminPage() {
                     </div>
                     <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                       {(() => { const editable = EDITABLE_STATUSES.includes(o.status); return (
-                      <button onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
-                        aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)}
-                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "8px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        ✏️ Edit
-                      </button>); })()}
-                      <button onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`}
-                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: "#fff", color: "#111827", border: "none", boxShadow: "inset 0 0 0 1px #d1d5db", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        📄 PDF
-                      </button>
-                      <button onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`}
-                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                        🗑 Delete
-                      </button>
+                      <AdminActionButton variant="edit" icon="✏️" label="Edit" block onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
+                        aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)} />); })()}
+                      <AdminActionButton variant="neutral" icon="📄" label="PDF" block onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`} />
+                      <AdminActionButton variant="danger" icon="🗑" label="Delete" block onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} />
                     </div>
                   </li>
                 );
@@ -1474,9 +1457,9 @@ export default function AdminPage() {
                           </td>
                           <td style={{ padding: "10px 14px" }}><ProductStatus active={p.isActive} /></td>
                           <td style={{ padding: "10px 14px" }}>
-                            <div className="admin-prod-actions" style={{ display: "flex", gap: "6px" }}>
-                              <button onClick={() => openEditProduct(p)} style={{ padding: "5px 12px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                              <button onClick={() => deleteProduct(p._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
+                            <div className="admin-prod-actions" style={{ display: "flex", gap: "8px" }}>
+                              <AdminActionButton variant="edit" icon="✏️" label="Edit" onClick={() => openEditProduct(p)} />
+                              <AdminActionButton variant="danger" icon="🗑" label="Delete" onClick={() => deleteProduct(p._id)} />
                             </div>
                           </td>
                         </tr>
@@ -1503,9 +1486,9 @@ export default function AdminPage() {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
                         <ProductStatus active={p.isActive} />
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button onClick={() => openEditProduct(p)} style={{ padding: "7px 14px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600 }}>Edit</button>
-                          <button onClick={() => deleteProduct(p._id)} style={{ padding: "7px 14px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600 }}>Delete</button>
+                        <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                          <AdminActionButton variant="edit" icon="✏️" label="Edit" block onClick={() => openEditProduct(p)} />
+                          <AdminActionButton variant="danger" icon="🗑" label="Delete" block onClick={() => deleteProduct(p._id)} />
                         </div>
                       </div>
                     </li>
@@ -1534,7 +1517,7 @@ export default function AdminPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "600px" }}>
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
-                    {["Name", "Email", "Phone", "Registered", "Status", "Action"].map(h => (
+                    {["Name", "Email", "Phone", "Registered", "Status", "Actions"].map(h => (
                       <th key={h} style={{ padding: "12px 14px", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "11.5px", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
@@ -1558,9 +1541,9 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <div style={{ display: "flex", gap: "6px" }}>
-                          <button onClick={() => openEditUser(u)} style={{ padding: "5px 12px", background: "#f0fdf4", color: "#16a34a", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                          <button onClick={() => deleteUser(u._id)} style={{ padding: "5px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Delete</button>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <AdminActionButton variant="edit" icon="✏️" label="Edit" compactMid aria-label="Edit" title="Edit" onClick={() => openEditUser(u)} />
+                          <AdminActionButton variant="danger" icon="🗑" label="Delete" compactMid aria-label="Delete" title="Delete" onClick={() => deleteUser(u._id)} />
                         </div>
                       </td>
                     </tr>
@@ -1654,9 +1637,9 @@ export default function AdminPage() {
                           {photo.description && <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "10.5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{photo.description}</div>}
                         </div>
                       </div>
-                      <div style={{ display: "flex", gap: "6px", padding: "8px 10px" }}>
-                        <button onClick={() => openFarmModal(photo)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                        <button onClick={() => deleteFarmPhoto(photo.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      <div style={{ display: "flex", gap: "8px", padding: "8px 10px" }}>
+                        <AdminActionButton variant="edit" icon="✏️" label="Edit" fill onClick={() => openFarmModal(photo)} />
+                        <AdminActionButton variant="danger" icon="🗑" label="Delete" fill onClick={() => deleteFarmPhoto(photo.id)} />
                       </div>
                     </div>
                   ))}
@@ -1702,7 +1685,7 @@ export default function AdminPage() {
                           <div style={{ position: "absolute", bottom: "6px", left: "8px", color: "#fff", fontSize: "12px", fontWeight: 700 }}>{icon} {label}</div>
                         </div>
                         <div style={{ padding: "6px 8px" }}>
-                          <button onClick={() => openStaticCatEdit(c)} style={{ width: "100%", padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
+                          <AdminActionButton variant="edit" icon="✏️" label="Edit" fill onClick={() => openStaticCatEdit(c)} />
                         </div>
                       </div>
                     );
@@ -1733,9 +1716,9 @@ export default function AdminPage() {
                         </div>
                         <div style={{ position: "absolute", top: "8px", right: "8px", width: "14px", height: "14px", borderRadius: "50%", background: cat.color, border: "2px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,.25)" }} />
                       </div>
-                      <div style={{ display: "flex", gap: "6px", padding: "8px 10px" }}>
-                        <button onClick={() => openCatModal(cat)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                        <button onClick={() => deleteCat(cat.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      <div style={{ display: "flex", gap: "8px", padding: "8px 10px" }}>
+                        <AdminActionButton variant="edit" icon="✏️" label="Edit" fill onClick={() => openCatModal(cat)} />
+                        <AdminActionButton variant="danger" icon="🗑" label="Delete" fill onClick={() => deleteCat(cat.id)} />
                       </div>
                     </div>
                   ))}
@@ -1790,9 +1773,9 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <p style={{ fontSize: "12px", color: "#4b5563", marginBottom: "8px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{t.message}</p>
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button onClick={() => openTestiModal(t)} style={{ flex: 1, padding: "5px", background: "#dbeafe", color: "#1d4ed8", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Edit</button>
-                        <button onClick={() => deleteTestimonial(t.id)} style={{ flex: 1, padding: "5px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>Remove</button>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <AdminActionButton variant="edit" icon="✏️" label="Edit" fill onClick={() => openTestiModal(t)} />
+                        <AdminActionButton variant="danger" icon="🗑" label="Delete" fill onClick={() => deleteTestimonial(t.id)} />
                       </div>
                     </div>
                   ))}

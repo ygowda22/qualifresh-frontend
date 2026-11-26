@@ -1,0 +1,59 @@
+/* Shared look for every row action button in the admin panel (Edit / PDF / Delete …).
+   Reference: the Orders tab buttons. Style only — no behaviour lives here. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s;
+}
+.btn:focus-visible { outline: 2px solid #2d8a4e; outline-offset: 2px; }
+
+.edit    { background: #f0fdf4; color: #2d8a4e; box-shadow: inset 0 0 0 1px #2d8a4e; }
+.neutral { background: #ffffff; color: #374151; box-shadow: inset 0 0 0 1px #d1d5db; }
+.danger  { background: #fef2f2; color: #ef4444; }
+.edit:hover    { background: #dcfce7; }
+.neutral:hover { background: #f9fafb; }
+.danger:hover  { background: #fee2e2; }
+
+/* disabled (or aria-disabled, e.g. Orders Edit on delivered/cancelled orders) */
+.btn:disabled,
+.btn[aria-disabled="true"],
+.btn:disabled:hover,
+.btn[aria-disabled="true"]:hover {
+  background: #f3f4f6;
+  color: #9ca3af;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  cursor: not-allowed;
+}
+
+/* compact: icon only below 1280px (the Orders table rule), label from 1280px */
+.compact .label { display: none; }
+@media (min-width: 1280px) { .compact .label { display: inline; } }
+
+/* compactMid: icon only between 1024px and 1279px only (tables that are tight at that width) */
+@media (min-width: 1024px) and (max-width: 1279px) { .compactMid .label { display: none; } }
+
+/* fill: cards shown at every width (Settings) — fills the row; touch size on phones/tablets */
+.fill { flex: 1 1 0; min-width: 0; width: 100%; }
+@media (max-width: 1023px) {
+  .fill { min-height: 44px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; }
+}
+
+/* block: card views — fills the row, 44px touch target */
+.block {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}

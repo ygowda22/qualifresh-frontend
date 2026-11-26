@@ -1,7 +1,9 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Pagination from "./Pagination";
 import OrderEditPanel, { type EditableOrder } from "./OrderEditPanel";
+// Invoice preview + PDF/QR libraries load only when a PDF button is clicked
+const InvoicePreview = lazy(() => import("./invoice/InvoicePreview"));
 import { siteConfig } from "../../src/config/site";
 import { cldImg } from "../lib/img";
 
@@ -256,6 +258,11 @@ export default function AdminPage() {
   // Edit order panel (focus returns to the Edit button that opened it)
   const [editingOrder, setEditingOrder] = useState<EditableOrder | null>(null);
   const editReturnRef = useRef<HTMLElement | null>(null);
+  // Invoice preview (focus returns to the PDF button that opened it)
+  const [invoiceOrder, setInvoiceOrder] = useState<EditableOrder | null>(null);
+  const invoiceReturnRef = useRef<HTMLElement | null>(null);
+  function openInvoice(o: EditableOrder, e: React.MouseEvent<HTMLElement>) { invoiceReturnRef.current = e.currentTarget; setInvoiceOrder(o); }
+  function closeInvoice() { setInvoiceOrder(null); setTimeout(() => invoiceReturnRef.current?.focus(), 0); }
   const ordersTopRef   = useRef<HTMLDivElement>(null);
   const productsTopRef = useRef<HTMLDivElement>(null);
   const usersTopRef    = useRef<HTMLDivElement>(null);
@@ -1304,6 +1311,10 @@ export default function AdminPage() {
                           style={{ padding: "5px 8px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "6px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
                           ✏️<span className="qf-del-txt"> Edit</span>
                         </button>); })()}
+                        <button className="admin-order-pdf" onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`} title="Invoice PDF"
+                          style={{ padding: "5px 8px", background: "#fff", color: "#111827", border: "none", boxShadow: "inset 0 0 0 1px #d1d5db", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                          📄<span className="qf-del-txt"> PDF</span>
+                        </button>
                         <button className="admin-order-del" onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`} title="Delete order"
                           style={{ padding: "5px 8px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: 600, whiteSpace: "nowrap" }}>
                           🗑<span className="qf-del-txt"> Delete</span>
@@ -1362,13 +1373,17 @@ export default function AdminPage() {
                         {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                       </select>
                     </div>
-                    <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
                       {(() => { const editable = EDITABLE_STATUSES.includes(o.status); return (
                       <button onClick={e => openEditOrder(o, e)} aria-disabled={!editable}
                         aria-label={editable ? `Edit order ${o.orderNumber}` : `${notEditableMsg(o.status)} (order ${o.orderNumber})`} title={editable ? "Edit order" : notEditableMsg(o.status)}
                         style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: editable ? "#f0fdf4" : "#f3f4f6", color: editable ? "#2d8a4e" : "#9ca3af", border: "none", boxShadow: `inset 0 0 0 1px ${editable ? "#2d8a4e" : "#e5e7eb"}`, borderRadius: "8px", cursor: editable ? "pointer" : "not-allowed", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
                         ✏️ Edit
                       </button>); })()}
+                      <button onClick={e => openInvoice(o, e)} aria-label={`Invoice PDF for order ${o.orderNumber}`}
+                        style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: "#fff", color: "#111827", border: "none", boxShadow: "inset 0 0 0 1px #d1d5db", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        📄 PDF
+                      </button>
                       <button onClick={() => deleteOrder(o._id, o.orderNumber)} aria-label={`Delete order ${o.orderNumber}`}
                         style={{ flex: 1, minHeight: "44px", padding: "8px 12px", background: "#fef2f2", color: "#ef4444", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12.5px", fontWeight: 600, whiteSpace: "nowrap" }}>
                         🗑 Delete
@@ -2156,6 +2171,13 @@ export default function AdminPage() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {/* ── Invoice preview ── */}
+      {invoiceOrder && (
+        <Suspense fallback={null}>
+          <InvoicePreview order={invoiceOrder} onClose={closeInvoice} />
+        </Suspense>
       )}
 
       {/* ── Edit order panel ── */}

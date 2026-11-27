@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, lazy, Suspense } from "react";
 import Pagination from "./Pagination";
 import OrderEditPanel, { type EditableOrder } from "./OrderEditPanel";
 import AdminActionButton from "./AdminActionButton";
+import { listText, isWeighed, type ProductUnitInfo } from "../lib/orderItemText";
 // Invoice preview + PDF/QR libraries load only when a PDF button is clicked
 const InvoicePreview = lazy(() => import("./invoice/InvoicePreview"));
 import { siteConfig } from "../../src/config/site";
@@ -85,20 +86,20 @@ function MiniBarChart({ data, color = "#2d8a4e" }: { data: { label: string; valu
 }
 
 // ── Order items list (table cell + expanded card) ────────────────────────────
-function OrderItems({ items }: { items: any[] | undefined }) {
+function OrderItems({ items, products }: { items: any[] | undefined; products?: Map<string, ProductUnitInfo> }) {
   if (!Array.isArray(items) || items.length === 0) return <span style={{ fontSize: "12px", color: "#9ca3af" }}>—</span>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
-      {items.map((i: any, idx: number) => (
+      {items.map((i: any, idx: number) => { const t = listText(i, i.productId ? products?.get(String(i.productId)) : undefined); return (
         <div key={idx} style={{ fontSize: "12px", color: "#374151", display: "grid", gridTemplateColumns: "minmax(0,1fr) auto auto", gap: "8px", alignItems: "baseline", paddingBottom: idx < items.length - 1 ? "3px" : 0, borderBottom: idx < items.length - 1 ? "1px dashed #f1f5f9" : "none" }}>
           <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>
             {i.name}{i.variant ? <span style={{ color: "#9ca3af", fontSize: "11px" }}> ({i.variant})</span> : ""}
-            <span style={{ color: "#6b7280" }}> ×{i.quantity}</span>
+            <span style={{ color: "#6b7280" }}>{t ? ` · ${t.qty}` : ` ×${i.quantity}`}</span>
           </span>
-          <span className="qf-item-ea" style={{ color: "#9ca3af", fontSize: "11px", whiteSpace: "nowrap" }}>₹{i.price}/ea</span>
-          <span style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{(i.price * i.quantity).toFixed(0)}</span>
+          <span className="qf-item-ea" style={{ color: "#9ca3af", fontSize: "11px", whiteSpace: "nowrap" }}>{t ? t.rate : `₹${i.price}/ea`}</span>
+          <span style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap" }}>₹{(i.price * (isWeighed(i) ? i.weightKg : i.quantity)).toFixed(0)}</span>
         </div>
-      ))}
+      ); })}
     </div>
   );
 }
@@ -261,6 +262,7 @@ export default function AdminPage() {
   const editReturnRef = useRef<HTMLElement | null>(null);
   // Invoice preview (focus returns to the PDF button that opened it)
   const [invoiceOrder, setInvoiceOrder] = useState<EditableOrder | null>(null);
+  const productUnits = new Map<string, ProductUnitInfo>(products.map(p => [String(p._id), p])); // units for item wording
   const invoiceReturnRef = useRef<HTMLElement | null>(null);
   function openInvoice(o: EditableOrder, e: React.MouseEvent<HTMLElement>) { invoiceReturnRef.current = e.currentTarget; setInvoiceOrder(o); }
   function closeInvoice() { setInvoiceOrder(null); setTimeout(() => invoiceReturnRef.current?.focus(), 0); }
@@ -1291,7 +1293,7 @@ export default function AdminPage() {
                         </div>
                       </td>
                       <td style={{ padding: "12px 14px" }}>
-                        <OrderItems items={o.items} />
+                        <OrderItems items={o.items} products={productUnits} />
                       </td>
                       <td style={{ padding: "12px 14px" }}>
                         <div style={{ fontWeight: 700, color: "#111827" }}>₹{o.total}</div>
@@ -1350,7 +1352,7 @@ export default function AdminPage() {
                           style={{ background: "none", border: "none", padding: "4px 0", cursor: "pointer", color: "#374151", fontSize: "12.5px", fontWeight: 600, fontFamily: "inherit" }}>
                           {count} {count === 1 ? "item" : "items"} <span aria-hidden="true">{open ? "▴" : "▾"}</span>
                         </button>
-                        {open && <div id={`order-items-${o._id}`} style={{ marginTop: "6px" }}><OrderItems items={o.items} /></div>}
+                        {open && <div id={`order-items-${o._id}`} style={{ marginTop: "6px" }}><OrderItems items={o.items} products={productUnits} /></div>}
                       </div>
                     )}
 
@@ -2159,7 +2161,7 @@ export default function AdminPage() {
       {/* ── Invoice preview ── */}
       {invoiceOrder && (
         <Suspense fallback={null}>
-          <InvoicePreview order={invoiceOrder} onClose={closeInvoice} />
+          <InvoicePreview order={invoiceOrder} products={products} onClose={closeInvoice} />
         </Suspense>
       )}
 

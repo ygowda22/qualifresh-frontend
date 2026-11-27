@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { siteConfig } from "../../src/config/site";
 import { cldImg } from "../lib/img";
+import { isPerKg, qtyText, kg, inr2 } from "../lib/orderItemText";
 
 // Admin: edit an order's items. Side panel on ≥1024px, full-screen sheet on phones/tablets.
 // The live summary is display-only; the server recalculates and its numbers are final.
@@ -21,15 +22,17 @@ interface Line {
   imageUrl?: string;
   quantityLabel?: string;
   orig?: { qty: number; price: number }; // from the stored order (undefined for added lines)
+  weight: string;               // actual weight in kg as typed ("" = not weighed) — per-kg lines only
+  unitInfo?: CatalogueProduct;  // the product (for its unit / price unit)
 }
 
-export interface EditableOrderItem { productId?: string | null; name: string; slug: string; quantity: number; price: number; }
+export interface EditableOrderItem { productId?: string | null; name: string; slug: string; quantity: number; price: number; weightKg?: number | null; }
 export interface EditableOrder {
   _id: string; orderNumber: string; status: string; items?: EditableOrderItem[];
   subtotal: number; deliveryCharge: number; total: number; updatedAt?: string; createdAt?: string;
   deliverySlot?: string; guestName?: string; user?: { name?: string } | null;
 }
-export interface CatalogueProduct { _id: string; name: string; slug: string; price: number; imageUrl?: string; quantityLabel?: string; unit?: string; stock?: number; isActive?: boolean; }
+export interface CatalogueProduct { _id: string; name: string; slug: string; price: number; imageUrl?: string; quantityLabel?: string; unit?: string; priceUnit?: string; stock?: number; isActive?: boolean; }
 
 interface Props {
   order: EditableOrder;
@@ -46,8 +49,8 @@ let keySeq = 0;
 const nextKey = () => `l${++keySeq}`;
 const rupees = (n: number) => `₹${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
-function totalsOf(lines: { qty: number; price: number }[]) {
-  const sub = lines.reduce((s, l) => s + Math.round(l.price * 100) * l.qty, 0);
+function totalsOf(lines: { qty: number; price: number; weight?: number | null }[]) {
+  const sub = lines.reduce((s, l) => s + (typeof l.weight === "number" ? Math.round(l.price * 100 * l.weight) : Math.round(l.price * 100) * l.qty), 0);
   const del = sub === 0 || sub >= DEL.freeDeliveryAbove * 100 ? 0 : DEL.deliveryCharge * 100;
   return { subtotal: sub / 100, deliveryCharge: del / 100, total: (sub + del) / 100 };
 }
@@ -56,6 +59,13 @@ function qtyError(v: string) {
   if (!/^\d+$/.test(v.trim())) return "Whole number, 1–999";
   const n = Number(v); return n < 1 || n > MAX_QTY ? "Whole number, 1–999" : "";
 }
+function weightError(v: string) {
+  const t = v.trim();
+  if (!t) return "";
+  if (!/^\d+(\.\d{1,2})?$/.test(t)) return "0.05–50 kg, up to 2 decimals";
+  const n = Number(t); return n < 0.05 || n > 50 ? "0.05–50 kg, up to 2 decimals" : "";
+}
+const weighOf = (l: Line) => (l.unitInfo && isPerKg(l.unitInfo) && l.weight.trim() && !weightError(l.weight) ? Number(l.weight) : null);
 function priceError(v: string) {
   const t = v.trim();
   if (!/^\d+(\.\d{1,2})?$/.test(t)) return "Price, up to 2 decimals";
@@ -69,14 +79,15 @@ function linesFromOrder(order: EditableOrder, products: CatalogueProduct[]): { l
   const out: Line[] = []; let merged = false;
   for (const it of (Array.isArray(order.items) ? order.items : [])) {
     const pid = it.productId ? String(it.productId) : null;
-    const same = out.find(l => (pid ? l.productId === pid : !l.productId && l.name === it.name) && l.orig && l.orig.price === it.price);
+    const same = out.find(l => (pid ? l.productId === pid : !l.productId && l.name === it.name) && l.orig && l.orig.price === it.price && !l.weight && typeof it.weightKg !== "number");
     if (same) {
       const q = Math.min(MAX_QTY, Number(same.qty) + Number(it.quantity));
       same.qty = String(q); merged = true; continue;
     }
     const p = pid ? byId.get(pid) : undefined;
     out.push({ key: nextKey(), productId: pid, name: it.name, slug: it.slug, qty: String(it.quantity), price: String(it.price),
-      imageUrl: p?.imageUrl, quantityLabel: p?.quantityLabel, orig: { qty: it.quantity, price: it.price } });
+      imageUrl: p?.imageUrl, quantityLabel: p?.quantityLabel, orig: { qty: it.quantity, price: it.price },
+      weight: typeof it.weightKg === "number" ? String(it.weightKg) : "", unitInfo: p });
   }
   return { lines: out, merged };
 }
@@ -99,13 +110,13 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
   const [vv, setVv] = useState<{ top: number; height: number } | null>(null);
 
   // ── derived ───────────────────────────────────────────────────────────────
-  const originalKey = useMemo(() => JSON.stringify(baseItems.map(i => [i.productId ? String(i.productId) : i.name, i.quantity, i.price])), [baseItems]);
-  const currentKey = JSON.stringify(lines.map(l => [l.productId ?? l.name, Number(l.qty), Number(l.price)]));
+  const originalKey = useMemo(() => JSON.stringify(baseItems.map(i => [i.productId ? String(i.productId) : i.name, i.quantity, i.price, typeof i.weightKg === "number" ? i.weightKg : null])), [baseItems]);
+  const currentKey = JSON.stringify(lines.map(l => [l.productId ?? l.name, Number(l.qty), Number(l.price), l.weight.trim() ? Number(l.weight) : null]));
   const dirty = mergedOnOpen || currentKey !== originalKey;
-  const invalid = lines.some(l => qtyError(l.qty) || priceError(l.price));
+  const invalid = lines.some(l => qtyError(l.qty) || priceError(l.price) || weightError(l.weight));
   const canSave = dirty && lines.length > 0 && !invalid && !saving;
   const before = { subtotal: order.subtotal, deliveryCharge: order.deliveryCharge, total: order.total };
-  const after = totalsOf(lines.map(l => ({ qty: qtyError(l.qty) ? 0 : Number(l.qty), price: priceError(l.price) ? 0 : Number(l.price) })));
+  const after = totalsOf(lines.map(l => ({ qty: qtyError(l.qty) ? 0 : Number(l.qty), price: priceError(l.price) ? 0 : Number(l.price), weight: weighOf(l) })));
   const customer = order.guestName || order.user?.name || "Guest";
 
   // ── open/close behaviour ─────────────────────────────────────────────────
@@ -178,7 +189,7 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
   // ── editing ──────────────────────────────────────────────────────────────
   function update(key: string, patch: Partial<Line>) {
     setLines(ls => ls.map(l => (l.key === key ? { ...l, ...patch } : l)));
-    setFieldErrors(fe => { const n = { ...fe }; delete n[`${key}.qty`]; delete n[`${key}.price`]; delete n[`${key}.product`]; return n; });
+    setFieldErrors(fe => { const n = { ...fe }; delete n[`${key}.qty`]; delete n[`${key}.price`]; delete n[`${key}.weight`]; delete n[`${key}.product`]; return n; });
     setError(null);
   }
   function step(key: string, d: number) {
@@ -193,7 +204,7 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
     const pid = String(p._id);
     const existing = lines.find(l => l.productId === pid);
     if (existing) step(existing.key, +1);
-    else setLines(ls => [...ls, { key: nextKey(), productId: pid, name: p.name, slug: p.slug, qty: "1", price: String(p.price), imageUrl: p.imageUrl, quantityLabel: p.quantityLabel }]);
+    else setLines(ls => [...ls, { key: nextKey(), productId: pid, name: p.name, slug: p.slug, qty: "1", price: String(p.price), imageUrl: p.imageUrl, quantityLabel: p.quantityLabel, weight: "", unitInfo: p }]);
     setSearch(""); setError(null);
   }
   const results = useMemo(() => {
@@ -211,7 +222,7 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: lines.map(l => ({ productId: l.productId, name: l.name, slug: l.slug, quantity: Number(l.qty), price: Number(l.price) })),
+          items: lines.map(l => ({ productId: l.productId, name: l.name, slug: l.slug, quantity: Number(l.qty), price: Number(l.price), ...(weighOf(l) !== null ? { weightKg: weighOf(l) } : {}) })),
           expectedUpdatedAt: order.updatedAt || order.createdAt,
         }),
       });
@@ -219,9 +230,9 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
       const d = await r.json().catch(() => ({}));
       if (r.ok) { finish(() => onSaved(d)); return; }
       if (r.status === 409) { setError({ message: d.message || "This order was changed by someone else. Reload and try again.", reload: true }); return; }
-      const m = /^items\.(\d+)\.(quantity|price|productId)$/.exec(d.field || "");
+      const m = /^items\.(\d+)\.(quantity|price|productId|weightKg)$/.exec(d.field || "");
       if (m && lines[Number(m[1])]) {
-        const which = m[2] === "quantity" ? "qty" : m[2] === "price" ? "price" : "product";
+        const which = m[2] === "quantity" ? "qty" : m[2] === "price" ? "price" : m[2] === "weightKg" ? "weight" : "product";
         setFieldErrors({ [`${lines[Number(m[1])].key}.${which}`]: d.message });
       } else setError({ message: d.message || `Couldn't save (error ${r.status}).` });
     } catch {
@@ -298,7 +309,9 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
           {lines.map(l => {
             const qErr = fieldErrors[`${l.key}.qty`] || qtyError(l.qty);
             const pErr = fieldErrors[`${l.key}.price`] || priceError(l.price);
-            const lineAmount = !qtyError(l.qty) && !priceError(l.price) ? Math.round(Number(l.price) * 100) * Number(l.qty) / 100 : null;
+            const perKg = !!l.unitInfo && isPerKg(l.unitInfo);
+            const wErr = perKg ? fieldErrors[`${l.key}.weight`] || weightError(l.weight) : "";
+            const lineAmount = !qtyError(l.qty) && !priceError(l.price) && !wErr ? (weighOf(l) !== null ? Math.round(Number(l.price) * 100 * (weighOf(l) as number)) / 100 : Math.round(Number(l.price) * 100) * Number(l.qty) / 100) : null;
             return (
               <div key={l.key} className="oe-line" data-line={l.name}>
                 {l.imageUrl ? <img src={cldImg(l.imageUrl, 100)} alt="" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover" }} />
@@ -325,9 +338,16 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
                           aria-label={`Quantity of ${l.name}`} aria-invalid={!!qErr} onChange={e => update(l.key, { qty: e.target.value })} />
                         <button type="button" className="oe-step" onClick={() => step(l.key, +1)} disabled={!qtyError(l.qty) && Number(l.qty) >= MAX_QTY} aria-label={`Increase quantity of ${l.name}`}>+</button>
                       </div>
+                      {perKg && (
+                        <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6b7280" }}>
+                          Weight (kg)
+                          <input className={`oe-input${wErr ? " err" : ""}`} value={l.weight} inputMode="decimal" step="0.05" placeholder="e.g. 1.70" style={{ width: "80px" }}
+                            aria-label={`Weight in kg of ${l.name}`} aria-invalid={!!wErr} onChange={e => update(l.key, { weight: e.target.value })} />
+                        </label>
+                      )}
                       <label style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6b7280" }}>
                         ₹<input className={`oe-input${pErr ? " err" : ""}`} value={l.price} inputMode="decimal" style={{ width: "86px" }}
-                          aria-label={`Price per unit of ${l.name}`} aria-invalid={!!pErr} onChange={e => update(l.key, { price: e.target.value })} />/ea
+                          aria-label={`Price per unit of ${l.name}`} aria-invalid={!!pErr} onChange={e => update(l.key, { price: e.target.value })} />{perKg ? "/kg" : "/ea"}
                       </label>
                       <button type="button" className="oe-btn" style={{ background: "#fef2f2", color: "#ef4444", marginLeft: "auto", padding: "7px 10px" }}
                         onClick={() => setConfirmRemove(l.key)} aria-label={`Remove ${l.name}`}>🗑 Remove</button>
@@ -335,6 +355,12 @@ export default function OrderEditPanel({ order: initialOrder, products, delivery
                   )}
                   {qErr && <div className="oe-err" role="alert">Quantity: {qErr}</div>}
                   {pErr && <div className="oe-err" role="alert">Price: {pErr}</div>}
+                  {wErr && <div className="oe-err" role="alert">Weight: {wErr}</div>}
+                  {perKg && lineAmount !== null && (
+                    <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }} data-weigh-text>
+                      {weighOf(l) !== null ? `${kg(weighOf(l) as number)} kg` : qtyText({ name: l.name, quantity: Number(l.qty), price: Number(l.price) }, l.unitInfo)} × ₹{Number(l.price)}/kg = {inr2(lineAmount)}
+                    </div>
+                  )}
                   {fieldErrors[`${l.key}.product`] && <div className="oe-err" role="alert">{fieldErrors[`${l.key}.product`]}</div>}
                 </div>
               </div>

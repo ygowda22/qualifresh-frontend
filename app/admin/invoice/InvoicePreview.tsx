@@ -3,7 +3,7 @@
 // full-screen sheet on phones/tablets (on-screen copy built from the same data/layout).
 // The PDF/QR libraries are imported only here, when the panel opens.
 import { useEffect, useRef, useState } from "react";
-import { buildInvoice, type InvoiceModel, type InvoiceOrder, type QrMatrix } from "./model";
+import { buildInvoice, type InvoiceModel, type InvoiceOrder, type InvoiceProduct, type QrMatrix } from "./model";
 import InvoiceHtml from "./InvoiceHtml";
 
 type SaveFilePicker = (o: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) =>
@@ -11,7 +11,7 @@ type SaveFilePicker = (o: { suggestedName: string; types: { description: string;
 
 interface Ready { blob: Blob; url: string; model: InvoiceModel; qr: QrMatrix }
 
-export default function InvoicePreview({ order, onClose }: { order: InvoiceOrder; onClose: () => void }) {
+export default function InvoicePreview({ order, products, onClose }: { order: InvoiceOrder; products?: InvoiceProduct[]; onClose: () => void }) {
   const [state, setState] = useState<"preparing" | "ready" | "error">("preparing");
   const [attempt, setAttempt] = useState(0);
   const [ready, setReady] = useState<Ready | null>(null);
@@ -38,7 +38,7 @@ export default function InvoicePreview({ order, onClose }: { order: InvoiceOrder
     setState("preparing"); setNotice("");
     (async () => {
       try {
-        const model = buildInvoice(order);
+        const model = buildInvoice(order, undefined, products); // products: units for the items table
         const { renderInvoicePdf } = await import("./renderInvoice");
         const { blob, qr } = await renderInvoicePdf(model);
         if (cancelled) return;

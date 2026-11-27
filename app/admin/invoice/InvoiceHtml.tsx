@@ -30,9 +30,9 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
     const fit = () => { const w = wrapRef.current?.clientWidth || 0; const pagePx = (L.pageW / 25.4) * 96; if (w) setScale(Math.min(1, (w - 16) / pagePx)); };
     fit(); window.addEventListener("resize", fit); return () => window.removeEventListener("resize", fit);
   }, [L.pageW]);
-  const cell: React.CSSProperties = { padding: `${mm(1.2)} ${mm(1.5)}`, boxSizing: "border-box" };
+  const cell: React.CSSProperties = { padding: `${mm(0.4)} ${mm(1.3)} 0`, boxSizing: "border-box", lineHeight: 1.2 };
   const totalRow = (label: string, value: string, bold = false) => (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: `${mm(1)} 0`, fontWeight: bold ? 700 : 400, fontSize: bold ? "10.5pt" : "9pt", ...(bold ? { borderTop: `1px solid ${GREEN}`, marginTop: mm(1), paddingTop: mm(1.6) } : {}) }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: `${mm(0.6)} 0`, fontWeight: bold ? 700 : 400, fontSize: bold ? "10.5pt" : "9pt", ...(bold ? { borderTop: `1px solid ${GREEN}`, marginTop: mm(0.6), paddingTop: mm(1.2) } : {}) }}>
       <span>{label}</span><span>{value}</span>
     </div>
   );
@@ -46,36 +46,36 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
       `}</style>
       {m.pages.map((pg, i) => (
         <div key={i} style={{ width: pagePx * scale, height: pageHPx * scale, margin: "0 auto 12px", boxShadow: "0 2px 12px rgba(0,0,0,.15)", background: "#fff", overflow: "hidden" }} data-invoice-page={i + 1}>
-          <div style={{ width: mm(L.pageW), height: mm(L.pageH), transform: `scale(${scale})`, transformOrigin: "top left", padding: mm(L.margin), boxSizing: "border-box", position: "relative", fontFamily: "QFSans, sans-serif", fontSize: "9pt", color: "#111827", lineHeight: 1.25 }}>
+          <div style={{ width: mm(L.pageW), height: mm(L.pageH), transform: `scale(${scale})`, transformOrigin: "top left", padding: mm(L.margin), boxSizing: "border-box", position: "relative", fontFamily: "QFSans, sans-serif", fontSize: "8.5pt", color: "#111827", lineHeight: 1.2 }}>
             {pg.first ? (
               <div style={{ height: mm(L.firstHeader) }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", height: mm(36) }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", height: mm(21) }}>
                   <div style={{ display: "flex", width: mm(140) }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={cfg.logo} alt="" style={{ width: mm(30), height: mm(23.6), marginRight: mm(4) }} />
+                    <img src={cfg.logo} alt="" style={{ width: mm(25), height: mm(19.7), marginRight: mm(3.5) }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "15pt", fontWeight: 700, color: GREEN }}>{cfg.businessName}</div>
-                      <div style={{ fontSize: "8.5pt", marginTop: mm(1) }}>{cfg.tagline}</div>
-                      <div style={{ fontSize: "8pt", marginTop: mm(1), color: "#374151" }}>{cfg.address}</div>
-                      <div style={{ fontSize: "8pt", marginTop: mm(0.8), color: "#374151", whiteSpace: "pre" }}>E-mail: {cfg.email}{"   "}Mob.: {cfg.phone}</div>
+                      <div style={{ fontSize: "14pt", fontWeight: 700, color: GREEN }}>{cfg.businessName}</div>
+                      <div style={{ fontSize: "8pt", marginTop: mm(0.6) }}>{cfg.tagline}</div>
+                      <div style={{ fontSize: "8pt", marginTop: mm(0.5), color: "#374151" }}>{cfg.address}</div>
+                      <div style={{ fontSize: "8pt", marginTop: mm(0.5), color: "#374151", whiteSpace: "pre" }}>E-mail: {cfg.email}{"   "}Mob.: {cfg.phone}</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <div style={{ fontSize: "15pt", fontWeight: 700, border: `1.5pt solid ${GREEN}`, color: GREEN, padding: `${mm(1.5)} ${mm(5)}`, letterSpacing: "1.5pt" }}>{cfg.title}</div>
-                    <div style={{ fontSize: "8.5pt", marginTop: mm(2) }}>GST No.: {cfg.gstin}</div>
+                    <div style={{ fontSize: "14pt", fontWeight: 700, border: `1.5pt solid ${GREEN}`, color: GREEN, padding: `${mm(1.2)} ${mm(5)}`, letterSpacing: "1.4pt" }}>{cfg.title}</div>
+                    <div style={{ fontSize: "8.5pt", marginTop: mm(1.5) }}>GST No.: {cfg.gstin}</div>
                   </div>
                 </div>
-                <div style={{ borderTop: `1.5pt solid ${GREEN}`, marginBottom: mm(3) }} />
-                <div style={{ display: "flex", justifyContent: "space-between", height: mm(24) }}>
-                  <div style={{ width: mm(115) }}>
-                    <div style={{ fontSize: "8pt", color: LINE, fontWeight: 700 }}>To:</div>
-                    <div style={{ fontSize: "10pt", fontWeight: 700, marginTop: mm(0.6), ...clamp(2), ...kr(m.customer.name) }}>{m.customer.name}</div>
-                    {m.customer.phone && <div style={{ fontSize: "8.5pt", marginTop: mm(0.6) }}>Phone: {m.customer.phone}</div>}
-                    {m.customer.address && <div style={{ fontSize: "8.5pt", marginTop: mm(0.6), ...clamp(3), ...kr(m.customer.address) }}>{m.customer.address}</div>}
+                <div style={{ borderTop: `1.5pt solid ${GREEN}`, marginBottom: mm(2) }} />
+                <div style={{ display: "flex", justifyContent: "space-between", height: mm(21.5) }}>
+                  <div style={{ width: mm(120) }}>
+                    <div style={{ fontSize: "7.5pt", color: LINE, fontWeight: 700 }}>To:</div>
+                    <div style={{ fontSize: "10pt", fontWeight: 700, marginTop: mm(0.4), ...clamp(1), ...kr(m.customer.name) }}>{m.customer.name}</div>
+                    {m.customer.phone && <div style={{ fontSize: "8.5pt", marginTop: mm(0.4) }}>Phone: {m.customer.phone}</div>}
+                    {m.customer.address && <div style={{ fontSize: "8pt", marginTop: mm(0.4), ...clamp(3), ...kr(m.customer.address) }}>{m.customer.address}</div>}
                   </div>
                   <div style={{ width: mm(62) }}>
                     {[["Invoice No.:", m.orderNumber], ["Date:", m.dateText], ["Delivery:", m.delivery]].map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", marginBottom: mm(1) }}>
+                      <div key={k} style={{ display: "flex", marginBottom: mm(0.8) }}>
                         <span style={{ width: mm(22), color: LINE, fontWeight: 700, fontSize: "8.5pt" }}>{k}</span>
                         <span style={{ flex: 1, fontWeight: k === "Invoice No.:" ? 700 : 400 }}>{v}</span>
                       </div>
@@ -91,7 +91,7 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
             )}
 
             {pg.rows.length > 0 && (
-              <div style={{ display: "flex", background: SOFT, border: `1px solid ${GREEN}`, height: mm(L.tableHead), alignItems: "center", fontWeight: 700, color: GREEN }}>
+              <div style={{ display: "flex", background: SOFT, border: `1px solid ${GREEN}`, height: mm(L.tableHead), boxSizing: "border-box", alignItems: "center", fontWeight: 700, color: GREEN }}>
                 <span style={{ width: mm(cols.sr), ...cell }}>Sr.</span>
                 <span style={{ width: mm(partW), ...cell }}>Particulars</span>
                 <span style={{ width: mm(cols.qty), ...cell, textAlign: "right" }}>Qty</span>
@@ -100,9 +100,9 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
               </div>
             )}
             {pg.rows.map(r => (
-              <div key={r.sr} style={{ display: "flex", minHeight: mm(L.rowBase + (r.lines - 1) * L.rowLine), borderLeft: "1px solid #9ca3af", borderRight: "1px solid #9ca3af", borderBottom: "0.5px solid #9ca3af" }}>
+              <div key={r.sr} style={{ display: "flex", height: mm(L.rowBase + (r.lines - 1) * L.rowLine), boxSizing: "border-box", borderLeft: "1px solid #9ca3af", borderRight: "1px solid #9ca3af", borderBottom: "0.5px solid #9ca3af" }}>
                 <span style={{ width: mm(cols.sr), ...cell }}>{r.sr}</span>
-                <span style={{ width: mm(partW), ...cell, ...clamp(r.lines), ...kr(r.name) }}>{r.name}</span>
+                <span style={{ width: mm(partW), ...cell, ...clamp(r.lines), ...kr(r.name + r.sub) }}>{r.name}{r.sub && <span style={{ fontSize: "7pt", color: LINE }}>{"  "}{r.sub}</span>}</span>
                 <span style={{ width: mm(cols.qty), ...cell, textAlign: "right" }}>{r.qty}</span>
                 <span style={{ width: mm(cols.rate), ...cell, textAlign: "right" }}>{r.rate}</span>
                 <span style={{ width: mm(cols.amount), ...cell, textAlign: "right" }}>{r.amount}</span>
@@ -110,8 +110,14 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
             ))}
 
             {pg.last && (
-              <div style={{ marginTop: mm(4) }}>
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ marginTop: mm(1.5) }}>
+                <div style={{ fontWeight: 700 }}>Items: {m.itemCount}</div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: mm(0.5) }}>
+                  <div style={{ width: mm(98), paddingTop: mm(0.6) }}>
+                    <div><b>Amount in words: </b>{m.amountInWords}</div>
+                    <div style={{ marginTop: mm(1.2), fontSize: "8pt", color: "#374151" }}>Terms: {cfg.terms}</div>
+                    {m.hasPerKg && <div style={{ marginTop: mm(1.2), fontSize: "7.5pt", color: LINE }}>* Weight-based items are billed by the actual weight at packing.</div>}
+                  </div>
                   <div style={{ width: mm(82) }}>
                     {totalRow("Sub Total", m.subTotal)}
                     {totalRow("Delivery Charges", m.delivery_)}
@@ -119,9 +125,7 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
                     {totalRow("Total Amount", m.totalText, true)}
                   </div>
                 </div>
-                <div style={{ marginTop: mm(2) }}><b>Amount in words: </b>{m.amountInWords}</div>
-                <div style={{ marginTop: mm(1.5), fontSize: "8.5pt", color: "#374151" }}>Terms: {cfg.terms}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: mm(4) }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginTop: mm(3) }}>
                   <div style={{ width: mm(68), border: "1px solid #9ca3af", padding: mm(2), boxSizing: "border-box" }}>
                     <div style={{ fontWeight: 700, color: GREEN, marginBottom: mm(1) }}>Bank Details</div>
                     {[["Account Name", cfg.bank.accountName], ["Bank Name", `${cfg.bank.bankName}, Branch: ${cfg.bank.branch}`], ["Account No.", cfg.bank.accountNo], ["IFSC Code", cfg.bank.ifsc], ["GooglePay / PhonePe", cfg.bank.paymentPhone]].map(([k, v]) => (
@@ -134,7 +138,7 @@ export default function InvoiceHtml({ m, qr }: { m: InvoiceModel; qr: QrMatrix }
                   </div>
                   <div style={{ width: mm(52), display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <div style={{ fontWeight: 700, fontSize: "8.5pt" }}>{cfg.signatureFor}</div>
-                    <div style={{ height: mm(22) }} />
+                    <div style={{ height: mm(20) }} />
                     <div style={{ borderTop: "0.8pt solid #111827", width: mm(44) }} />
                     <div style={{ fontSize: "8pt", marginTop: mm(1) }}>{cfg.signatureLabel}</div>
                   </div>

@@ -1,8 +1,10 @@
 // Invoice data for one order — shared by the PDF and the on-screen (phone) preview so both
 // show exactly the same content and page breaks. No PDF/QR library here (kept small).
 import { invoiceConfig } from "../../../src/config/invoice";
+import { qtyText, rateUnit, subLabel, linePaise, isPerKg, type ProductUnitInfo } from "../../lib/orderItemText";
 
 export type InvoiceConfig = typeof invoiceConfig;
+export interface InvoiceProduct extends ProductUnitInfo { _id: string }
 
 export interface InvoiceOrder {
   orderNumber: string;
@@ -13,13 +15,14 @@ export interface InvoiceOrder {
   guestName?: string;
   guestPhone?: string;
   user?: { name?: string; phone?: string } | null;
-  items?: { name: string; quantity: number; price: number }[];
+  items?: { productId?: string | null; name: string; quantity: number; price: number; weightKg?: number | null }[];
   subtotal: number;
   deliveryCharge: number;
   total: number;
 }
 
-export interface InvoiceRow { sr: number; name: string; qty: number; rate: string; amount: string; lines: number; }
+// name + small grey label (pack size, or "1 piece · billed by actual weight"); qty/rate carry units
+export interface InvoiceRow { sr: number; name: string; sub: string; qty: string; rate: string; amount: string; lines: number; }
 export interface InvoicePage { rows: InvoiceRow[]; first: boolean; last: boolean; }
 export interface InvoiceModel {
   cfg: InvoiceConfig;
@@ -36,6 +39,8 @@ export interface InvoiceModel {
   fileName: string;
   pages: InvoicePage[];
   hasHangul: boolean;
+  itemCount: number;
+  hasPerKg: boolean;          // show the "billed by actual weight" footnote
 }
 
 // ── formatting ──────────────────────────────────────────────────────────────
@@ -114,38 +119,46 @@ export const HANGUL = /[ᄀ-ᇿ㄰-㆏가-힣]/;
 // ── page layout (shared by PDF and HTML preview; all sizes in mm) ───────────
 export const LAYOUT = {
   pageW: 210, pageH: 297, margin: 12,
-  firstHeader: 66,        // business header + customer/invoice block on page 1
-  contHeader: 12,         // "Invoice QF-x (continued)" on later pages
-  tableHead: 7,
-  rowBase: 6, rowLine: 3.9, // single-line row height, and each extra wrapped line
-  closing: 96,            // totals + words + terms + bank / QR / signature
-  footer: 8,              // "Page x of y"
-  cols: { sr: 11, qty: 16, rate: 31, amount: 34 }, // particulars gets the rest
-  charsPerLine: 46,       // conservative estimate for the particulars column at 9pt
+  firstHeader: 46,        // business header + Bill To / invoice block on page 1
+  contHeader: 10,         // "INVOICE QF-x (continued)" on later pages
+  tableHead: 6,
+  rowBase: 4.5, rowLine: 3.6, // single-line row height, and each extra wrapped line
+  closing: 80,            // items count + totals + words/terms/footnote + bank / QR / signature
+  footer: 1,              // "Page x of y" sits in the bottom margin (6 mm from the edge)
+  cols: { sr: 8, qty: 26, rate: 33, amount: 24 }, // particulars gets the rest
+  charsPerLine: 52,       // conservative estimate for the particulars column at 9pt
+  minRowsWithTotals: 3,   // a page with the totals always carries at least this many item rows
 };
 
-function wrappedLines(text: string): number {
-  // Hangul is about twice as wide as Latin letters
-  const width = Array.from(text).reduce((w, ch) => w + (HANGUL.test(ch) ? 2 : 1), 0);
+function wrappedLines(name: string, sub: string): number {
+  // Hangul is about twice as wide as Latin letters; the grey label is a smaller font (~0.8)
+  const w = (t: string) => Array.from(t).reduce((s, ch) => s + (HANGUL.test(ch) ? 2 : 1), 0);
+  const width = w(name) + (sub ? 2 + 0.8 * w(sub) : 0);
   return Math.max(1, Math.ceil(width / LAYOUT.charsPerLine));
 }
 
 function paginate(rows: InvoiceRow[]): InvoicePage[] {
-  const usable = LAYOUT.pageH - 2 * LAYOUT.margin - LAYOUT.footer;
-  const pages: InvoicePage[] = [];
-  let cur: InvoiceRow[] = [], first = true, left = usable - LAYOUT.firstHeader - LAYOUT.tableHead;
-  const rowH = (r: InvoiceRow) => LAYOUT.rowBase + (r.lines - 1) * LAYOUT.rowLine;
+  const L = LAYOUT, usable = L.pageH - 2 * L.margin - L.footer;
+  const rowH = (r: InvoiceRow) => L.rowBase + (r.lines - 1) * L.rowLine;
+  const room = (first: boolean) => usable - (first ? L.firstHeader : L.contHeader) - L.tableHead;
+  const pages: { rows: InvoiceRow[]; first: boolean }[] = [];
+  let cur: InvoiceRow[] = [], first = true, left = room(true);
   for (const r of rows) {
-    if (rowH(r) > left && cur.length) {
-      pages.push({ rows: cur, first, last: false });
-      cur = []; first = false; left = usable - LAYOUT.contHeader - LAYOUT.tableHead;
-    }
+    if (rowH(r) > left && cur.length) { pages.push({ rows: cur, first }); cur = []; first = false; left = room(false); }
     cur.push(r); left -= rowH(r);
   }
-  // the totals / bank / QR block must fit under the last rows, else it gets its own page
-  if (left >= LAYOUT.closing) pages.push({ rows: cur, first, last: true });
-  else { pages.push({ rows: cur, first, last: false }); pages.push({ rows: [], first: false, last: true }); }
-  return pages;
+  pages.push({ rows: cur, first });
+  // The totals + bank + QR + signature block goes on the last page if it fits there. Otherwise it moves
+  // to a new page together with at least the last few item rows — never totals alone.
+  const last = pages[pages.length - 1];
+  const used = (p: { rows: InvoiceRow[] }) => p.rows.reduce((s, r) => s + rowH(r), 0);
+  if (room(last.first) - used(last) < L.closing) {
+    const carry = Math.min(L.minRowsWithTotals, last.rows.length);
+    const moved = last.rows.splice(last.rows.length - carry, carry); // (a continuation page always fits 3 rows + the totals)
+    if (!last.rows.length) pages.pop();
+    pages.push({ rows: moved, first: pages.length === 0 });
+  }
+  return pages.map((p, i) => ({ rows: p.rows, first: p.first, last: i === pages.length - 1 }));
 }
 
 /** Emoji can't be printed with the invoice fonts — leave them out of printed text. */
@@ -153,15 +166,26 @@ export function printable(s: unknown): string {
   return String(s ?? "").replace(EMOJI, "").replace(/\s{2,}/g, " ").trim();
 }
 
-export function buildInvoice(order: InvoiceOrder, cfg: InvoiceConfig = invoiceConfig): InvoiceModel {
+export function buildInvoice(order: InvoiceOrder, cfg: InvoiceConfig = invoiceConfig, products: InvoiceProduct[] = []): InvoiceModel {
   const name = printable(order.guestName || order.user?.name);
   const phone = printable(order.guestPhone || order.user?.phone);
   const addr = printable(order.deliveryAddress);
   const address = [addr && addr !== "Not provided" ? addr : "", printable(order.city)].filter(Boolean).join(", ");
+  const byId = new Map(products.map(p => [String(p._id), p]));
+  let hasPerKg = false;
   const rows: InvoiceRow[] = (Array.isArray(order.items) ? order.items : []).map((it, i) => {
-    const amountPaise = Math.round(Number(it.price) * 100) * Number(it.quantity);
+    const line = { name: String(it.name ?? ""), quantity: Number(it.quantity), price: Number(it.price), weightKg: typeof it.weightKg === "number" ? it.weightKg : null };
+    const p = it.productId ? byId.get(String(it.productId)) : undefined;
+    if (isPerKg(p)) hasPerKg = true;
     const itemName = printable(it.name);
-    return { sr: i + 1, name: itemName, qty: Number(it.quantity), rate: inr(Number(it.price)), amount: inr(amountPaise / 100), lines: wrappedLines(itemName) };
+    const sub = printable(subLabel(line, p));
+    return {
+      sr: i + 1, name: itemName, sub,
+      qty: qtyText(line, p) ?? `${line.quantity} pc`,                 // unknown product → "pc"
+      rate: `${inr(line.price)} / ${p ? rateUnit(p) : "pc"}`,
+      amount: inr(linePaise(line) / 100),
+      lines: wrappedLines(itemName, sub),
+    };
   });
   const total = Number(order.total) || 0;
   const totalRounded = Math.round(total);
@@ -186,5 +210,7 @@ export function buildInvoice(order: InvoiceOrder, cfg: InvoiceConfig = invoiceCo
     fileName: invoiceFileName(order.orderNumber, order.guestName || order.user?.name, order.createdAt),
     pages: paginate(rows),
     hasHangul: HANGUL.test(text),
+    itemCount: rows.length,
+    hasPerKg,
   };
 }

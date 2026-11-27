@@ -5,9 +5,10 @@ import { siteConfig } from "../../src/config/site";
 import { saveAndClearCart } from "../lib/cartSync";
 import { useCart } from "../context/CartContext";
 import { cldImg } from "../lib/img";
+import { qtyText, isWeighed, linePaise, inr2, type ProductUnitInfo } from "../lib/orderItemText";
 
 interface UserData { name: string; email: string; token: string; phone?: string; createdAt?: string; }
-interface OrderItem { name: string; quantity: number; price: number; }
+interface OrderItem { name: string; quantity: number; price: number; productId?: string | null; weightKg?: number | null; }
 interface Order {
   _id: string; orderNumber: string; status: string; total: number; subtotal: number;
   deliveryCharge: number; deliveryAddress: string; deliverySlot: string;
@@ -37,6 +38,7 @@ export default function UserPage() {
   const [user, setUser]                 = useState<UserData | null>(null);
   const [orders, setOrders]             = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [productUnits, setProductUnits] = useState<Map<string, ProductUnitInfo>>(() => new Map()); // units for weighed lines
   const [activeSection, setActiveSection] = useState<"orders" | "profile" | "addresses" | "wishlist">(() => {
     const seg = pathname?.split("/").pop() ?? "";
     return (["orders", "addresses", "wishlist", "profile"].includes(seg) ? seg : "profile") as "orders" | "profile" | "addresses" | "wishlist";
@@ -91,9 +93,19 @@ export default function UserPage() {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         credentials: "include",
       });
-      if (r.ok) { const d = await r.json(); setOrders(d.orders || d || []); }
+      if (r.ok) { const d = await r.json(); setOrders(d.orders || d || []); loadUnitsIfWeighed(d.orders || d || []); }
     } catch { /* ignore */ }
     finally { setOrdersLoading(false); }
+  }
+
+  async function loadUnitsIfWeighed(list: Order[]) {
+    if (!Array.isArray(list) || !list.some(o => (o.items ?? []).some(i => isWeighed(i)))) return;
+    try {
+      const r = await fetch("/backend/api/products");
+      if (!r.ok) return;
+      const ps = await r.json();
+      if (Array.isArray(ps)) setProductUnits(new Map(ps.map((p: ProductUnitInfo & { _id: string }) => [String(p._id), p])));
+    } catch { /* units are optional — weighed lines fall back */ }
   }
 
   async function loadProfile(token: string) {
@@ -455,12 +467,18 @@ export default function UserPage() {
                               </span>
                             </div>
                             <div style={{ margin: "0 0 4px" }}>
-                              {(order.items ?? []).map((item, i) => (
+                              {(order.items ?? []).map((item, i) => {
+                                // weighed per-kg lines: "Name · 1 pc · 1.70 kg" and the billed amount; all other lines as before
+                                const w = isWeighed(item) ? qtyText(item, item.productId ? productUnits.get(String(item.productId)) : undefined) : null;
+                                return (
                                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", color: "#4b5563", lineHeight: 1.7 }}>
-                                  <span>{item.name} <span style={{ color: "#9ca3af" }}>×{item.quantity}</span></span>
-                                  <span style={{ fontWeight: 600, color: "#166534", whiteSpace: "nowrap", marginLeft: "8px" }}>₹{(item.price * item.quantity).toFixed(0)}</span>
+                                  {w
+                                    ? <span>{item.name} <span style={{ color: "#9ca3af" }}>· {w}</span></span>
+                                    : <span>{item.name} <span style={{ color: "#9ca3af" }}>×{item.quantity}</span></span>}
+                                  <span style={{ fontWeight: 600, color: "#166534", whiteSpace: "nowrap", marginLeft: "8px" }}>{isWeighed(item) ? inr2(linePaise(item) / 100) : `₹${(item.price * item.quantity).toFixed(0)}`}</span>
                                 </div>
-                              ))}
+                                );
+                              })}
                             </div>
                             {order.deliveryAddress && <p style={{ fontSize: "11.5px", color: "#9ca3af", margin: 0 }}>📍 {order.deliveryAddress}</p>}
                           </div>
